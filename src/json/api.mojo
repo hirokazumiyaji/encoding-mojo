@@ -1,5 +1,8 @@
 """The module-level functions that mirror CPython's `json` package."""
 
+from std.memory import ArcPointer
+
+from .decoder import parse_document
 from .encoder import EncodeOptions, Indent, write_value
 from .value import JSONValue
 
@@ -45,3 +48,28 @@ def dumps(
     var out = String()
     write_value(out, value._tape[], value._idx, opts)
     return out^
+
+
+def loads(
+    text: StringSlice, *, strict: Bool = True, allow_nan: Bool = True
+) raises -> JSONValue:
+    """Decodes a JSON document.
+
+    Args:
+        text: The document to decode.
+        strict: Whether raw control characters inside strings are rejected,
+            as CPython's `strict=True` does.
+        allow_nan: Whether the non-standard `NaN`, `Infinity` and `-Infinity`
+            literals are accepted, as CPython does by default.
+
+    Returns:
+        The decoded document.
+
+    Raises:
+        `JSONDecodeError` if the text is not valid JSON.
+    """
+    var parsed = parse_document(
+        text.as_bytes(), strict=strict, allow_nan=allow_nan
+    )
+    var root = parsed.root
+    return JSONValue(tape=ArcPointer(parsed^.take_tape()), idx=root)
