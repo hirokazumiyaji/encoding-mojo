@@ -63,6 +63,15 @@ struct Indent(Copyable, ImplicitlyCopyable, Movable):
         self.enabled = True
 
     @implicit
+    def __init__(out self, text: StringLiteral):
+        """Indents each level with `text`.
+
+        Args:
+            text: The literal indent for one nesting level.
+        """
+        self = Self(StringSlice(text))
+
+    @implicit
     def __init__(out self, text: StringSlice):
         """Indents each level with `text`.
 
