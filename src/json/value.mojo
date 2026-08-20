@@ -516,6 +516,53 @@ struct JSONValue(
             )
         return out^
 
+    def items(self) raises -> List[Tuple[String, Self]]:
+        """Returns this object's members in insertion order.
+
+        Returns:
+            The `(key, value)` pairs.
+
+        Raises:
+            If this value is not an object.
+        """
+        self._expect(_KIND_OBJECT, "items")
+        var node = self._node()
+        var out = List[Tuple[String, Self]](capacity=Int(node.b))
+        for i in range(Int(node.b)):
+            out.append(
+                (
+                    String(
+                        unsafe_from_utf8=self._tape[].str_bytes(
+                            self._tape[].kids[Int(node.a) + 2 * i]
+                        )
+                    ),
+                    Self(
+                        tape=self._tape,
+                        idx=self._tape[].kids[Int(node.a) + 2 * i + 1],
+                    ),
+                )
+            )
+        return out^
+
+    # Not a conformance to `Iterable`: that trait's `__iter__` cannot raise,
+    # and iterating a scalar has to fail the way Python's `TypeError` does.
+    # A `for` loop only needs the method to exist.
+    def __iter__(self) raises -> _JSONIter:
+        """Iterates this container, following Python's rules.
+
+        Arrays yield their elements and objects yield their keys, as JSON
+        string values.
+
+        Returns:
+            An iterator over the container.
+
+        Raises:
+            If this value is not an array or an object.
+        """
+        if not self.is_container():
+            raise Error("'", self.type(), "' object is not iterable")
+        return _JSONIter(self, 0, Int(self._node().b))
+
     def get(self, key: StringSlice) -> Optional[Self]:
         """Looks up a member without raising, like Python's `dict.get`.
 
@@ -815,3 +862,57 @@ def _count_codepoints(bytes: Span[UInt8, _]) -> Int:
         if (bytes[i] & 0xC0) != 0x80:
             count += 1
     return count
+
+
+struct _JSONIter(Copyable, ImplicitlyCopyable, Iterator, Movable):
+    """Iterates an array's elements or an object's keys."""
+
+    comptime Element = JSONValue
+    """What `__next__` yields."""
+
+    var _value: JSONValue
+    """The container being iterated. Holding it keeps the document alive."""
+
+    var _index: Int
+    """The next position to yield."""
+
+    var _length: Int
+    """The container's length, captured when iteration started."""
+
+    def __init__(out self, value: JSONValue, index: Int, length: Int):
+        """Starts an iteration.
+
+        Args:
+            value: The container to iterate.
+            index: The position to start from.
+            length: The number of positions to yield.
+        """
+        self._value = value
+        self._index = index
+        self._length = length
+
+    def __next__(mut self) raises StopIteration -> JSONValue:
+        """Yields the next element or key.
+
+        Returns:
+            An array element, or an object key as a JSON string.
+
+        Raises:
+            StopIteration when the container is exhausted.
+        """
+        if self._index >= self._length:
+            raise StopIteration()
+        var node = self._value._node()
+        var stride = 2 if node.kind == _KIND_OBJECT else 1
+        var child = self._value._tape[].kids[Int(node.a) + stride * self._index]
+        self._index += 1
+        return JSONValue(tape=self._value._tape, idx=child)
+
+    def bounds(self) -> Tuple[Int, Optional[Int]]:
+        """Reports how many elements remain.
+
+        Returns:
+            The exact number of remaining elements, as both bounds.
+        """
+        var remaining = self._length - self._index
+        return (remaining, Optional(remaining))

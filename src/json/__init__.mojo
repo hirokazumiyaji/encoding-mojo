@@ -9,7 +9,7 @@ print(dumps(doc, indent=2))
 ```
 """
 
-from .api import dumps, loads
+from .api import dump, dumps, load, loads
 from .errors import JSONDecodeError
 from .encoder import Indent
 from .tape import JSONType
