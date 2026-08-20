@@ -270,3 +270,182 @@ struct _Tape(Movable, Deinitable):
         """
         var node = self.nodes[Int(idx)]
         return Span(self.buf)[Int(node.a) : Int(node.a) + Int(node.b)]
+
+    # ===-------------------------------------------------------------------===#
+    # Containers
+    # ===-------------------------------------------------------------------===#
+
+    @always_inline
+    def slots_per_entry(self, idx: UInt32) -> Int:
+        """Returns how many `kids` slots one entry of a container occupies.
+
+        Args:
+            idx: The index of a container node.
+
+        Returns:
+            2 for objects (key and value), 1 for arrays.
+        """
+        return 2 if self.nodes[Int(idx)].kind == _KIND_OBJECT else 1
+
+    def reserve_slots(mut self, idx: UInt32, needed: Int):
+        """Makes sure the container at `idx` owns at least `needed` slots.
+
+        Containers behave like vectors inside the shared `kids` array: they
+        grow geometrically, extending in place when they already own the tail
+        of the array and relocating to the end otherwise. Relocating strands
+        the old slots, which is why the parser sizes containers exactly and
+        only interactive building ever pays for growth.
+
+        Args:
+            idx: The index of a container node.
+            needed: The number of slots the container must own.
+        """
+        var node = self.nodes[Int(idx)]
+        if Int(node.cap) >= needed:
+            return
+
+        var new_cap = max(4, Int(node.cap) * 2)
+        if new_cap < needed:
+            new_cap = needed
+        var used = Int(node.b) * self.slots_per_entry(idx)
+        var end = len(self.kids)
+
+        if Int(node.a) + Int(node.cap) == end:
+            # The container already ends at the tail of `kids`; just extend it.
+            self.kids.resize(end + new_cap - Int(node.cap), 0)
+        else:
+            self.kids.resize(end + new_cap, 0)
+            for i in range(used):
+                self.kids[end + i] = self.kids[Int(node.a) + i]
+            node.a = UInt32(end)
+        node.cap = UInt32(new_cap)
+        self.nodes[Int(idx)] = node
+
+    def new_container(mut self, kind: UInt8) -> UInt32:
+        """Appends an empty array or object node.
+
+        Args:
+            kind: Either `_KIND_ARRAY` or `_KIND_OBJECT`.
+
+        Returns:
+            The index of the new node.
+        """
+        return self.push(_Node.container(kind, 0, 0, 0))
+
+    def array_push(mut self, idx: UInt32, child: UInt32):
+        """Appends `child` to the array at `idx`.
+
+        Args:
+            idx: The index of an array node.
+            child: The index of the value to append.
+        """
+        var count = Int(self.nodes[Int(idx)].b)
+        self.reserve_slots(idx, count + 1)
+        var node = self.nodes[Int(idx)]
+        self.kids[Int(node.a) + count] = child
+        node.b = UInt32(count + 1)
+        self.nodes[Int(idx)] = node
+
+    def object_push(mut self, idx: UInt32, key: UInt32, value: UInt32):
+        """Appends the member `key: value` to the object at `idx`.
+
+        The key is not checked for duplicates; callers that need CPython's
+        "last one wins" behaviour go through `find_member` first.
+
+        Args:
+            idx: The index of an object node.
+            key: The index of the member's key, which must be a string node.
+            value: The index of the member's value.
+        """
+        var count = Int(self.nodes[Int(idx)].b)
+        self.reserve_slots(idx, 2 * (count + 1))
+        var node = self.nodes[Int(idx)]
+        self.kids[Int(node.a) + 2 * count] = key
+        self.kids[Int(node.a) + 2 * count + 1] = value
+        node.b = UInt32(count + 1)
+        self.nodes[Int(idx)] = node
+
+    def find_member(self, idx: UInt32, key: Span[UInt8, _]) -> Int:
+        """Returns the position of the member named `key`, or -1.
+
+        Args:
+            idx: The index of an object node.
+            key: The key to look for.
+
+        Returns:
+            The zero-based member position, or -1 when the key is absent.
+        """
+        var node = self.nodes[Int(idx)]
+        for i in range(Int(node.b)):
+            if _bytes_equal(self.str_bytes(self.kids[Int(node.a) + 2 * i]), key):
+                return i
+        return -1
+
+    def remove_entry(mut self, idx: UInt32, pos: Int):
+        """Removes the entry at member/element position `pos`.
+
+        Args:
+            idx: The index of a container node.
+            pos: The zero-based position to remove.
+        """
+        var node = self.nodes[Int(idx)]
+        var width = self.slots_per_entry(idx)
+        var used = Int(node.b) * width
+        for i in range((pos + 1) * width, used):
+            self.kids[Int(node.a) + i - width] = self.kids[Int(node.a) + i]
+        node.b -= 1
+        self.nodes[Int(idx)] = node
+
+    def graft(mut self, src: _Tape, src_idx: UInt32) -> UInt32:
+        """Deep-copies the subtree at `src_idx` of `src` into this tape.
+
+        Args:
+            src: The tape to copy from. Must not be this tape.
+            src_idx: The root of the subtree to copy.
+
+        Returns:
+            The index of the copied root in this tape.
+        """
+        var node = src.nodes[Int(src_idx)]
+
+        if node.kind == _KIND_STRING:
+            return self.push_string(src.str_bytes(src_idx))
+
+        if node.kind != _KIND_ARRAY and node.kind != _KIND_OBJECT:
+            return self.push(node)
+
+        # Children have to be materialised before the parent, because the
+        # parent's slot range must be contiguous and children may themselves
+        # append to `kids`.
+        var width = 2 if node.kind == _KIND_OBJECT else 1
+        var count = Int(node.b)
+        var copied = List[UInt32](capacity=count * width)
+        for i in range(count):
+            if width == 2:
+                copied.append(
+                    self.push_string(src.str_bytes(src.kids[Int(node.a) + 2 * i]))
+                )
+            copied.append(self.graft(src, src.kids[Int(node.a) + width * i + width - 1]))
+
+        var start = UInt32(len(self.kids))
+        self.kids.extend(copied^)
+        return self.push(
+            _Node.container(node.kind, start, UInt32(count), UInt32(count * width))
+        )
+
+
+def _bytes_equal(a: Span[UInt8, _], b: Span[UInt8, _]) -> Bool:
+    """Compares two byte spans.
+
+    Args:
+        a: The first span.
+        b: The second span.
+
+    Returns:
+        True if both spans have the same length and contents.
+    """
+    if len(a) != len(b):
+        return False
+    if len(a) == 0:
+        return True
+    return unsafe_memcmp(a.unsafe_ptr(), b.unsafe_ptr(), len(a)) == 0

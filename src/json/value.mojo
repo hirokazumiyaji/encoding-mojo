@@ -6,7 +6,7 @@ That also gives Python's reference semantics for free: `doc["a"]` shares the
 tape with `doc`, so mutating one mutates the other.
 """
 
-from std.memory import ArcPointer, unsafe_memcmp
+from std.memory import ArcPointer
 
 from .encoder import write_default
 from .tape import (
@@ -20,6 +20,7 @@ from .tape import (
     _KIND_STRING,
     _Node,
     _Tape,
+    _bytes_equal,
 )
 
 
@@ -34,6 +35,7 @@ struct JSONValue(
     Equatable,
     ImplicitlyCopyable,
     Movable,
+    SizedRaising,
     Writable,
 ):
     """A single JSON value: `null`, a bool, a number, a string, an array or an
@@ -86,6 +88,15 @@ struct JSONValue(
         self = Self()
 
     @implicit
+    def __init__(out self, value: NoneType._mlir_type):
+        """Creates a JSON `null` from the `None` literal.
+
+        Args:
+            value: Always `None`.
+        """
+        self = Self()
+
+    @implicit
     def __init__(out self, value: Bool):
         """Creates a JSON boolean.
 
@@ -111,6 +122,15 @@ struct JSONValue(
             value: The float to store.
         """
         self = Self._scalar(_Node.scalar(_KIND_FLOAT, value.to_bits[DType.uint64]()))
+
+    @implicit
+    def __init__(out self, value: StringLiteral):
+        """Creates a JSON string from a literal.
+
+        Args:
+            value: The text to store.
+        """
+        self = Self(StringSlice(value))
 
     @implicit
     def __init__(out self, value: StringSlice):
@@ -307,6 +327,340 @@ struct JSONValue(
         return String(unsafe_from_utf8=self._tape[].str_bytes(self._idx))
 
     # ===-------------------------------------------------------------------===#
+    # Containers
+    # ===-------------------------------------------------------------------===#
+
+    @staticmethod
+    def array() -> Self:
+        """Creates an empty JSON array.
+
+        Returns:
+            A new empty array.
+        """
+        var tape = _Tape()
+        var idx = tape.new_container(_KIND_ARRAY)
+        return Self(tape=ArcPointer(tape^), idx=idx)
+
+    @staticmethod
+    def object() -> Self:
+        """Creates an empty JSON object.
+
+        Returns:
+            A new empty object.
+        """
+        var tape = _Tape()
+        var idx = tape.new_container(_KIND_OBJECT)
+        return Self(tape=ArcPointer(tape^), idx=idx)
+
+    def __len__(self) raises -> Int:
+        """Returns the Python `len()` of this value.
+
+        Returns:
+            The number of elements of an array, members of an object, or
+            codepoints of a string.
+
+        Raises:
+            If this value is a scalar, mirroring Python's `TypeError`.
+        """
+        var node = self._node()
+        if node.kind == _KIND_ARRAY or node.kind == _KIND_OBJECT:
+            return Int(node.b)
+        if node.kind == _KIND_STRING:
+            return _count_codepoints(self._tape[].str_bytes(self._idx))
+        raise Error("object of type '", self.type(), "' has no len()")
+
+    def _adopt(self, value: Self) -> UInt32:
+        """Returns an index in *this* document for `value`.
+
+        Values already living in this document are aliased, so inserting one
+        gives Python's reference semantics. Values from another document are
+        deep-copied, because a `JSONValue` cannot span two tapes.
+
+        Args:
+            value: The value to place into this document.
+
+        Returns:
+            The node index to store.
+        """
+        if self._tape.__is__(value._tape):
+            return value._idx
+        return self._tape[].graft(value._tape[], value._idx)
+
+    def append(self, var value: Self) raises:
+        """Appends `value` to this array.
+
+        Args:
+            value: The value to append. Native Mojo values convert implicitly,
+                so `arr.append(1)` and `arr.append("x")` both work.
+
+        Raises:
+            If this value is not an array.
+        """
+        self._expect(_KIND_ARRAY, "append")
+        var child = self._adopt(value)
+        self._tape[].array_push(self._idx, child)
+
+    def extend(self, values: Self) raises:
+        """Appends every element of the array `values` to this array.
+
+        Args:
+            values: The array whose elements are appended.
+
+        Raises:
+            If either value is not an array.
+        """
+        self._expect(_KIND_ARRAY, "extend")
+        if not values.is_array():
+            raise Error("can only extend a JSON array with another array")
+        for i in range(len(values)):
+            self.append(values[i])
+
+    def pop(self) raises -> Self:
+        """Removes and returns the last element of this array.
+
+        Returns:
+            The removed element.
+
+        Raises:
+            If this value is not an array, or the array is empty.
+        """
+        return self.pop(-1)
+
+    def pop(self, index: Int) raises -> Self:
+        """Removes and returns the element at `index`.
+
+        Args:
+            index: The position to remove, negative counting from the end.
+
+        Returns:
+            The removed element.
+
+        Raises:
+            If this value is not an array, or the index is out of range.
+        """
+        self._expect(_KIND_ARRAY, "pop")
+        var pos = self._checked_index(index)
+        var removed = self._tape[].kids[Int(self._node().a) + pos]
+        self._tape[].remove_entry(self._idx, pos)
+        return Self(tape=self._tape, idx=removed)
+
+    def pop(self, key: StringSlice) raises -> Self:
+        """Removes the member named `key` and returns its value.
+
+        Args:
+            key: The member to remove.
+
+        Returns:
+            The removed value.
+
+        Raises:
+            If this value is not an object, or the key is absent.
+        """
+        self._expect(_KIND_OBJECT, "pop")
+        var pos = self._tape[].find_member(self._idx, key.as_bytes())
+        if pos < 0:
+            raise Error("KeyError: '", key, "'")
+        var removed = self._tape[].kids[Int(self._node().a) + 2 * pos + 1]
+        self._tape[].remove_entry(self._idx, pos)
+        return Self(tape=self._tape, idx=removed)
+
+    def clear(self) raises:
+        """Removes every element or member from this container.
+
+        Raises:
+            If this value is not an array or an object.
+        """
+        if not self.is_container():
+            raise Error("'", self.type(), "' object has no attribute 'clear'")
+        var node = self._node()
+        node.b = 0
+        self._tape[].nodes[Int(self._idx)] = node
+
+    def keys(self) raises -> List[String]:
+        """Returns this object's keys in insertion order.
+
+        Returns:
+            The member names.
+
+        Raises:
+            If this value is not an object.
+        """
+        self._expect(_KIND_OBJECT, "keys")
+        var node = self._node()
+        var out = List[String](capacity=Int(node.b))
+        for i in range(Int(node.b)):
+            out.append(
+                String(
+                    unsafe_from_utf8=self._tape[].str_bytes(
+                        self._tape[].kids[Int(node.a) + 2 * i]
+                    )
+                )
+            )
+        return out^
+
+    def values(self) raises -> List[Self]:
+        """Returns this object's values in insertion order.
+
+        Returns:
+            The member values.
+
+        Raises:
+            If this value is not an object.
+        """
+        self._expect(_KIND_OBJECT, "values")
+        var node = self._node()
+        var out = List[Self](capacity=Int(node.b))
+        for i in range(Int(node.b)):
+            out.append(
+                Self(tape=self._tape, idx=self._tape[].kids[Int(node.a) + 2 * i + 1])
+            )
+        return out^
+
+    def get(self, key: StringSlice) -> Optional[Self]:
+        """Looks up a member without raising, like Python's `dict.get`.
+
+        Args:
+            key: The member name.
+
+        Returns:
+            The member's value, or `None` if this value is not an object or
+            has no such member.
+        """
+        if not self.is_object():
+            return None
+        var pos = self._tape[].find_member(self._idx, key.as_bytes())
+        if pos < 0:
+            return None
+        return Self(
+            tape=self._tape,
+            idx=self._tape[].kids[Int(self._node().a) + 2 * pos + 1],
+        )
+
+    def __contains__(self, key: StringSlice) -> Bool:
+        """Reports whether this object has a member named `key`.
+
+        Args:
+            key: The member name.
+
+        Returns:
+            True if the member exists.
+        """
+        if not self.is_object():
+            return False
+        return self._tape[].find_member(self._idx, key.as_bytes()) >= 0
+
+    def __getitem__(self, index: Int) raises -> Self:
+        """Returns the array element at `index`.
+
+        Args:
+            index: The position, negative counting from the end.
+
+        Returns:
+            A handle on the element.
+
+        Raises:
+            If this value is not an array, or the index is out of range.
+        """
+        if not self.is_array():
+            raise Error("'", self.type(), "' object is not subscriptable")
+        var pos = self._checked_index(index)
+        return Self(tape=self._tape, idx=self._tape[].kids[Int(self._node().a) + pos])
+
+    def __getitem__(self, key: StringSlice) raises -> Self:
+        """Returns the object member named `key`.
+
+        Args:
+            key: The member name.
+
+        Returns:
+            A handle on the member's value.
+
+        Raises:
+            If this value is not an object, or the key is absent.
+        """
+        if not self.is_object():
+            raise Error("'", self.type(), "' object is not subscriptable")
+        var pos = self._tape[].find_member(self._idx, key.as_bytes())
+        if pos < 0:
+            raise Error("KeyError: '", key, "'")
+        return Self(
+            tape=self._tape,
+            idx=self._tape[].kids[Int(self._node().a) + 2 * pos + 1],
+        )
+
+    def __setitem__(self, index: Int, var value: Self) raises:
+        """Replaces the array element at `index`.
+
+        Args:
+            index: The position, negative counting from the end.
+            value: The replacement value.
+
+        Raises:
+            If this value is not an array, or the index is out of range.
+        """
+        if not self.is_array():
+            raise Error("'", self.type(), "' object does not support item assignment")
+        var pos = self._checked_index(index)
+        var child = self._adopt(value)
+        self._tape[].kids[Int(self._node().a) + pos] = child
+
+    def __setitem__(self, key: StringSlice, var value: Self) raises:
+        """Sets the object member named `key`.
+
+        An existing member keeps its position and gets the new value, exactly
+        like assigning into a Python dict.
+
+        Args:
+            key: The member name.
+            value: The value to store.
+
+        Raises:
+            If this value is not an object.
+        """
+        if not self.is_object():
+            raise Error("'", self.type(), "' object does not support item assignment")
+        var child = self._adopt(value)
+        var pos = self._tape[].find_member(self._idx, key.as_bytes())
+        if pos >= 0:
+            self._tape[].kids[Int(self._node().a) + 2 * pos + 1] = child
+            return
+        var key_idx = self._tape[].push_string(key.as_bytes())
+        self._tape[].object_push(self._idx, key_idx, child)
+
+    def _expect(self, kind: UInt8, method: StaticString) raises:
+        """Raises unless this value has the given kind.
+
+        Args:
+            kind: The required node kind.
+            method: The name of the calling method, used in the message.
+
+        Raises:
+            If this value has a different kind.
+        """
+        if self._kind() != kind:
+            raise Error(
+                "'", self.type(), "' object has no attribute '", method, "'"
+            )
+
+    def _checked_index(self, index: Int) raises -> Int:
+        """Resolves a possibly negative index against this container's length.
+
+        Args:
+            index: The index to resolve.
+
+        Returns:
+            The non-negative position.
+
+        Raises:
+            If the index is out of range.
+        """
+        var count = Int(self._node().b)
+        var pos = index + count if index < 0 else index
+        if pos < 0 or pos >= count:
+            raise Error("list index out of range")
+        return pos
+
+    # ===-------------------------------------------------------------------===#
     # Trait implementations
     # ===-------------------------------------------------------------------===#
 
@@ -366,23 +720,6 @@ struct JSONValue(
 # ===-----------------------------------------------------------------------===#
 # Structural comparison
 # ===-----------------------------------------------------------------------===#
-
-
-def _bytes_equal(a: Span[UInt8, _], b: Span[UInt8, _]) -> Bool:
-    """Compares two byte spans.
-
-    Args:
-        a: The first span.
-        b: The second span.
-
-    Returns:
-        True if both spans have the same length and contents.
-    """
-    if len(a) != len(b):
-        return False
-    if len(a) == 0:
-        return True
-    return unsafe_memcmp(a.unsafe_ptr(), b.unsafe_ptr(), len(a)) == 0
 
 
 def _nodes_equal(
@@ -460,3 +797,21 @@ def _as_float(node: _Node) -> Float64:
     if node.kind == _KIND_FLOAT:
         return Float64(from_bits=node.num)
     return Float64(Int64(node.num))
+
+
+def _count_codepoints(bytes: Span[UInt8, _]) -> Int:
+    """Counts the Unicode codepoints in valid UTF-8.
+
+    Args:
+        bytes: The UTF-8 bytes to measure.
+
+    Returns:
+        The number of codepoints, matching Python's `len()` on a `str`.
+    """
+    var count = 0
+    for i in range(len(bytes)):
+        # Continuation bytes are 0b10xxxxxx; every other byte starts a
+        # codepoint.
+        if (bytes[i] & 0xC0) != 0x80:
+            count += 1
+    return count
