@@ -10,10 +10,13 @@ its children are already the top entries of that stack, so they move into the
 tape's child array as one contiguous run.
 """
 
+from std.bit import count_trailing_zeros
 from std.collections.string import atof
+from std.memory import pack_bits
 
 from .errors import JSONDecodeError
 from .tape import (
+    _reserve_extra,
     _KIND_ARRAY,
     _KIND_BOOL,
     _KIND_FLOAT,
@@ -34,6 +37,9 @@ cannot be walked recursively afterwards (by `dumps`, for instance), and CPython
 raises `RecursionError` at a comparable depth.
 """
 
+comptime _SCAN_WIDTH = 32
+"""How many bytes the string scanner examines per SIMD step."""
+
 comptime _TAB: UInt8 = 0x09
 comptime _NEWLINE: UInt8 = 0x0A
 comptime _RETURN: UInt8 = 0x0D
@@ -51,6 +57,34 @@ comptime _LBRACKET: UInt8 = 0x5B
 comptime _RBRACKET: UInt8 = 0x5D
 comptime _LBRACE: UInt8 = 0x7B
 comptime _RBRACE: UInt8 = 0x7D
+
+
+comptime _MANTISSA_ROOM: UInt64 = (UInt64.MAX - 9) // 10
+"""Largest mantissa that can still absorb one more decimal digit."""
+
+comptime _EXACT_MANTISSA: UInt64 = UInt64(1) << 53
+"""Mantissas below this are exactly representable as a `Float64`."""
+
+comptime _POW10 = SIMD[DType.float64, 32](
+    1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7,
+    1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15,
+    1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+)
+"""Powers of ten up to 10^22, the largest one exactly representable."""
+
+
+@always_inline
+def _pow10(exponent: Int) -> Float64:
+    """Returns `10 ** exponent` for an exponent in `[0, 22]`.
+
+    Args:
+        exponent: The power to raise ten to.
+
+    Returns:
+        The exact power of ten.
+    """
+    return materialize[_POW10]()[exponent]
 
 
 @always_inline
@@ -85,6 +119,15 @@ def _hex_value(b: UInt8) -> Int:
     return -1
 
 
+comptime _HASH_THRESHOLD = 8
+"""Object size at which duplicate-key detection switches to a hash table.
+
+Below this, a linear scan over the keys already staged is cheaper than hashing
+every key. Above it the scan would be quadratic, which is ruinous for the
+thousand-key objects real documents contain.
+"""
+
+
 @fieldwise_init
 struct _Frame(Copyable, ImplicitlyCopyable, Movable):
     """One open container while parsing."""
@@ -94,6 +137,28 @@ struct _Frame(Copyable, ImplicitlyCopyable, Movable):
 
     var stack_base: Int
     """Where this container's staged children start on the value stack."""
+
+    var htab_base: Int
+    """Start of this object's slots in the shared hash area."""
+
+    var htab_cap: Int
+    """Number of slots this object owns, always a power of two, 0 if none."""
+
+
+@always_inline
+def _hash_bytes(bytes: Span[UInt8, _]) -> UInt64:
+    """Hashes a key with FNV-1a.
+
+    Args:
+        bytes: The key's bytes.
+
+    Returns:
+        The hash.
+    """
+    var h: UInt64 = 0xCBF29CE484222325
+    for i in range(len(bytes)):
+        h = (h ^ UInt64(bytes[i])) * 0x100000001B3
+    return h
 
 
 struct _Parser[origin: ImmOrigin](Movable):
@@ -113,6 +178,13 @@ struct _Parser[origin: ImmOrigin](Movable):
 
     var frames: List[_Frame]
     """The chain of containers currently open."""
+
+    var htab: List[UInt32]
+    """Open-addressing hash slots for large objects, one region per frame.
+
+    A slot holds a member position plus one, so zero means empty. Regions are
+    stacked: only the innermost object is ever probed, and its region is always
+    on top, so growing it is a push and closing it is a pop."""
 
     var strict: Bool
     """Whether raw control characters inside strings are rejected."""
@@ -135,6 +207,7 @@ struct _Parser[origin: ImmOrigin](Movable):
         self.tape = _Tape(capacity_hint=len(src))
         self.values = []
         self.frames = []
+        self.htab = []
         self.strict = strict
         self.allow_nan = allow_nan
 
@@ -152,13 +225,54 @@ struct _Parser[origin: ImmOrigin](Movable):
         return self.pos >= len(self.src)
 
     @always_inline
+    def _byte(self, i: Int) -> UInt8:
+        """Reads a byte the caller has already proved is in range.
+
+        Args:
+            i: The offset to read.
+
+        Returns:
+            The byte at `i`.
+        """
+        return self.src.unsafe_ptr()[unsafe_offset=i]
+
+    def _scan_string(self, start: Int) -> Int:
+        """Finds the next byte inside a string that needs attention.
+
+        Args:
+            start: Where to start scanning.
+
+        Returns:
+            The offset of the first quote, backslash or control character at or
+            after `start`, or the end of input if there is none.
+        """
+        var n = len(self.src)
+        var ptr = self.src.unsafe_ptr()
+        var i = start
+        while i + _SCAN_WIDTH <= n:
+            var chunk = ptr.unsafe_offset(i).unsafe_load[width=_SCAN_WIDTH]()
+            var hits = (
+                chunk.eq(_QUOTE) | chunk.eq(_BACKSLASH) | chunk.lt(UInt8(0x20))
+            )
+            var bits = pack_bits(hits)
+            if bits:
+                return i + Int(count_trailing_zeros(bits))
+            i += _SCAN_WIDTH
+        while i < n:
+            var b = ptr[unsafe_offset=i]
+            if b == _QUOTE or b == _BACKSLASH or b < 0x20:
+                return i
+            i += 1
+        return n
+
+    @always_inline
     def _peek(self) -> UInt8:
         """Returns the byte at the cursor without consuming it.
 
         Returns:
             The current byte, or 0 at end of input.
         """
-        return self.src[self.pos] if self.pos < len(self.src) else UInt8(0)
+        return self._byte(self.pos) if self.pos < len(self.src) else UInt8(0)
 
     def _error(self, var msg: String, pos: Int) -> JSONDecodeError:
         """Builds a decode error located at `pos`.
@@ -177,7 +291,7 @@ struct _Parser[origin: ImmOrigin](Movable):
         """Advances the cursor past JSON whitespace."""
         var n = len(self.src)
         while self.pos < n:
-            var b = self.src[self.pos]
+            var b = self._byte(self.pos)
             if b != _SPACE and b != _TAB and b != _NEWLINE and b != _RETURN:
                 return
             self.pos += 1
@@ -219,28 +333,30 @@ struct _Parser[origin: ImmOrigin](Movable):
         var n = len(self.src)
         var run_start = self.pos
 
-        # Fast path: scan for the closing quote and copy the whole string in
-        # one go. Only a backslash forces the slow, byte-at-a-time path.
-        var i = self.pos
-        while i < n:
-            var b = self.src[i]
+        # Fast path: scan 32 bytes at a time for the closing quote and copy the
+        # whole string in one go. Only a backslash forces the slow,
+        # byte-at-a-time path.
+        var i = run_start
+        while True:
+            i = self._scan_string(i)
+            if i >= n:
+                raise self._error(
+                    String("Unterminated string starting at"), quote_start
+                )
+            var b = self._byte(i)
             if b == _QUOTE:
                 self.pos = i + 1
                 return self.tape.push_string(self.src[run_start:i])
             if b == _BACKSLASH:
                 break
-            if b < 0x20 and self.strict:
+            if self.strict:
                 raise self._error(String("Invalid control character at"), i)
-            i += 1
-
-        if i >= n:
-            raise self._error(
-                String("Unterminated string starting at"), quote_start
-            )
+            i += 1  # a control character, which non-strict mode keeps verbatim
 
         # Slow path: decode escapes straight into the tape's byte buffer so no
         # intermediate allocation is needed.
         var offset = UInt32(len(self.tape.buf))
+        _reserve_extra(self.tape.buf, i - run_start)
         self.tape.buf.extend(self.src[run_start:i])
         self.pos = i
 
@@ -249,7 +365,7 @@ struct _Parser[origin: ImmOrigin](Movable):
                 raise self._error(
                     String("Unterminated string starting at"), quote_start
                 )
-            var b = self.src[self.pos]
+            var b = self._byte(self.pos)
             if b == _QUOTE:
                 self.pos += 1
                 break
@@ -261,12 +377,10 @@ struct _Parser[origin: ImmOrigin](Movable):
 
             # Copy the run of ordinary bytes up to the next escape or quote.
             var start = self.pos
-            var j = self.pos
-            while j < n:
-                var c = self.src[j]
-                if c == _QUOTE or c == _BACKSLASH or (c < 0x20 and self.strict):
-                    break
-                j += 1
+            var j = self._scan_string(start)
+            while j < n and self._byte(j) < 0x20 and not self.strict:
+                j = self._scan_string(j + 1)
+            _reserve_extra(self.tape.buf, j - start)
             self.tape.buf.extend(self.src[start:j])
             self.pos = j
 
@@ -282,7 +396,7 @@ struct _Parser[origin: ImmOrigin](Movable):
         var esc_start = self.pos
         if self.pos + 1 >= len(self.src):
             raise self._error(String("Invalid \\escape"), esc_start)
-        var e = self.src[self.pos + 1]
+        var e = self._byte(self.pos + 1)
         self.pos += 2
 
         if e == _QUOTE:
@@ -308,8 +422,8 @@ struct _Parser[origin: ImmOrigin](Movable):
                 # follow to recover an astral codepoint.
                 if (
                     self.pos + 1 < len(self.src)
-                    and self.src[self.pos] == _BACKSLASH
-                    and self.src[self.pos + 1] == 0x75
+                    and self._byte(self.pos) == _BACKSLASH
+                    and self._byte(self.pos + 1) == 0x75
                 ):
                     var pair_start = self.pos
                     self.pos += 2
@@ -346,7 +460,7 @@ struct _Parser[origin: ImmOrigin](Movable):
             raise self._error(String("Invalid \\uXXXX escape"), marker_pos)
         var value = 0
         for k in range(4):
-            var digit = _hex_value(self.src[self.pos + k])
+            var digit = _hex_value(self._byte(self.pos + k))
             if digit < 0:
                 raise self._error(String("Invalid \\uXXXX escape"), marker_pos)
             value = value * 16 + digit
@@ -387,6 +501,9 @@ struct _Parser[origin: ImmOrigin](Movable):
         simply ends the number, which is why `loads("1.")` reports extra data
         rather than a malformed number.
 
+        Digits are accumulated into a 64-bit mantissa during the single scan,
+        so the common case needs no second pass and no `strtod` call.
+
         Returns:
             The index of the new number node.
 
@@ -397,59 +514,87 @@ struct _Parser[origin: ImmOrigin](Movable):
         var n = len(self.src)
         var negative = False
 
-        if self.pos < n and self.src[self.pos] == _MINUS:
+        if self._byte(self.pos) == _MINUS:
             negative = True
             self.pos += 1
 
-        if self.pos >= n or not _is_digit(self.src[self.pos]):
+        if self.pos >= n or not _is_digit(self._byte(self.pos)):
             self.pos = start
             raise self._error(String("Expecting value"), start)
 
-        var int_start = self.pos
-        if self.src[self.pos] == _ZERO:
+        var mantissa: UInt64 = 0
+        var exp10 = 0
+        var inexact = False
+
+        if self._byte(self.pos) == _ZERO:
             self.pos += 1
         else:
-            while self.pos < n and _is_digit(self.src[self.pos]):
+            while self.pos < n and _is_digit(self._byte(self.pos)):
+                if mantissa <= _MANTISSA_ROOM:
+                    mantissa = mantissa * 10 + UInt64(self._byte(self.pos) - _ZERO)
+                else:
+                    # The mantissa is full; keep the magnitude by counting the
+                    # remaining digits as an exponent.
+                    inexact = True
+                    exp10 += 1
                 self.pos += 1
-        var int_digits = self.pos - int_start
 
         var is_float = False
         if (
             self.pos + 1 < n
-            and self.src[self.pos] == _DOT
-            and _is_digit(self.src[self.pos + 1])
+            and self._byte(self.pos) == _DOT
+            and _is_digit(self._byte(self.pos + 1))
         ):
             is_float = True
-            self.pos += 2
-            while self.pos < n and _is_digit(self.src[self.pos]):
+            self.pos += 1
+            while self.pos < n and _is_digit(self._byte(self.pos)):
+                if mantissa <= _MANTISSA_ROOM:
+                    mantissa = mantissa * 10 + UInt64(self._byte(self.pos) - _ZERO)
+                    exp10 -= 1
+                else:
+                    inexact = True
                 self.pos += 1
 
-        if self.pos < n and (self.src[self.pos] | 0x20) == 0x65:  # e or E
+        if self.pos < n and (self._byte(self.pos) | 0x20) == 0x65:  # e or E
             var probe = self.pos + 1
-            if probe < n and (self.src[probe] == _PLUS or self.src[probe] == _MINUS):
+            var exp_negative = False
+            if probe < n and (self._byte(probe) == _PLUS or self._byte(probe) == _MINUS):
+                exp_negative = self._byte(probe) == _MINUS
                 probe += 1
-            if probe < n and _is_digit(self.src[probe]):
+            if probe < n and _is_digit(self._byte(probe)):
                 is_float = True
                 self.pos = probe
-                while self.pos < n and _is_digit(self.src[self.pos]):
+                var magnitude = 0
+                while self.pos < n and _is_digit(self._byte(self.pos)):
+                    if magnitude < 0x10000:
+                        magnitude = magnitude * 10 + Int(self._byte(self.pos) - _ZERO)
                     self.pos += 1
+                exp10 += -magnitude if exp_negative else magnitude
 
-        if not is_float and int_digits <= 19:
-            # Fast path: accumulate directly. 19 digits always fit in a UInt64,
-            # so only the final magnitude needs a range check.
-            var magnitude: UInt64 = 0
-            for i in range(int_start, int_start + int_digits):
-                magnitude = magnitude * 10 + UInt64(self.src[i] - _ZERO)
+        if not is_float and not inexact:
             var limit = UInt64(1) << 63
-            if magnitude < limit or (negative and magnitude == limit):
-                var signed = -Int64(magnitude) if negative else Int64(magnitude)
+            if mantissa < limit or (negative and mantissa == limit):
+                var signed = -Int64(mantissa) if negative else Int64(mantissa)
                 return self.tape.push(_Node.scalar(_KIND_INT, UInt64(signed)))
 
-        # Either a float, or an integer too large for 64 bits. CPython would
-        # keep the exact value as a big integer; the closest this library can
-        # get is a float, so oversized integers widen.
-        var text = StringSlice(unsafe_from_utf8=self.src[start : self.pos])
-        var value = atof(text)
+        var value: Float64
+        if not inexact and mantissa < _EXACT_MANTISSA and -22 <= exp10 <= 22:
+            # Both the mantissa and the power of ten are exactly representable,
+            # so a single multiply or divide rounds once and lands on the same
+            # double `strtod` would produce.
+            var scaled = Float64(mantissa)
+            if exp10 >= 0:
+                scaled *= _pow10(exp10)
+            else:
+                scaled /= _pow10(-exp10)
+            value = -scaled if negative else scaled
+        else:
+            # Too many digits, or an exponent outside the exactly representable
+            # range: fall back to a correctly rounded general conversion. This
+            # is also where an integer too large for 64 bits widens to a float,
+            # which CPython would have kept exact as a big integer.
+            value = atof(StringSlice(unsafe_from_utf8=self.src[start : self.pos]))
+
         return self.tape.push(
             _Node.scalar(_KIND_FLOAT, value.to_bits[DType.uint64]())
         )
@@ -517,7 +662,7 @@ struct _Parser[origin: ImmOrigin](Movable):
             The byte, or 0 past the end of input.
         """
         var i = self.pos + offset
-        return self.src[i] if i < len(self.src) else UInt8(0)
+        return self._byte(i) if i < len(self.src) else UInt8(0)
 
     def _close_container(mut self) raises:
         """Turns the innermost open container into a tape node.
@@ -526,9 +671,12 @@ struct _Parser[origin: ImmOrigin](Movable):
             Never; the signature matches the rest of the parser.
         """
         var frame = self.frames.pop()
+        if frame.htab_cap:
+            self.htab.shrink(frame.htab_base)
         var slots = len(self.values) - frame.stack_base
         var count = slots // 2 if frame.is_object else slots
         var start = UInt32(len(self.tape.kids))
+        _reserve_extra(self.tape.kids, slots)
         for i in range(slots):
             self.tape.kids.append(self.values[frame.stack_base + i])
         self.values.shrink(frame.stack_base)
@@ -539,27 +687,99 @@ struct _Parser[origin: ImmOrigin](Movable):
             )
         )
 
-    def _dedupe_last_member(mut self, base: Int):
+    def _dedupe_last_member(mut self):
         """Applies CPython's duplicate-key rule to the member just completed.
 
         A repeated key keeps the position of its first appearance but takes the
         latest value, exactly like assigning into a Python dict.
+        """
+        var depth = len(self.frames) - 1
+        var base = self.frames[depth].stack_base
+        var end = len(self.values) - 2
+        var members = (end - base) // 2
+
+        if members < _HASH_THRESHOLD and self.frames[depth].htab_cap == 0:
+            var key = self.values[end]
+            var i = base
+            while i < end:
+                if _bytes_equal(
+                    self.tape.str_bytes(self.values[i]),
+                    self.tape.str_bytes(key),
+                ):
+                    self.values[i + 1] = self.values[end + 1]
+                    self.values.shrink(end)
+                    return
+                i += 2
+            return
+
+        if self.frames[depth].htab_cap == 0:
+            self._build_hash_index(depth, members)
+        elif (members + 1) * 4 > self.frames[depth].htab_cap * 3:
+            self._build_hash_index(depth, members)
+
+        var found = self._probe_insert(depth, members)
+        if found >= 0:
+            self.values[base + 2 * found + 1] = self.values[end + 1]
+            self.values.shrink(end)
+
+    def _build_hash_index(mut self, depth: Int, members: Int):
+        """Rebuilds the innermost object's hash region, doubling its capacity.
 
         Args:
-            base: Where the enclosing object's members start on the stack.
+            depth: The index of the frame in `frames`.
+            members: How many members are already staged.
         """
-        var end = len(self.values) - 2
-        var key = self.values[end]
-        var value = self.values[end + 1]
-        var i = base
-        while i < end:
+        var old_base = self.frames[depth].htab_base
+        if self.frames[depth].htab_cap:
+            self.htab.shrink(old_base)
+
+        var cap = 16
+        while cap * 3 <= (members + 1) * 4:
+            cap *= 2
+        var base = len(self.htab)
+        _reserve_extra(self.htab, cap)
+        for _ in range(cap):
+            self.htab.append(0)
+        self.frames[depth].htab_base = base
+        self.frames[depth].htab_cap = cap
+
+        var stack_base = self.frames[depth].stack_base
+        for i in range(members):
+            var key = self.values[stack_base + 2 * i]
+            var slot = Int(_hash_bytes(self.tape.str_bytes(key))) & (cap - 1)
+            while self.htab[base + slot] != 0:
+                slot = (slot + 1) & (cap - 1)
+            self.htab[base + slot] = UInt32(i + 1)
+
+    def _probe_insert(mut self, depth: Int, members: Int) -> Int:
+        """Looks the newest key up, inserting it when it is new.
+
+        Args:
+            depth: The index of the frame in `frames`.
+            members: How many members precede the one being inserted.
+
+        Returns:
+            The position of the earlier member with the same key, or -1.
+        """
+        var base = self.frames[depth].htab_base
+        var cap = self.frames[depth].htab_cap
+        var stack_base = self.frames[depth].stack_base
+        var key = self.values[len(self.values) - 2]
+        var key_bytes = self.tape.str_bytes(key)
+        var slot = Int(_hash_bytes(key_bytes)) & (cap - 1)
+
+        while True:
+            var entry = self.htab[base + slot]
+            if entry == 0:
+                self.htab[base + slot] = UInt32(members + 1)
+                return -1
+            var pos = Int(entry) - 1
             if _bytes_equal(
-                self.tape.str_bytes(self.values[i]), self.tape.str_bytes(key)
+                self.tape.str_bytes(self.values[stack_base + 2 * pos]),
+                key_bytes,
             ):
-                self.values[i + 1] = value
-                self.values.shrink(end)
-                return
-            i += 2
+                return pos
+            slot = (slot + 1) & (cap - 1)
 
     def take_tape(deinit self) -> _Tape:
         """Consumes the parser and hands back the tape it built.
@@ -593,7 +813,7 @@ struct _Parser[origin: ImmOrigin](Movable):
                     )
                 var is_object = b == _LBRACE
                 self.pos += 1
-                self.frames.append(_Frame(is_object, len(self.values)))
+                self.frames.append(_Frame(is_object, len(self.values), 0, 0))
                 self._skip_whitespace()
 
                 if is_object:
@@ -622,7 +842,7 @@ struct _Parser[origin: ImmOrigin](Movable):
 
                 var frame = self.frames[len(self.frames) - 1]
                 if frame.is_object:
-                    self._dedupe_last_member(frame.stack_base)
+                    self._dedupe_last_member()
                 self._skip_whitespace()
                 var closer = _RBRACE if frame.is_object else _RBRACKET
                 var next = self._peek()

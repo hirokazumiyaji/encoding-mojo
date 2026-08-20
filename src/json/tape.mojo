@@ -12,6 +12,26 @@ allocations instead of `O(n)`.
 from std.memory import unsafe_memcmp, unsafe_memcpy
 
 
+def _reserve_extra[T: Copyable & Movable](mut items: List[T], extra: Int):
+    """Makes room for `extra` more elements, growing geometrically.
+
+    `List.reserve` allocates exactly what it is asked for, so calling it with
+    `len + n` on every append would recopy the whole list every time. Doubling
+    here keeps bulk appends amortized O(1).
+
+    Parameters:
+        T: The list's element type.
+
+    Args:
+        items: The list to grow.
+        extra: How many more elements must fit.
+    """
+    var needed = len(items) + extra
+    if items.capacity() >= needed:
+        return
+    items.reserve(max(needed, items.capacity() * 2, 16))
+
+
 # ===-----------------------------------------------------------------------===#
 # Node kinds
 # ===-----------------------------------------------------------------------===#
@@ -223,6 +243,7 @@ struct _Tape(Movable, Deinitable):
             The index of the freshly appended node.
         """
         var idx = UInt32(len(self.nodes))
+        _reserve_extra(self.nodes, 1)
         self.nodes.append(node)
         return idx
 
@@ -238,6 +259,7 @@ struct _Tape(Movable, Deinitable):
         var offset = UInt32(len(self.buf))
         var n = len(bytes)
         if n:
+            _reserve_extra(self.buf, n)
             self.buf.resize(unsafe_uninit_length=len(self.buf) + n)
             unsafe_memcpy(
                 dest=self.buf.unsafe_ptr().unsafe_offset(Int(offset)),
@@ -262,14 +284,20 @@ struct _Tape(Movable, Deinitable):
     def str_bytes(self, idx: UInt32) -> Span[UInt8, origin_of(self.buf)]:
         """Returns the stored bytes of the string node at `idx`.
 
+        Callers reach this through a node index the tape itself handed out, so
+        the offsets are known good and the bounds checks are skipped.
+
         Args:
             idx: The index of a `_KIND_STRING` node.
 
         Returns:
             A view over the node's bytes inside the tape buffer.
         """
-        var node = self.nodes[Int(idx)]
-        return Span(self.buf)[Int(node.a) : Int(node.a) + Int(node.b)]
+        var node = self.nodes.unsafe_get(Int(idx))
+        return Span(
+            unsafe_ptr=self.buf.unsafe_ptr().unsafe_offset(Int(node.a)),
+            length=Int(node.b),
+        )
 
     # ===-------------------------------------------------------------------===#
     # Containers
@@ -312,8 +340,10 @@ struct _Tape(Movable, Deinitable):
 
         if Int(node.a) + Int(node.cap) == end:
             # The container already ends at the tail of `kids`; just extend it.
+            _reserve_extra(self.kids, new_cap - Int(node.cap))
             self.kids.resize(end + new_cap - Int(node.cap), 0)
         else:
+            _reserve_extra(self.kids, new_cap)
             self.kids.resize(end + new_cap, 0)
             for i in range(used):
                 self.kids[end + i] = self.kids[Int(node.a) + i]
@@ -428,6 +458,7 @@ struct _Tape(Movable, Deinitable):
             copied.append(self.graft(src, src.kids[Int(node.a) + width * i + width - 1]))
 
         var start = UInt32(len(self.kids))
+        _reserve_extra(self.kids, len(copied))
         self.kids.extend(copied^)
         return self.push(
             _Node.container(node.kind, start, UInt32(count), UInt32(count * width))
