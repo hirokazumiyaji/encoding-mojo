@@ -157,7 +157,9 @@ def _needs_escape(b: UInt8, ensure_ascii: Bool) -> Bool:
     Returns:
         True if the byte needs an escape sequence.
     """
-    return b < 0x20 or b == 0x22 or b == 0x5C or (ensure_ascii and b >= 0x80)
+    # CPython's ensure_ascii keeps `0x20 <= c < 0x7f` verbatim, so DEL is
+    # escaped along with everything non-ASCII.
+    return b < 0x20 or b == 0x22 or b == 0x5C or (ensure_ascii and b >= 0x7F)
 
 
 def _write_hex4(mut writer: Some[Writer], value: UInt32):
@@ -224,7 +226,8 @@ def _write_escaped(
         elif b == 0x09:
             writer.write_string("\\t")
             i += 1
-        elif b < 0x20:
+        elif b < 0x80:
+            # A control character, or DEL under `ensure_ascii`.
             _write_hex4(writer, UInt32(b))
             i += 1
         else:

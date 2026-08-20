@@ -12,7 +12,7 @@ allocations instead of `O(n)`.
 from std.memory import unsafe_memcmp, unsafe_memcpy
 
 
-def _reserve_extra[T: Copyable & Movable](mut items: List[T], extra: Int):
+def _reserve_extra[T: Copyable](mut items: List[T], extra: Int):
     """Makes room for `extra` more elements, growing geometrically.
 
     `List.reserve` allocates exactly what it is asked for, so calling it with

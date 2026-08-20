@@ -370,7 +370,7 @@ struct _Parser[origin: ImmOrigin](Movable):
                 self.pos += 1
                 break
             if b == _BACKSLASH:
-                self._decode_escape()
+                self._decode_escape(quote_start)
                 continue
             if b < 0x20 and self.strict:
                 raise self._error(String("Invalid control character at"), self.pos)
@@ -387,15 +387,24 @@ struct _Parser[origin: ImmOrigin](Movable):
         var length = UInt32(len(self.tape.buf)) - offset
         return self.tape.push(_Node.string(offset, length))
 
-    def _decode_escape(mut self) raises:
+    def _decode_escape(mut self, quote_start: Int) raises:
         """Consumes one `\\`-escape and appends its bytes to the tape buffer.
 
+        Args:
+            quote_start: The offset of the string's opening quote, which is
+                where an unterminated string is reported.
+
         Raises:
-            If the escape is not one JSON defines.
+            If the escape is not one JSON defines, or the document ends inside
+            it.
         """
         var esc_start = self.pos
         if self.pos + 1 >= len(self.src):
-            raise self._error(String("Invalid \\escape"), esc_start)
+            # A backslash as the last byte of the document: CPython calls this
+            # an unterminated string rather than a bad escape.
+            raise self._error(
+                String("Unterminated string starting at"), quote_start
+            )
         var e = self._byte(self.pos + 1)
         self.pos += 2
 
@@ -456,7 +465,10 @@ struct _Parser[origin: ImmOrigin](Movable):
         Raises:
             If fewer than four hexadecimal digits follow.
         """
-        if self.pos + 4 > len(self.src):
+        # CPython requires a byte after the four digits — in a well-formed
+        # document that is the closing quote — so digits that run right up to
+        # the end of the input are rejected even when all four are present.
+        if self.pos + 4 >= len(self.src):
             raise self._error(String("Invalid \\uXXXX escape"), marker_pos)
         var value = 0
         for k in range(4):
@@ -577,23 +589,26 @@ struct _Parser[origin: ImmOrigin](Movable):
                 var signed = -Int64(mantissa) if negative else Int64(mantissa)
                 return self.tape.push(_Node.scalar(_KIND_INT, UInt64(signed)))
 
-        var value: Float64
+        var scaled: Float64
         if not inexact and mantissa < _EXACT_MANTISSA and -22 <= exp10 <= 22:
             # Both the mantissa and the power of ten are exactly representable,
             # so a single multiply or divide rounds once and lands on the same
-            # double `strtod` would produce.
-            var scaled = Float64(mantissa)
+            # double CPython would produce.
+            scaled = Float64(mantissa)
             if exp10 >= 0:
                 scaled *= _pow10(exp10)
             else:
                 scaled /= _pow10(-exp10)
-            value = -scaled if negative else scaled
         else:
-            # Too many digits, or an exponent outside the exactly representable
-            # range: fall back to a correctly rounded general conversion. This
-            # is also where an integer too large for 64 bits widens to a float,
-            # which CPython would have kept exact as a big integer.
-            value = atof(StringSlice(unsafe_from_utf8=self.src[start : self.pos]))
+            # Outside the exactly representable range. Hand the general
+            # converter the normalized `<mantissa>e<exponent>` form rather than
+            # the original text: the two describe the same value, but the
+            # normalized one always has at most 19 digits, which keeps the
+            # conversion in range for inputs like `0.000...001` written out in
+            # full. This is also where an integer too large for 64 bits widens
+            # to a float, which CPython would have kept exact.
+            scaled = atof(String(mantissa, "e", exp10))
+        var value = -scaled if negative else scaled
 
         return self.tape.push(
             _Node.scalar(_KIND_FLOAT, value.to_bits[DType.uint64]())
