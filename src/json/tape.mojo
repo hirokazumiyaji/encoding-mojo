@@ -197,6 +197,31 @@ struct _Node(Copyable, ImplicitlyCopyable, Movable):
         return Self(kind, start, count, cap, 0)
 
 
+comptime _INDEX_THRESHOLD = 16
+"""Member count at which an object gets a hash index.
+
+Below this a linear scan over the keys is faster than hashing the one being
+looked up. Above it the scan is what makes `obj[key]` and `obj[key] = v`
+quadratic over a document's lifetime.
+"""
+
+
+@always_inline
+def _hash_key(bytes: Span[UInt8, _]) -> UInt64:
+    """Hashes an object key with FNV-1a.
+
+    Args:
+        bytes: The key's bytes.
+
+    Returns:
+        The hash.
+    """
+    var h: UInt64 = 0xCBF29CE484222325
+    for i in range(len(bytes)):
+        h = (h ^ UInt64(bytes[i])) * 0x100000001B3
+    return h
+
+
 struct _Tape(Movable, Deinitable):
     """The flat arena that stores every node of one document."""
 
@@ -211,11 +236,20 @@ struct _Tape(Movable, Deinitable):
     var buf: List[UInt8]
     """Decoded UTF-8 bytes for every string node, concatenated."""
 
+    var hash_slots: List[UInt32]
+    """Hash slots for objects large enough to have an index.
+
+    Each indexed object owns one power-of-two region; its offset and size live
+    in the object node's otherwise unused `num` field. A slot holds a member
+    position plus one, so zero means empty. Rebuilding an index strands its old
+    region, which stays bounded because regions double in size."""
+
     def __init__(out self):
         """Creates an empty tape. No allocation happens until the first push."""
         self.nodes = []
         self.kids = []
         self.buf = []
+        self.hash_slots = []
 
     def __init__(out self, *, capacity_hint: Int):
         """Creates an empty tape sized for a document of roughly `capacity_hint`
@@ -231,6 +265,7 @@ struct _Tape(Movable, Deinitable):
         self.nodes = List[_Node](capacity=max(8, capacity_hint // 16))
         self.kids = List[UInt32](capacity=max(8, capacity_hint // 24))
         self.buf = List[UInt8](capacity=max(8, capacity_hint // 4))
+        self.hash_slots = []
 
     @always_inline
     def push(mut self, node: _Node) -> UInt32:
@@ -376,6 +411,58 @@ struct _Tape(Movable, Deinitable):
         node.b = UInt32(count + 1)
         self.nodes[Int(idx)] = node
 
+    def _index_of(self, node: _Node) -> Tuple[Int, Int]:
+        """Unpacks an object node's hash-index descriptor.
+
+        Args:
+            node: The object node.
+
+        Returns:
+            The region's offset and slot count, both zero when there is no
+            index.
+        """
+        return (Int(node.num >> 32), Int(node.num & 0xFFFFFFFF))
+
+    def _build_object_index(mut self, idx: UInt32):
+        """Builds or rebuilds the hash index of the object at `idx`.
+
+        Args:
+            idx: The index of an object node.
+        """
+        var node = self.nodes[Int(idx)]
+        var count = Int(node.b)
+        var cap = 32
+        while cap * 3 <= (count + 1) * 4:
+            cap *= 2
+
+        var offset = len(self.hash_slots)
+        _reserve_extra(self.hash_slots, cap)
+        for _ in range(cap):
+            self.hash_slots.append(0)
+
+        for i in range(count):
+            var key = self.kids[Int(node.a) + 2 * i]
+            var slot = Int(_hash_key(self.str_bytes(key))) & (cap - 1)
+            while self.hash_slots[offset + slot] != 0:
+                slot = (slot + 1) & (cap - 1)
+            self.hash_slots[offset + slot] = UInt32(i + 1)
+
+        node.num = (UInt64(offset) << 32) | UInt64(cap)
+        self.nodes[Int(idx)] = node
+
+    def drop_object_index(mut self, idx: UInt32):
+        """Forgets the hash index of the object at `idx`.
+
+        Removing a member shifts every later position, so the cheapest correct
+        answer is to rebuild on the next lookup.
+
+        Args:
+            idx: The index of an object node.
+        """
+        var node = self.nodes[Int(idx)]
+        node.num = 0
+        self.nodes[Int(idx)] = node
+
     def object_push(mut self, idx: UInt32, key: UInt32, value: UInt32):
         """Appends the member `key: value` to the object at `idx`.
 
@@ -395,8 +482,22 @@ struct _Tape(Movable, Deinitable):
         node.b = UInt32(count + 1)
         self.nodes[Int(idx)] = node
 
-    def find_member(self, idx: UInt32, key: Span[UInt8, _]) -> Int:
+        var offset, cap = self._index_of(node)
+        if cap == 0:
+            return
+        if (count + 1) * 4 > cap * 3:
+            self._build_object_index(idx)
+            return
+        var slot = Int(_hash_key(self.str_bytes(key))) & (cap - 1)
+        while self.hash_slots[offset + slot] != 0:
+            slot = (slot + 1) & (cap - 1)
+        self.hash_slots[offset + slot] = UInt32(count + 1)
+
+    def find_member(mut self, idx: UInt32, key: Span[UInt8, _]) -> Int:
         """Returns the position of the member named `key`, or -1.
+
+        Small objects are scanned linearly. Larger ones get a hash index built
+        on first use, so repeated lookups and inserts stay O(1).
 
         Args:
             idx: The index of an object node.
@@ -406,10 +507,28 @@ struct _Tape(Movable, Deinitable):
             The zero-based member position, or -1 when the key is absent.
         """
         var node = self.nodes[Int(idx)]
-        for i in range(Int(node.b)):
-            if _bytes_equal(self.str_bytes(self.kids[Int(node.a) + 2 * i]), key):
-                return i
-        return -1
+        var count = Int(node.b)
+
+        if count < _INDEX_THRESHOLD:
+            for i in range(count):
+                if _bytes_equal(self.str_bytes(self.kids[Int(node.a) + 2 * i]), key):
+                    return i
+            return -1
+
+        var _unused, cap = self._index_of(node)
+        if cap == 0:
+            self._build_object_index(idx)
+            node = self.nodes[Int(idx)]
+        var offset, slots = self._index_of(node)
+        var slot = Int(_hash_key(key)) & (slots - 1)
+        while True:
+            var entry = self.hash_slots[offset + slot]
+            if entry == 0:
+                return -1
+            var pos = Int(entry) - 1
+            if _bytes_equal(self.str_bytes(self.kids[Int(node.a) + 2 * pos]), key):
+                return pos
+            slot = (slot + 1) & (slots - 1)
 
     def remove_entry(mut self, idx: UInt32, pos: Int):
         """Removes the entry at member/element position `pos`.
@@ -418,6 +537,7 @@ struct _Tape(Movable, Deinitable):
             idx: The index of a container node.
             pos: The zero-based position to remove.
         """
+        self.drop_object_index(idx)
         var node = self.nodes[Int(idx)]
         var width = self.slots_per_entry(idx)
         var used = Int(node.b) * width

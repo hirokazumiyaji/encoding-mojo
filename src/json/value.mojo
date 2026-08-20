@@ -386,6 +386,114 @@ struct JSONValue(
             return value._idx
         return self._tape[].graft(value._tape[], value._idx)
 
+    def _new_scalar(self, node: _Node) raises -> UInt32:
+        """Appends a scalar node to this value's own document.
+
+        Args:
+            node: The node to append.
+
+        Returns:
+            The index of the new node.
+
+        Raises:
+            Never; the signature matches its callers.
+        """
+        return self._tape[].push(node)
+
+    def append(self, value: Int) raises:
+        """Appends an integer to this array.
+
+        Args:
+            value: The integer to append.
+
+        Raises:
+            If this value is not an array.
+        """
+        self._expect(_KIND_ARRAY, "append")
+        var child = self._new_scalar(_Node.scalar(_KIND_INT, UInt64(Int64(value))))
+        self._tape[].array_push(self._idx, child)
+
+    def append(self, value: Float64) raises:
+        """Appends a float to this array.
+
+        Args:
+            value: The float to append.
+
+        Raises:
+            If this value is not an array.
+        """
+        self._expect(_KIND_ARRAY, "append")
+        var child = self._new_scalar(
+            _Node.scalar(_KIND_FLOAT, value.to_bits[DType.uint64]())
+        )
+        self._tape[].array_push(self._idx, child)
+
+    def append(self, value: Bool) raises:
+        """Appends a boolean to this array.
+
+        Args:
+            value: The boolean to append.
+
+        Raises:
+            If this value is not an array.
+        """
+        self._expect(_KIND_ARRAY, "append")
+        var child = self._new_scalar(
+            _Node.scalar(_KIND_BOOL, UInt64(1) if value else UInt64(0))
+        )
+        self._tape[].array_push(self._idx, child)
+
+    def append(self, value: NoneType) raises:
+        """Appends `null` to this array.
+
+        Args:
+            value: Always `None`.
+
+        Raises:
+            If this value is not an array.
+        """
+        self._expect(_KIND_ARRAY, "append")
+        var child = self._new_scalar(_Node.scalar(_KIND_NULL))
+        self._tape[].array_push(self._idx, child)
+
+    def append(self, value: NoneType._mlir_type) raises:
+        """Appends `null` to this array.
+
+        This exact overload keeps `arr.append(None)` unambiguous: without it
+        the literal could convert either to `NoneType` or to a `JSONValue`.
+
+        Args:
+            value: Always `None`.
+
+        Raises:
+            If this value is not an array.
+        """
+        self.append(NoneType(value))
+
+    def append(self, value: StringSlice) raises:
+        """Appends a string to this array.
+
+        Args:
+            value: The text to append.
+
+        Raises:
+            If this value is not an array.
+        """
+        self._expect(_KIND_ARRAY, "append")
+        var child = self._tape[].push_string(value.as_bytes())
+        self._tape[].array_push(self._idx, child)
+
+    def append(self, value: StringLiteral) raises:
+        """Appends a string literal to this array.
+
+        Args:
+            value: The text to append.
+
+        Raises:
+            If this value is not an array.
+        """
+        self.append(StringSlice(value))
+
     def append(self, var value: Self) raises:
         """Appends `value` to this array.
 
@@ -474,6 +582,7 @@ struct JSONValue(
             raise Error("'", self.type(), "' object has no attribute 'clear'")
         var node = self._node()
         node.b = 0
+        node.num = 0  # Any hash index described by `num` is now stale.
         self._tape[].nodes[Int(self._idx)] = node
 
     def keys(self) raises -> List[String]:

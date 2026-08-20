@@ -8,7 +8,7 @@ from std.testing import (
     assert_true,
 )
 
-from json import JSONType, JSONValue
+from json import JSONType, JSONValue, dumps, loads
 
 
 def test_empty_array() raises:
@@ -209,6 +209,46 @@ def test_object_equality_ignores_order() raises:
     y["b"] = 2
     y["a"] = 1
     assert_equal(x, y)
+
+
+def test_large_object_lookup() raises:
+    # Objects past a few dozen members switch to a hash index; the index has to
+    # stay in step with inserts, removals and clears.
+    var o = JSONValue.object()
+    for i in range(500):
+        o["key_" + String(i)] = i
+    assert_equal(len(o), 500)
+    for i in range(500):
+        assert_equal(o["key_" + String(i)].int(), i)
+    assert_false("key_500" in o)
+
+    o["key_500"] = 500
+    assert_equal(o["key_500"].int(), 500)
+    assert_equal(len(o), 501)
+
+    assert_equal(o.pop("key_0").int(), 0)
+    assert_false("key_0" in o)
+    assert_equal(o["key_499"].int(), 499)
+    assert_equal(len(o), 500)
+
+    o["key_1"] = -1
+    assert_equal(o["key_1"].int(), -1)
+    assert_equal(len(o), 500)
+
+    o.clear()
+    assert_equal(len(o), 0)
+    assert_false("key_1" in o)
+    o["fresh"] = 1
+    assert_equal(o["fresh"].int(), 1)
+
+
+def test_large_object_survives_round_trip() raises:
+    var o = JSONValue.object()
+    for i in range(200):
+        o["k" + String(i)] = i
+    var reparsed = loads(dumps(o))
+    assert_equal(reparsed, o)
+    assert_equal(reparsed["k137"].int(), 137)
 
 
 def test_indexing_a_scalar_raises() raises:
