@@ -9,6 +9,8 @@ spelling, and `indent` layout.
 from std.math import isinf, isnan
 
 from .tape import (
+    MAX_DEPTH,
+    _DEPTH_MESSAGE,
     _KIND_ARRAY,
     _KIND_BOOL,
     _KIND_FLOAT,
@@ -378,8 +380,11 @@ def write_value(
         depth: The current nesting depth, used for indentation.
 
     Raises:
-        If a non-finite float is encountered and `allow_nan` is False.
+        If a non-finite float is encountered and `allow_nan` is False, or if
+        the walk runs deeper than `MAX_DEPTH`.
     """
+    if depth > MAX_DEPTH:
+        raise Error(_DEPTH_MESSAGE)
     var node = tape.nodes[Int(idx)]
     var kind = node.kind
 

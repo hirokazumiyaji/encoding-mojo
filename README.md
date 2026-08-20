@@ -19,7 +19,7 @@ print(dumps(doc, indent=2))
 
 | Package | State | Notes |
 |---------|-------|-------|
-| [`json`](src/json) | usable | Decoder, encoder and a mutable document model, checked against CPython's `json` |
+| [`json`](src/json) | complete | Decoder, encoder, hooks and a mutable document model, checked against CPython's `json` |
 | `toml`  | planned | |
 | `yaml`  | planned | |
 | `csv`   | planned | |

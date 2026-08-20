@@ -9,8 +9,9 @@ print(dumps(doc, indent=2))
 ```
 """
 
-from .api import dump, dumps, load, loads
+from .api import JSONDecoder, JSONEncoder, dump, dumps, load, loads
 from .errors import JSONDecodeError
+from .hooks import NoNumberHook, NoValueHook, NumberHook, ValueHook
 from .encoder import Indent
-from .tape import JSONType
+from .tape import MAX_DEPTH, JSONType
 from .value import JSONValue

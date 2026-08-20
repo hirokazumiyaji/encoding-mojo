@@ -32,6 +32,18 @@ def _reserve_extra[T: Copyable](mut items: List[T], extra: Int):
     items.reserve(max(needed, items.capacity() * 2, 16))
 
 
+comptime MAX_DEPTH = 1000
+"""How deeply containers may nest.
+
+The parser is iterative and could go deeper, but `dumps`, structural equality
+and cross-document copying all walk a document recursively, so anything deeper
+would overflow the machine stack. The limit doubles as cycle detection: values
+can alias each other within a document, and a value spliced into its own
+subtree is only detectable by noticing that the walk never ends. CPython gives
+up at a comparable depth with `RecursionError`.
+"""
+
+
 # ===-----------------------------------------------------------------------===#
 # Node kinds
 # ===-----------------------------------------------------------------------===#
@@ -552,16 +564,25 @@ struct _Tape(Deinitable, Movable):
         node.b -= 1
         self.nodes[Int(idx)] = node
 
-    def graft(mut self, src: _Tape, src_idx: UInt32) -> UInt32:
+    def graft(
+        mut self, src: _Tape, src_idx: UInt32, depth: Int = 0
+    ) raises -> UInt32:
         """Deep-copies the subtree at `src_idx` of `src` into this tape.
 
         Args:
             src: The tape to copy from. Must not be this tape.
             src_idx: The root of the subtree to copy.
+            depth: The current recursion depth.
 
         Returns:
             The index of the copied root in this tape.
+
+        Raises:
+            If the subtree nests deeper than `MAX_DEPTH`, which is also what a
+            cycle looks like from here.
         """
+        if depth > MAX_DEPTH:
+            raise Error(_DEPTH_MESSAGE)
         var node = src.nodes[Int(src_idx)]
 
         if node.kind == _KIND_STRING:
@@ -584,7 +605,11 @@ struct _Tape(Deinitable, Movable):
                     )
                 )
             copied.append(
-                self.graft(src, src.kids[Int(node.a) + width * i + width - 1])
+                self.graft(
+                    src,
+                    src.kids[Int(node.a) + width * i + width - 1],
+                    depth + 1,
+                )
             )
 
         var start = UInt32(len(self.kids))
@@ -612,3 +637,11 @@ def _bytes_equal(a: Span[UInt8, _], b: Span[UInt8, _]) -> Bool:
     if len(a) == 0:
         return True
     return unsafe_memcmp(a.unsafe_ptr(), b.unsafe_ptr(), len(a)) == 0
+
+
+comptime _DEPTH_MESSAGE = (
+    "Circular reference detected, or nesting deeper than "
+    + String(MAX_DEPTH)
+    + " levels"
+)
+"""What every recursive walk raises when it runs past `MAX_DEPTH`."""

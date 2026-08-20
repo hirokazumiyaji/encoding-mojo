@@ -11,6 +11,7 @@ from std.memory import ArcPointer
 from .encoder import write_default
 from .tape import (
     JSONType,
+    MAX_DEPTH,
     _KIND_ARRAY,
     _KIND_BOOL,
     _KIND_FLOAT,
@@ -373,7 +374,7 @@ struct JSONValue(
             return _count_codepoints(self._tape[].str_bytes(self._idx))
         raise Error("object of type '", self.type(), "' has no len()")
 
-    def _adopt(self, value: Self) -> UInt32:
+    def _adopt(self, value: Self) raises -> UInt32:
         """Returns an index in *this* document for `value`.
 
         Values already living in this document are aliased, so inserting one
@@ -385,6 +386,9 @@ struct JSONValue(
 
         Returns:
             The node index to store.
+
+        Raises:
+            If copying the value would recurse past `MAX_DEPTH`.
         """
         if self._tape.__is__(value._tape):
             return value._idx
@@ -681,6 +685,48 @@ struct JSONValue(
             raise Error("'", self.type(), "' object is not iterable")
         return _JSONIter(self, 0, Int(self._node().b))
 
+    def update(self, other: Self) raises:
+        """Copies every member of `other` into this object.
+
+        An existing key keeps its position and takes the new value, exactly
+        like Python's `dict.update`.
+
+        Args:
+            other: The object to copy members from.
+
+        Raises:
+            If either value is not an object.
+        """
+        self._expect(_KIND_OBJECT, "update")
+        if not other.is_object():
+            raise Error("can only update a JSON object with another object")
+        for pair in other.items():
+            self[pair[0]] = pair[1]
+
+    def setdefault(self, key: StringSlice, var default: Self) raises -> Self:
+        """Returns the member named `key`, inserting `default` if it is absent.
+
+        Args:
+            key: The member name.
+            default: The value to insert when the key is missing.
+
+        Returns:
+            A handle on the member's value, which is live: mutating it mutates
+            this object.
+
+        Raises:
+            If this value is not an object.
+        """
+        self._expect(_KIND_OBJECT, "setdefault")
+        var pos = self._tape[].find_member(self._idx, key.as_bytes())
+        if pos >= 0:
+            return Self(
+                tape=self._tape,
+                idx=self._tape[].kids[Int(self._node().a) + 2 * pos + 1],
+            )
+        self[key] = default^
+        return self[key]
+
     def get(self, key: StringSlice) -> Optional[Self]:
         """Looks up a member without raising, like Python's `dict.get`.
 
@@ -893,7 +939,9 @@ struct JSONValue(
 # ===-----------------------------------------------------------------------===#
 
 
-def _nodes_equal(lhs: _Tape, li: UInt32, rhs: _Tape, ri: UInt32) -> Bool:
+def _nodes_equal(
+    lhs: _Tape, li: UInt32, rhs: _Tape, ri: UInt32, depth: Int = 0
+) -> Bool:
     """Compares the subtrees rooted at `li` and `ri`.
 
     Args:
@@ -901,10 +949,15 @@ def _nodes_equal(lhs: _Tape, li: UInt32, rhs: _Tape, ri: UInt32) -> Bool:
         li: The index of the left root node.
         rhs: The tape holding the right subtree.
         ri: The index of the right root node.
+        depth: The current recursion depth.
 
     Returns:
-        True if the two subtrees are structurally equal.
+        True if the two subtrees are structurally equal. Subtrees nesting
+        deeper than `MAX_DEPTH` — which is what a cycle looks like from here —
+        are reported as unequal rather than compared forever.
     """
+    if depth > MAX_DEPTH:
+        return False
     var a = lhs.nodes[Int(li)]
     var b = rhs.nodes[Int(ri)]
 
@@ -931,7 +984,11 @@ def _nodes_equal(lhs: _Tape, li: UInt32, rhs: _Tape, ri: UInt32) -> Bool:
     if a.kind == _KIND_ARRAY:
         for i in range(Int(a.b)):
             if not _nodes_equal(
-                lhs, lhs.kids[Int(a.a) + i], rhs, rhs.kids[Int(b.a) + i]
+                lhs,
+                lhs.kids[Int(a.a) + i],
+                rhs,
+                rhs.kids[Int(b.a) + i],
+                depth + 1,
             ):
                 return False
         return True
@@ -945,7 +1002,7 @@ def _nodes_equal(lhs: _Tape, li: UInt32, rhs: _Tape, ri: UInt32) -> Bool:
             var rk = rhs.kids[Int(b.a) + 2 * j]
             if _bytes_equal(lhs.str_bytes(lk), rhs.str_bytes(rk)):
                 if not _nodes_equal(
-                    lhs, lv, rhs, rhs.kids[Int(b.a) + 2 * j + 1]
+                    lhs, lv, rhs, rhs.kids[Int(b.a) + 2 * j + 1], depth + 1
                 ):
                     return False
                 found = True

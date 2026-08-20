@@ -14,8 +14,13 @@ from std.bit import count_trailing_zeros
 from std.collections.string import atof
 from std.memory import pack_bits
 
+from std.memory import ArcPointer
+
 from .errors import JSONDecodeError
+from .hooks import NoNumberHook, NoValueHook, NumberHook, ValueHook
+from .value import JSONValue
 from .tape import (
+    MAX_DEPTH,
     _reserve_extra,
     _KIND_ARRAY,
     _KIND_BOOL,
@@ -28,14 +33,6 @@ from .tape import (
     _Tape,
     _bytes_equal,
 )
-
-comptime MAX_DEPTH = 1000
-"""How deeply containers may nest before decoding gives up.
-
-The parser itself is iterative and could go deeper, but a document this deep
-cannot be walked recursively afterwards (by `dumps`, for instance), and CPython
-raises `RecursionError` at a comparable depth.
-"""
 
 comptime _SCAN_WIDTH = 32
 """How many bytes the string scanner examines per SIMD step."""
@@ -189,8 +186,23 @@ def _hash_bytes(bytes: Span[UInt8, _]) -> UInt64:
     return h
 
 
-struct _Parser[origin: ImmOrigin](Movable):
-    """A single decoding run over one document."""
+struct _Parser[
+    origin: ImmOrigin,
+    ParseInt: NumberHook = NoNumberHook,
+    ParseFloat: NumberHook = NoNumberHook,
+    ParseConstant: NumberHook = NoNumberHook,
+    ObjectHook: ValueHook = NoValueHook,
+](Movable):
+    """A single decoding run over one document.
+
+    Parameters:
+        origin: The origin of the bytes being decoded.
+        ParseInt: Replaces the value integer literals decode to.
+        ParseFloat: Replaces the value float literals decode to.
+        ParseConstant: Replaces the value `NaN`, `Infinity` and `-Infinity`
+            decode to.
+        ObjectHook: Replaces each decoded object.
+    """
 
     var src: Span[UInt8, Self.origin]
     """The bytes being decoded."""
@@ -623,6 +635,13 @@ struct _Parser[origin: ImmOrigin](Movable):
                     self.pos += 1
                 exp10 += -magnitude if exp_negative else magnitude
 
+        if not is_float:
+            comptime if Self.ParseInt != NoNumberHook:
+                return self._graft_hooked[Self.ParseInt](start)
+        else:
+            comptime if Self.ParseFloat != NoNumberHook:
+                return self._graft_hooked[Self.ParseFloat](start)
+
         if not is_float and not inexact:
             var limit = UInt64(1) << 63
             if mantissa < limit or (negative and mantissa == limit):
@@ -654,6 +673,46 @@ struct _Parser[origin: ImmOrigin](Movable):
             _Node.scalar(_KIND_FLOAT, value.to_bits[DType.uint64]())
         )
 
+    def _graft_hooked[H: NumberHook](mut self, start: Int) raises -> UInt32:
+        """Hands the literal spanning `start`..cursor to `H` and stores the
+        result.
+
+        Parameters:
+            H: The hook to consult.
+
+        Args:
+            start: Where the literal begins.
+
+        Returns:
+            The index of the node holding the hook's result.
+
+        Raises:
+            Whatever the hook raises.
+        """
+        var text = String(unsafe_from_utf8=self.src[start : self.pos])
+        var replacement = H.call(text^)
+        return self.tape.graft(replacement._tape[], replacement._idx)
+
+    def _constant(mut self, start: Int, value: Float64) raises -> UInt32:
+        """Stores one of the non-standard constants, via `ParseConstant`.
+
+        Args:
+            start: Where the constant's text begins.
+            value: The float it stands for.
+
+        Returns:
+            The index of the new node.
+
+        Raises:
+            Whatever the hook raises.
+        """
+        comptime if Self.ParseConstant != NoNumberHook:
+            return self._graft_hooked[Self.ParseConstant](start)
+        else:
+            return self.tape.push(
+                _Node.scalar(_KIND_FLOAT, value.to_bits[DType.uint64]())
+            )
+
     # ===-------------------------------------------------------------------===#
     # Values
     # ===-------------------------------------------------------------------===#
@@ -676,12 +735,7 @@ struct _Parser[origin: ImmOrigin](Movable):
                 var start = self.pos
                 self.pos += 1
                 if self._match_keyword("Infinity"):
-                    return self.tape.push(
-                        _Node.scalar(
-                            _KIND_FLOAT,
-                            Float64("-inf").to_bits[DType.uint64](),
-                        )
-                    )
+                    return self._constant(start, Float64("-inf"))
                 self.pos = start
             return self._parse_number()
         if b == 0x74:  # t
@@ -694,19 +748,13 @@ struct _Parser[origin: ImmOrigin](Movable):
             if self._match_keyword("null"):
                 return self.tape.push(_Node.scalar(_KIND_NULL))
         elif self.allow_nan and b == 0x4E:  # N
+            var start = self.pos
             if self._match_keyword("NaN"):
-                return self.tape.push(
-                    _Node.scalar(
-                        _KIND_FLOAT, Float64("nan").to_bits[DType.uint64]()
-                    )
-                )
+                return self._constant(start, Float64("nan"))
         elif self.allow_nan and b == 0x49:  # I
+            var start = self.pos
             if self._match_keyword("Infinity"):
-                return self.tape.push(
-                    _Node.scalar(
-                        _KIND_FLOAT, Float64("inf").to_bits[DType.uint64]()
-                    )
-                )
+                return self._constant(start, Float64("inf"))
 
         raise self._error(String("Expecting value"), self.pos)
 
@@ -740,11 +788,36 @@ struct _Parser[origin: ImmOrigin](Movable):
             self.tape.kids.append(self.values[frame.stack_base + i])
         self.values.shrink(frame.stack_base)
         var kind = _KIND_OBJECT if frame.is_object else _KIND_ARRAY
-        self.values.append(
-            self.tape.push(
-                _Node.container(kind, start, UInt32(count), UInt32(slots))
-            )
+        var node = self.tape.push(
+            _Node.container(kind, start, UInt32(count), UInt32(slots))
         )
+        comptime if Self.ObjectHook != NoValueHook:
+            if frame.is_object:
+                node = self._apply_object_hook(node)
+        self.values.append(node)
+
+    def _apply_object_hook(mut self, idx: UInt32) raises -> UInt32:
+        """Hands the object at `idx` to `ObjectHook` and stores its answer.
+
+        The hook is given a standalone document rather than a handle into the
+        one being parsed, so it can keep or mutate what it receives without
+        disturbing the parse in progress.
+
+        Args:
+            idx: The index of the object node just completed.
+
+        Returns:
+            The index of the node holding the hook's result.
+
+        Raises:
+            Whatever the hook raises.
+        """
+        var standalone = _Tape()
+        var root = standalone.graft(self.tape, idx)
+        var replacement = Self.ObjectHook.call(
+            JSONValue(tape=ArcPointer(standalone^), idx=root)
+        )
+        return self.tape.graft(replacement._tape[], replacement._idx)
 
     def _dedupe_last_member(mut self):
         """Applies CPython's duplicate-key rule to the member just completed.
@@ -986,10 +1059,24 @@ struct ParsedDocument(Movable):
         return self.tape^
 
 
-def parse_document(
-    src: Span[UInt8, _], *, strict: Bool, allow_nan: Bool
+def parse_document[
+    origin: ImmOrigin,
+    //,
+    ParseInt: NumberHook = NoNumberHook,
+    ParseFloat: NumberHook = NoNumberHook,
+    ParseConstant: NumberHook = NoNumberHook,
+    ObjectHook: ValueHook = NoValueHook,
+](
+    src: Span[UInt8, origin], *, strict: Bool, allow_nan: Bool
 ) raises -> ParsedDocument:
     """Decodes `src` into a fresh tape.
+
+    Parameters:
+        origin: The origin of the document bytes.
+        ParseInt: Replaces the value integer literals decode to.
+        ParseFloat: Replaces the value float literals decode to.
+        ParseConstant: Replaces the value the non-standard constants decode to.
+        ObjectHook: Replaces each decoded object.
 
     Args:
         src: The document bytes.
@@ -1000,8 +1087,11 @@ def parse_document(
         The tape and the index of its root node.
 
     Raises:
-        `JSONDecodeError` if the document is not valid JSON.
+        `JSONDecodeError` if the document is not valid JSON, or whatever a
+        hook raises.
     """
-    var parser = _Parser(src, strict=strict, allow_nan=allow_nan)
+    var parser = _Parser[
+        origin, ParseInt, ParseFloat, ParseConstant, ObjectHook
+    ](src, strict=strict, allow_nan=allow_nan)
     var root = parser.parse()
     return ParsedDocument(parser^.take_tape(), root)

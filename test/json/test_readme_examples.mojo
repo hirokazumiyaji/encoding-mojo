@@ -6,7 +6,31 @@ might copy is executed here.
 
 from std.testing import TestSuite, assert_equal, assert_true
 
-from json import JSONType, JSONValue, dumps, loads
+from json import (
+    JSONDecoder,
+    JSONEncoder,
+    JSONType,
+    JSONValue,
+    NumberHook,
+    dumps,
+    loads,
+)
+
+
+struct KeepLiteral(NumberHook):
+    """The `ParseInt` example from src/json/README.md."""
+
+    @staticmethod
+    def call(text: String) raises -> JSONValue:
+        """Keeps a numeric literal as the text it was written with.
+
+        Args:
+            text: The literal as it appeared in the document.
+
+        Returns:
+            The literal as a string value.
+        """
+        return JSONValue(text)
 
 
 def test_root_readme_quick_start() raises:
@@ -87,6 +111,31 @@ def test_type_reflection_example() raises:
     assert_equal(String(loads("null").type()), "NoneType")
     assert_equal(dumps(loads("1")), "1")
     assert_equal(dumps(loads("1.0")), "1.0")
+
+
+def test_reusable_settings_example() raises:
+    var encoder = JSONEncoder(indent=2, sort_keys=True)
+    var doc = loads('{"b": 1, "a": 2}')
+    assert_equal(encoder.encode(doc), '{\n  "a": 2,\n  "b": 1\n}')
+
+    var decoder = JSONDecoder(strict=False)
+    assert_equal(decoder.decode('"a\nb"').string(), "a\nb")
+
+
+def test_hook_example() raises:
+    var doc = loads[ParseInt=KeepLiteral]("123456789012345678901234567890")
+    assert_equal(doc.string(), "123456789012345678901234567890")
+
+
+def test_cycle_example() raises:
+    var doc = JSONValue.object()
+    doc["self"] = doc
+    var rejected = False
+    try:
+        _ = dumps(doc)
+    except:
+        rejected = True
+    assert_true(rejected)
 
 
 def test_documented_deviations() raises:
