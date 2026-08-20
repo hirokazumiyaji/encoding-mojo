@@ -1,0 +1,4 @@
+*.mojopkg
+*.mojoc
+.build/
+__pycache__/
