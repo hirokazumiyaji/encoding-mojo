@@ -66,10 +66,38 @@ comptime _EXACT_MANTISSA: UInt64 = UInt64(1) << 53
 """Mantissas below this are exactly representable as a `Float64`."""
 
 comptime _POW10 = SIMD[DType.float64, 32](
-    1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7,
-    1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15,
-    1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
+    1e0,
+    1e1,
+    1e2,
+    1e3,
+    1e4,
+    1e5,
+    1e6,
+    1e7,
+    1e8,
+    1e9,
+    1e10,
+    1e11,
+    1e12,
+    1e13,
+    1e14,
+    1e15,
+    1e16,
+    1e17,
+    1e18,
+    1e19,
+    1e20,
+    1e21,
+    1e22,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
 )
 """Powers of ten up to 10^22, the largest one exactly representable."""
 
@@ -193,7 +221,11 @@ struct _Parser[origin: ImmOrigin](Movable):
     """Whether `NaN`, `Infinity` and `-Infinity` are accepted."""
 
     def __init__(
-        out self, src: Span[UInt8, Self.origin], *, strict: Bool, allow_nan: Bool
+        out self,
+        src: Span[UInt8, Self.origin],
+        *,
+        strict: Bool,
+        allow_nan: Bool,
     ):
         """Prepares to decode `src`.
 
@@ -308,9 +340,7 @@ struct _Parser[origin: ImmOrigin](Movable):
         var bytes = word.as_bytes()
         if self.pos + len(bytes) > len(self.src):
             return False
-        if not _bytes_equal(
-            self.src[self.pos : self.pos + len(bytes)], bytes
-        ):
+        if not _bytes_equal(self.src[self.pos : self.pos + len(bytes)], bytes):
             return False
         self.pos += len(bytes)
         return True
@@ -373,7 +403,9 @@ struct _Parser[origin: ImmOrigin](Movable):
                 self._decode_escape(quote_start)
                 continue
             if b < 0x20 and self.strict:
-                raise self._error(String("Invalid control character at"), self.pos)
+                raise self._error(
+                    String("Invalid control character at"), self.pos
+                )
 
             # Copy the run of ordinary bytes up to the next escape or quote.
             var start = self.pos
@@ -543,7 +575,9 @@ struct _Parser[origin: ImmOrigin](Movable):
         else:
             while self.pos < n and _is_digit(self._byte(self.pos)):
                 if mantissa <= _MANTISSA_ROOM:
-                    mantissa = mantissa * 10 + UInt64(self._byte(self.pos) - _ZERO)
+                    mantissa = mantissa * 10 + UInt64(
+                        self._byte(self.pos) - _ZERO
+                    )
                 else:
                     # The mantissa is full; keep the magnitude by counting the
                     # remaining digits as an exponent.
@@ -561,7 +595,9 @@ struct _Parser[origin: ImmOrigin](Movable):
             self.pos += 1
             while self.pos < n and _is_digit(self._byte(self.pos)):
                 if mantissa <= _MANTISSA_ROOM:
-                    mantissa = mantissa * 10 + UInt64(self._byte(self.pos) - _ZERO)
+                    mantissa = mantissa * 10 + UInt64(
+                        self._byte(self.pos) - _ZERO
+                    )
                     exp10 -= 1
                 else:
                     inexact = True
@@ -570,7 +606,9 @@ struct _Parser[origin: ImmOrigin](Movable):
         if self.pos < n and (self._byte(self.pos) | 0x20) == 0x65:  # e or E
             var probe = self.pos + 1
             var exp_negative = False
-            if probe < n and (self._byte(probe) == _PLUS or self._byte(probe) == _MINUS):
+            if probe < n and (
+                self._byte(probe) == _PLUS or self._byte(probe) == _MINUS
+            ):
                 exp_negative = self._byte(probe) == _MINUS
                 probe += 1
             if probe < n and _is_digit(self._byte(probe)):
@@ -579,7 +617,9 @@ struct _Parser[origin: ImmOrigin](Movable):
                 var magnitude = 0
                 while self.pos < n and _is_digit(self._byte(self.pos)):
                     if magnitude < 0x10000:
-                        magnitude = magnitude * 10 + Int(self._byte(self.pos) - _ZERO)
+                        magnitude = magnitude * 10 + Int(
+                            self._byte(self.pos) - _ZERO
+                        )
                     self.pos += 1
                 exp10 += -magnitude if exp_negative else magnitude
 
@@ -656,12 +696,16 @@ struct _Parser[origin: ImmOrigin](Movable):
         elif self.allow_nan and b == 0x4E:  # N
             if self._match_keyword("NaN"):
                 return self.tape.push(
-                    _Node.scalar(_KIND_FLOAT, Float64("nan").to_bits[DType.uint64]())
+                    _Node.scalar(
+                        _KIND_FLOAT, Float64("nan").to_bits[DType.uint64]()
+                    )
                 )
         elif self.allow_nan and b == 0x49:  # I
             if self._match_keyword("Infinity"):
                 return self.tape.push(
-                    _Node.scalar(_KIND_FLOAT, Float64("inf").to_bits[DType.uint64]())
+                    _Node.scalar(
+                        _KIND_FLOAT, Float64("inf").to_bits[DType.uint64]()
+                    )
                 )
 
         raise self._error(String("Expecting value"), self.pos)
@@ -821,9 +865,7 @@ struct _Parser[origin: ImmOrigin](Movable):
             if b == _LBRACKET or b == _LBRACE:
                 if len(self.frames) >= MAX_DEPTH:
                     raise self._error(
-                        String(
-                            "Exceeded maximum nesting depth of ", MAX_DEPTH
-                        ),
+                        String("Exceeded maximum nesting depth of ", MAX_DEPTH),
                         self.pos,
                     )
                 var is_object = b == _LBRACE

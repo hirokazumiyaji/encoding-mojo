@@ -79,8 +79,10 @@ def test_built_document_round_trips() raises:
     assert_equal(loads(dumps(doc)), doc)
     assert_equal(
         dumps(doc),
-        '{"nums": [0, 1, 4, 9, 16, 25, 36, 49, 64, 81], "nested":'
-        ' {"deep": "value"}}',
+        (
+            '{"nums": [0, 1, 4, 9, 16, 25, 36, 49, 64, 81], "nested":'
+            ' {"deep": "value"}}'
+        ),
     )
 
 

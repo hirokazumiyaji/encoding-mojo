@@ -47,7 +47,9 @@ def test_loads_floats() raises:
 def test_loads_float_precision() raises:
     assert_equal(loads("0.1").float(), 0.1)
     assert_equal(loads("3.141592653589793").float(), 3.141592653589793)
-    assert_equal(loads("2.2250738585072014e-308").float(), 2.2250738585072014e-308)
+    assert_equal(
+        loads("2.2250738585072014e-308").float(), 2.2250738585072014e-308
+    )
 
 
 def test_loads_huge_exponent_is_infinity() raises:
@@ -186,15 +188,25 @@ def test_error_extra_data() raises:
 
 
 def test_error_expecting_delimiters() raises:
-    with assert_raises(contains="Expecting ':' delimiter: line 1 column 5 (char 4)"):
+    with assert_raises(
+        contains="Expecting ':' delimiter: line 1 column 5 (char 4)"
+    ):
         _ = loads('{"a"')
-    with assert_raises(contains="Expecting ':' delimiter: line 1 column 6 (char 5)"):
+    with assert_raises(
+        contains="Expecting ':' delimiter: line 1 column 6 (char 5)"
+    ):
         _ = loads('{"a" 1}')
-    with assert_raises(contains="Expecting ',' delimiter: line 1 column 4 (char 3)"):
+    with assert_raises(
+        contains="Expecting ',' delimiter: line 1 column 4 (char 3)"
+    ):
         _ = loads("[1 2]")
-    with assert_raises(contains="Expecting ',' delimiter: line 1 column 5 (char 4)"):
+    with assert_raises(
+        contains="Expecting ',' delimiter: line 1 column 5 (char 4)"
+    ):
         _ = loads("[1,2")
-    with assert_raises(contains="Expecting ',' delimiter: line 1 column 7 (char 6)"):
+    with assert_raises(
+        contains="Expecting ',' delimiter: line 1 column 7 (char 6)"
+    ):
         _ = loads('{"a":1')
 
 
@@ -219,9 +231,13 @@ def test_error_string_problems() raises:
         _ = loads('"a\nb"')
     with assert_raises(contains="Invalid \\escape: line 1 column 3 (char 2)"):
         _ = loads('"a\\qb"')
-    with assert_raises(contains="Invalid \\uXXXX escape: line 1 column 3 (char 2)"):
+    with assert_raises(
+        contains="Invalid \\uXXXX escape: line 1 column 3 (char 2)"
+    ):
         _ = loads('"\\u12"')
-    with assert_raises(contains="Invalid \\uXXXX escape: line 1 column 3 (char 2)"):
+    with assert_raises(
+        contains="Invalid \\uXXXX escape: line 1 column 3 (char 2)"
+    ):
         _ = loads('"\\uZZZZ"')
 
 

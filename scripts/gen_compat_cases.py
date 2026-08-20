@@ -266,6 +266,7 @@ def main():
 
     with open(OUT, "w") as fh:
         fh.write("\n".join(lines))
+    os.system("mojo format -q %s >/dev/null 2>&1" % OUT)
     print(
         "wrote %s: %d decodable cases, %d rejected cases"
         % (os.path.relpath(OUT, os.path.join(HERE, "..")), len(ok_cases), len(err_cases))

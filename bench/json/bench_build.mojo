@@ -27,4 +27,6 @@ def main() raises:
     for i in range(_N // 10):
         obj["key_" + String(i)] = i
     elapsed = perf_counter_ns() - start
-    print("set members  ", Float64(elapsed) / 1e6, "ms for", len(obj), "members")
+    print(
+        "set members  ", Float64(elapsed) / 1e6, "ms for", len(obj), "members"
+    )

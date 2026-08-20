@@ -103,7 +103,9 @@ struct JSONValue(
         Args:
             value: The boolean to store.
         """
-        self = Self._scalar(_Node.scalar(_KIND_BOOL, UInt64(1) if value else UInt64(0)))
+        self = Self._scalar(
+            _Node.scalar(_KIND_BOOL, UInt64(1) if value else UInt64(0))
+        )
 
     @implicit
     def __init__(out self, value: Int):
@@ -121,7 +123,9 @@ struct JSONValue(
         Args:
             value: The float to store.
         """
-        self = Self._scalar(_Node.scalar(_KIND_FLOAT, value.to_bits[DType.uint64]()))
+        self = Self._scalar(
+            _Node.scalar(_KIND_FLOAT, value.to_bits[DType.uint64]())
+        )
 
     @implicit
     def __init__(out self, value: StringLiteral):
@@ -410,7 +414,9 @@ struct JSONValue(
             If this value is not an array.
         """
         self._expect(_KIND_ARRAY, "append")
-        var child = self._new_scalar(_Node.scalar(_KIND_INT, UInt64(Int64(value))))
+        var child = self._new_scalar(
+            _Node.scalar(_KIND_INT, UInt64(Int64(value)))
+        )
         self._tape[].array_push(self._idx, child)
 
     def append(self, value: Float64) raises:
@@ -621,7 +627,10 @@ struct JSONValue(
         var out = List[Self](capacity=Int(node.b))
         for i in range(Int(node.b)):
             out.append(
-                Self(tape=self._tape, idx=self._tape[].kids[Int(node.a) + 2 * i + 1])
+                Self(
+                    tape=self._tape,
+                    idx=self._tape[].kids[Int(node.a) + 2 * i + 1],
+                )
             )
         return out^
 
@@ -720,7 +729,9 @@ struct JSONValue(
         if not self.is_array():
             raise Error("'", self.type(), "' object is not subscriptable")
         var pos = self._checked_index(index)
-        return Self(tape=self._tape, idx=self._tape[].kids[Int(self._node().a) + pos])
+        return Self(
+            tape=self._tape, idx=self._tape[].kids[Int(self._node().a) + pos]
+        )
 
     def __getitem__(self, key: StringSlice) raises -> Self:
         """Returns the object member named `key`.
@@ -755,7 +766,9 @@ struct JSONValue(
             If this value is not an array, or the index is out of range.
         """
         if not self.is_array():
-            raise Error("'", self.type(), "' object does not support item assignment")
+            raise Error(
+                "'", self.type(), "' object does not support item assignment"
+            )
         var pos = self._checked_index(index)
         var child = self._adopt(value)
         self._tape[].kids[Int(self._node().a) + pos] = child
@@ -774,7 +787,9 @@ struct JSONValue(
             If this value is not an object.
         """
         if not self.is_object():
-            raise Error("'", self.type(), "' object does not support item assignment")
+            raise Error(
+                "'", self.type(), "' object does not support item assignment"
+            )
         var child = self._adopt(value)
         var pos = self._tape[].find_member(self._idx, key.as_bytes())
         if pos >= 0:
@@ -878,9 +893,7 @@ struct JSONValue(
 # ===-----------------------------------------------------------------------===#
 
 
-def _nodes_equal(
-    lhs: _Tape, li: UInt32, rhs: _Tape, ri: UInt32
-) -> Bool:
+def _nodes_equal(lhs: _Tape, li: UInt32, rhs: _Tape, ri: UInt32) -> Bool:
     """Compares the subtrees rooted at `li` and `ri`.
 
     Args:
@@ -931,7 +944,9 @@ def _nodes_equal(
         for j in range(Int(b.b)):
             var rk = rhs.kids[Int(b.a) + 2 * j]
             if _bytes_equal(lhs.str_bytes(lk), rhs.str_bytes(rk)):
-                if not _nodes_equal(lhs, lv, rhs, rhs.kids[Int(b.a) + 2 * j + 1]):
+                if not _nodes_equal(
+                    lhs, lv, rhs, rhs.kids[Int(b.a) + 2 * j + 1]
+                ):
                     return False
                 found = True
                 break

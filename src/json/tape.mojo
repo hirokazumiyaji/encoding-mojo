@@ -182,7 +182,9 @@ struct _Node(Copyable, ImplicitlyCopyable, Movable):
         return Self(_KIND_STRING, offset, length, 0, 0)
 
     @staticmethod
-    def container(kind: UInt8, start: UInt32, count: UInt32, cap: UInt32) -> Self:
+    def container(
+        kind: UInt8, start: UInt32, count: UInt32, cap: UInt32
+    ) -> Self:
         """Builds an array or object node.
 
         Args:
@@ -222,7 +224,7 @@ def _hash_key(bytes: Span[UInt8, _]) -> UInt64:
     return h
 
 
-struct _Tape(Movable, Deinitable):
+struct _Tape(Deinitable, Movable):
     """The flat arena that stores every node of one document."""
 
     var nodes: List[_Node]
@@ -511,7 +513,9 @@ struct _Tape(Movable, Deinitable):
 
         if count < _INDEX_THRESHOLD:
             for i in range(count):
-                if _bytes_equal(self.str_bytes(self.kids[Int(node.a) + 2 * i]), key):
+                if _bytes_equal(
+                    self.str_bytes(self.kids[Int(node.a) + 2 * i]), key
+                ):
                     return i
             return -1
 
@@ -526,7 +530,9 @@ struct _Tape(Movable, Deinitable):
             if entry == 0:
                 return -1
             var pos = Int(entry) - 1
-            if _bytes_equal(self.str_bytes(self.kids[Int(node.a) + 2 * pos]), key):
+            if _bytes_equal(
+                self.str_bytes(self.kids[Int(node.a) + 2 * pos]), key
+            ):
                 return pos
             slot = (slot + 1) & (slots - 1)
 
@@ -573,15 +579,21 @@ struct _Tape(Movable, Deinitable):
         for i in range(count):
             if width == 2:
                 copied.append(
-                    self.push_string(src.str_bytes(src.kids[Int(node.a) + 2 * i]))
+                    self.push_string(
+                        src.str_bytes(src.kids[Int(node.a) + 2 * i])
+                    )
                 )
-            copied.append(self.graft(src, src.kids[Int(node.a) + width * i + width - 1]))
+            copied.append(
+                self.graft(src, src.kids[Int(node.a) + width * i + width - 1])
+            )
 
         var start = UInt32(len(self.kids))
         _reserve_extra(self.kids, len(copied))
         self.kids.extend(copied^)
         return self.push(
-            _Node.container(node.kind, start, UInt32(count), UInt32(count * width))
+            _Node.container(
+                node.kind, start, UInt32(count), UInt32(count * width)
+            )
         )
 
 

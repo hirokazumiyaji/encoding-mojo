@@ -173,7 +173,7 @@ def _write_hex4(mut writer: Some[Writer], value: UInt32):
     var shift = 12
     while shift >= 0:
         var nibble = Int((value >> UInt32(shift)) & 0xF)
-        writer.write_string(_HEX_DIGITS[byte=nibble : nibble + 1])
+        writer.write_string(_HEX_DIGITS[byte = nibble : nibble + 1])
         shift -= 4
 
 
@@ -246,7 +246,9 @@ def _write_escaped(
                 cp = (UInt32(b) & 0x07) << 18
                 width = 4
             for k in range(1, width):
-                cp |= (UInt32(bytes[i + k]) & 0x3F) << UInt32((width - 1 - k) * 6)
+                cp |= (UInt32(bytes[i + k]) & 0x3F) << UInt32(
+                    (width - 1 - k) * 6
+                )
             if cp > 0xFFFF:
                 var v = cp - 0x10000
                 _write_hex4(writer, 0xD800 + (v >> 10))
@@ -261,7 +263,9 @@ def _write_escaped(
     writer.write_string('"')
 
 
-def _write_float(mut writer: Some[Writer], value: Float64, allow_nan: Bool) raises:
+def _write_float(
+    mut writer: Some[Writer], value: Float64, allow_nan: Bool
+) raises:
     """Writes a float using CPython's `repr` spelling.
 
     Args:
@@ -292,7 +296,9 @@ def _write_float(mut writer: Some[Writer], value: Float64, allow_nan: Bool) rais
 # ===-----------------------------------------------------------------------===#
 
 
-def _write_newline_indent(mut writer: Some[Writer], opts: EncodeOptions, depth: Int):
+def _write_newline_indent(
+    mut writer: Some[Writer], opts: EncodeOptions, depth: Int
+):
     """Writes a newline followed by `depth` levels of indentation.
 
     Args:
@@ -327,7 +333,9 @@ def _sorted_member_order(tape: _Tape, node: _Node) -> List[Int]:
         var cur_key = tape.str_bytes(tape.kids[Int(node.a) + 2 * cur])
         var j = i - 1
         while j >= 0:
-            var other_key = tape.str_bytes(tape.kids[Int(node.a) + 2 * order[j]])
+            var other_key = tape.str_bytes(
+                tape.kids[Int(node.a) + 2 * order[j]]
+            )
             if not _bytes_greater(other_key, cur_key):
                 break
             order[j + 1] = order[j]
@@ -396,7 +404,9 @@ def write_value(
                 writer.write_string(opts.item_sep)
             if opts.indent.enabled:
                 _write_newline_indent(writer, opts, depth + 1)
-            write_value(writer, tape, tape.kids[Int(node.a) + i], opts, depth + 1)
+            write_value(
+                writer, tape, tape.kids[Int(node.a) + i], opts, depth + 1
+            )
         if opts.indent.enabled:
             _write_newline_indent(writer, opts, depth)
         writer.write_string("]")
@@ -406,7 +416,9 @@ def write_value(
             writer.write_string("{}")
             return
         writer.write_string("{")
-        var order = _sorted_member_order(tape, node) if opts.sort_keys else List[Int]()
+        var order = _sorted_member_order(
+            tape, node
+        ) if opts.sort_keys else List[Int]()
         for i in range(count):
             var pos = order[i] if opts.sort_keys else i
             if i:
@@ -417,7 +429,11 @@ def write_value(
             _write_escaped(writer, tape.str_bytes(key), opts.ensure_ascii)
             writer.write_string(opts.key_sep)
             write_value(
-                writer, tape, tape.kids[Int(node.a) + 2 * pos + 1], opts, depth + 1
+                writer,
+                tape,
+                tape.kids[Int(node.a) + 2 * pos + 1],
+                opts,
+                depth + 1,
             )
         if opts.indent.enabled:
             _write_newline_indent(writer, opts, depth)

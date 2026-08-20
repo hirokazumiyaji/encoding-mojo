@@ -17,8 +17,10 @@ def test_root_readme_quick_start() raises:
     doc["tags"].append("pure")
     assert_equal(
         dumps(doc, indent=2),
-        '{\n  "name": "mojo",\n  "tags": [\n    "fast",\n    "safe",\n   '
-        ' "pure"\n  ]\n}',
+        (
+            '{\n  "name": "mojo",\n  "tags": [\n    "fast",\n    "safe",\n   '
+            ' "pure"\n  ]\n}'
+        ),
     )
 
 
@@ -34,11 +36,17 @@ def test_decoding_example() raises:
 def test_encoding_options_example() raises:
     var doc = loads('{"id": 7, "tags": ["a", "b"], "meta": null}')
     assert_equal(dumps(doc), '{"id": 7, "tags": ["a", "b"], "meta": null}')
-    assert_equal(dumps(doc, separators=(",", ":")), '{"id":7,"tags":["a","b"],"meta":null}')
     assert_equal(
-        dumps(doc, sort_keys=True), '{"id": 7, "meta": null, "tags": ["a", "b"]}'
+        dumps(doc, separators=(",", ":")),
+        '{"id":7,"tags":["a","b"],"meta":null}',
     )
-    assert_equal(dumps(loads('{"a": [1]}'), indent="\t"), '{\n\t"a": [\n\t\t1\n\t]\n}')
+    assert_equal(
+        dumps(doc, sort_keys=True),
+        '{"id": 7, "meta": null, "tags": ["a", "b"]}',
+    )
+    assert_equal(
+        dumps(loads('{"a": [1]}'), indent="\t"), '{\n\t"a": [\n\t\t1\n\t]\n}'
+    )
 
 
 def test_building_example() raises:

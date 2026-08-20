@@ -72,7 +72,9 @@ def test_dumps_indent_int() raises:
     a.append(2)
     o["a"] = a
     o["b"] = JSONValue.object()
-    assert_equal(dumps(o, indent=2), '{\n  "a": [\n    1,\n    2\n  ],\n  "b": {}\n}')
+    assert_equal(
+        dumps(o, indent=2), '{\n  "a": [\n    1,\n    2\n  ],\n  "b": {}\n}'
+    )
 
 
 def test_dumps_indent_zero_still_breaks_lines() raises:
