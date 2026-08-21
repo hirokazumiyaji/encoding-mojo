@@ -23,9 +23,11 @@ jobs:
           python3 scripts/gen_compat_cases.py
           python3 scripts/gen_yaml_compat_cases.py
           python3 scripts/gen_toml_compat_cases.py
+          python3 scripts/gen_csv_compat_cases.py
           git diff --exit-code test/json/test_python_compat.mojo
           git diff --exit-code test/yaml/test_pyyaml_compat.mojo
           git diff --exit-code test/toml/test_tomllib_compat.mojo
+          git diff --exit-code test/csv/test_python_compat.mojo
 
       - name: Run tests
         run: ./scripts/run_tests.sh
@@ -68,3 +70,11 @@ jobs:
           mojo run -I src bench/toml/bench_toml.mojo
           echo "== CPython"
           python3 bench/toml/bench_python.py
+
+      - name: Benchmark csv against CPython
+        run: |
+          python3 bench/csv/gen_data.py
+          echo "== csv-mojo"
+          mojo run -I src bench/csv/bench_csv.mojo
+          echo "== CPython"
+          python3 bench/csv/bench_python.py
