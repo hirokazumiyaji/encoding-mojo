@@ -15,13 +15,15 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Mojo
-        run: pip install modular
+      - name: Install Mojo and PyYAML
+        run: pip install modular pyyaml
 
       - name: Check generated compatibility cases are current
         run: |
           python3 scripts/gen_compat_cases.py
+          python3 scripts/gen_yaml_compat_cases.py
           git diff --exit-code test/json/test_python_compat.mojo
+          git diff --exit-code test/yaml/test_pyyaml_compat.mojo
 
       - name: Run tests
         run: ./scripts/run_tests.sh
@@ -38,13 +40,21 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Mojo
-        run: pip install modular
+      - name: Install Mojo and PyYAML
+        run: pip install modular pyyaml
 
-      - name: Benchmark against CPython
+      - name: Benchmark json against CPython
         run: |
           python3 bench/json/gen_data.py
           echo "== json-mojo"
           mojo run -I src bench/json/bench_json.mojo
           echo "== CPython"
           python3 bench/json/bench_python.py
+
+      - name: Benchmark yaml against PyYAML
+        run: |
+          python3 bench/yaml/gen_data.py
+          echo "== yaml-mojo"
+          mojo run -I src bench/yaml/bench_yaml.mojo
+          echo "== PyYAML"
+          python3 bench/yaml/bench_python.py

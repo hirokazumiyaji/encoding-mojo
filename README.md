@@ -1,8 +1,9 @@
 # json-mojo
 
-Pure-Mojo data-format libraries with CPython-compatible APIs. The first one is
-`json`; the layout is a monorepo so `toml`, `yaml` and `csv` can land beside it
-without anything moving. Mojo's standard library ships none of these.
+Pure-Mojo data-format libraries with Python-compatible APIs. `json` mirrors
+CPython's `json` module and `yaml` mirrors PyYAML's `safe_load`/`safe_dump`;
+`toml` and `csv` can land beside them without anything moving. Mojo's standard
+library ships none of these.
 
 ```mojo
 from json import dumps, loads
@@ -15,13 +16,25 @@ doc["tags"].append("pure")
 print(dumps(doc, indent=2))
 ```
 
+Every package shares one document model, so values cross formats with no
+conversion:
+
+```mojo
+from json import dumps
+from yaml import safe_load
+
+print(dumps(safe_load("name: mojo\ntags: [fast, safe]\n")))
+# {"name": "mojo", "tags": ["fast", "safe"]}
+```
+
 ## Status
 
 | Package | State | Notes |
 |---------|-------|-------|
 | [`json`](src/json) | complete | Decoder, encoder, hooks and a mutable document model, checked against CPython's `json` |
+| [`yaml`](src/yaml) | complete | Loader and emitter for the YAML 1.1 PyYAML implements, checked against PyYAML |
+| [`serde`](src/serde) | complete | The `Value` type and tape both packages build on |
 | `toml`  | planned | |
-| `yaml`  | planned | |
 | `csv`   | planned | |
 
 ## Why it is fast
@@ -46,12 +59,28 @@ Measured against CPython 3.11's C-accelerated `json` on the fixtures in
 | canada (0.73 MiB) | float-heavy | **3.2x** faster | **2.0x** faster |
 | catalog (0.93 MiB) | object-heavy | **2.1x** faster | **3.0x** faster |
 
+And against PyYAML on the fixtures in `bench/yaml`:
+
+| Fixture | `safe_load` | `safe_dump` |
+|---------|-------------|-------------|
+| config (0.20 MiB) | **61x** faster | **127x** faster |
+| records (0.27 MiB) | **57x** faster | **128x** faster |
+
+Those YAML numbers are against PyYAML's pure-Python backend, which is what is
+installed here. PyYAML also ships an optional C backend built on libyaml
+(`CSafeLoader`); where that is available the gap is far smaller. The benchmark
+script uses the C backend when it can and prints which one ran.
+
 Reproduce with:
 
 ```bash
 python3 bench/json/gen_data.py       # writes the fixtures once
 mojo run -I src bench/json/bench_json.mojo
 python3 bench/json/bench_python.py   # the same table for CPython
+
+python3 bench/yaml/gen_data.py
+mojo run -I src bench/yaml/bench_yaml.mojo
+python3 bench/yaml/bench_python.py
 ```
 
 ## Install
@@ -74,10 +103,12 @@ Requires the Mojo compiler (`pip install modular`); developed against Mojo 1.0.
 ## Repository layout
 
 ```
+src/serde/           the shared Value type and its flat arena
 src/json/            the json package
-test/json/           its tests, one module per area
-bench/json/          its benchmarks, plus the CPython baseline
-scripts/             test runner, package build, compat-case generator
+src/yaml/            the yaml package
+test/<name>/         each package's tests, one module per area
+bench/<name>/        each package's benchmarks, plus the Python baseline
+scripts/             test runner, package build, compat-case generators
 ```
 
 A new format package follows the same shape: `src/<name>/` with an
@@ -94,14 +125,16 @@ them all with:
 ./scripts/run_tests.sh               # or pass specific files
 ```
 
-`test/json/test_python_compat.mojo` is generated, not hand-written:
-`scripts/gen_compat_cases.py` runs several hundred documents through CPython's
-own `json` and records what it produced, so the suite is a differential test
-against the reference implementation rather than against someone's reading of
-the spec. Add cases to the generator, not to the generated file:
+`test/json/test_python_compat.mojo` and `test/yaml/test_pyyaml_compat.mojo`
+are generated, not hand-written: the scripts below run several hundred
+documents through CPython's `json` and through PyYAML and record what those
+produced, so each suite is a differential test against the reference
+implementation rather than against someone's reading of the spec. Add cases to
+the generators, not to the generated files:
 
 ```bash
 python3 scripts/gen_compat_cases.py
+python3 scripts/gen_yaml_compat_cases.py
 ```
 
 ## License
