@@ -114,6 +114,11 @@ DOCUMENTS = [
     # Dotted keys inside one inline table build the same table.
     "x = { a.b = 1, a.c = 2 }\n",
     "x = { y = {}, z = { y = { a = 1 } } }\n",
+    # A dotted key may still share a parent it built itself.
+    "[t]\na.b = 1\na.c = 2\n",
+    "[t.a.b]\nz = 1\n[t]\na.x = 2\n",
+    "[a.b]\n[a]\nc.d = 1\n",
+    "[[p]]\nq.r = 1\n[[p]]\nq.r = 2\n",
     # Strings that only a multi-line form can hold verbatim.
     'a = "line\\nbreak"\nb = "carriage\\r\\nreturn"\nc = "ctrl\\u0001char"\n',
     'a = "tab\\there"\nb = "del\\u007f"\n',
@@ -224,6 +229,12 @@ BAD = [
     "x = [{ a = {}, a.b = 1 }]\n",
     "x = { y = { a = {}, a.b = 1 } }\n",
     "a = { b = 1 }\na.c = 2\n",
+    # A header claims the table it names against a later dotted key.
+    "[[t.a]]\nz = 1\n[t]\na.b = 2\n",
+    "[t.a]\nz = 1\n[t]\na.b = 2\n",
+    "[t.a.b]\nz = 1\n[t]\na.b.c = 2\n",
+    "[a.b]\n[a]\nb.c = 1\n",
+    "[t.a]\nz = 1\n[t]\na.b.c = 2\n",
     # Six quotes do not close a multi-line string.
     'a = """abc""""""\n',
     "a = '''abc''''''\n",

@@ -386,5 +386,34 @@ def test_registry_paths_survive_awkward_keys() raises:
     )
 
 
+def test_a_header_claims_its_namespace() raises:
+    # A `[table]` or `[[array]]` owns the table it names, so a dotted key in
+    # a parent section may not build the same one again.
+    with assert_raises(contains="Cannot redefine namespace ('t', 'a')"):
+        _ = loads("[[t.a]]\nz = 1\n[t]\na.b = 2\n")
+    with assert_raises(contains="Cannot redefine namespace ('t', 'a')"):
+        _ = loads("[t.a]\nz = 1\n[t]\na.b = 2\n")
+    with assert_raises(contains="Cannot redefine namespace ('t', 'a', 'b')"):
+        _ = loads("[t.a.b]\nz = 1\n[t]\na.b.c = 2\n")
+    with assert_raises(contains="Cannot redefine namespace ('a', 'b')"):
+        _ = loads("[a.b]\n[a]\nb.c = 1\n")
+    # The shortest claimed prefix is the one named.
+    with assert_raises(contains="Cannot redefine namespace ('t', 'a')"):
+        _ = loads("[t.a]\nz = 1\n[t]\na.b.c = 2\n")
+    # Tables a dotted key built itself are not claimed, so two dotted keys in
+    # one section still share their parents.
+    _check("[t]\na.b = 1\na.c = 2\n", '{"t":{"a":{"b":1,"c":2}}}')
+    _check(
+        "[t.a.b]\nz = 1\n[t]\na.x = 2\n",
+        '{"t":{"a":{"b":{"z":1},"x":2}}}',
+    )
+    _check("[a.b]\n[a]\nc.d = 1\n", '{"a":{"b":{},"c":{"d":1}}}')
+    # Each element of an array of tables starts clean.
+    _check(
+        "[[p]]\nq.r = 1\n[[p]]\nq.r = 2\n",
+        '{"p":[{"q":{"r":1}},{"q":{"r":2}}]}',
+    )
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

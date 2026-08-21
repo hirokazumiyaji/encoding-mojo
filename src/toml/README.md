@@ -51,7 +51,8 @@ headers; comments; and CRLF line endings.
 
 The rules that make TOML strict are enforced too: a key cannot be defined
 twice, a `[table]` cannot be declared twice or after a dotted key already
-built it, a value that is not a table cannot be reopened as one, an inline
+built it, a value that is not a table cannot be reopened as one, a table a
+`[header]` named cannot be built again by a later dotted key, an inline
 table can never be extended — from a later dotted key inside the same braces
 either — and a statically defined array can never be appended to. Control
 characters reach a string only through an escape, an escape has to name a
@@ -111,12 +112,13 @@ fixtures in `bench/toml`:
 
 | Fixture | `loads` | `dumps` |
 |---------|---------|---------|
-| config (0.20 MiB) | **6.8x** faster | **10.5x** faster |
-| records (0.33 MiB) | **7.6x** faster | **10.8x** faster |
+| config (0.20 MiB) | **6.1x** faster | **10.0x** faster |
+| records (0.33 MiB) | **6.5x** faster | **10.0x** faster |
 
 Median of three runs on each side, taken back to back on one 4-core x86-64
-Linux box; the ratio is what travels, the absolute times are not comparable
-across machines.
+Linux box. Neither the times nor the ratio travels exactly — the same
+measurement on a faster box put load at 6.8-7.6x — so treat these as the
+shape of the gap, not a constant.
 
 Reproduce with:
 

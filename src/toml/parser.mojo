@@ -509,6 +509,33 @@ struct _Parser(Movable):
                 return length + 1
         return 0
 
+    def _redefined_namespace(self, path: List[String]) -> Int:
+        """Returns how far into `path` a header already claimed the namespace.
+
+        A `[table]` or `[[array]]` header owns the table it names, so a later
+        dotted key may not build the same one again. `tomllib` reports the
+        shortest such prefix, which is what the first hit here is. Tables that
+        a dotted key itself built are deliberately not in this test: two
+        dotted keys in one section share their parents.
+
+        Args:
+            path: The key path being written, as the document wrote it.
+
+        Returns:
+            The number of key parts up to and including the claimed table, or
+            -1 if the pair claims nothing.
+        """
+        if len(path) < 2:
+            return -1
+        var prefix = String(self.registry_joined)
+        for i in range(len(path) - 1):
+            _append_tagged(prefix, _KEY, path[i])
+            if self._knows(self.declared, prefix) or self._knows(
+                self.array_declared, prefix
+            ):
+                return i + 1
+        return -1
+
     def _frozen_pair_prefix(self, path: List[String]) -> Bool:
         """Reports whether the key's parent namespace is already complete.
 
@@ -806,6 +833,19 @@ struct _Parser(Movable):
         var joined = String(self.registry_joined)
         for i in range(len(path)):
             _append_tagged(joined, _KEY, path[i])
+
+        var redefined = self._redefined_namespace(path)
+        if redefined >= 0:
+            # `tomllib` runs this before the frozen test and names the table
+            # the header claimed, written the way the document wrote it.
+            var claimed = List[String]()
+            for i in range(len(self.current_path)):
+                claimed.append(self.current_path[i])
+            for i in range(redefined):
+                claimed.append(path[i])
+            raise self._error(
+                String("Cannot redefine namespace ", _quote_path(claimed))
+            )
 
         if self._frozen_pair_prefix(path):
             # `tomllib` names the key's parent here, written the way the
