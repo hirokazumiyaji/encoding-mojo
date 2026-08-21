@@ -308,3 +308,47 @@ struct JSONDecoder(Copyable, ImplicitlyCopyable, Movable):
         return loads[ParseInt, ParseFloat, ParseConstant, ObjectHook](
             text, strict=self.strict, allow_nan=self.allow_nan
         )
+
+    def raw_decode[
+        ParseInt: NumberHook = NoNumberHook,
+        ParseFloat: NumberHook = NoNumberHook,
+        ParseConstant: NumberHook = NoNumberHook,
+        ObjectHook: ValueHook = NoValueHook,
+    ](self, text: StringSlice, idx: Int = 0) raises -> Tuple[JSONValue, Int]:
+        """Decodes one value starting at `idx` and reports where it ended.
+
+        Use this to read documents concatenated in one buffer, or to leave
+        trailing content for someone else to parse. Like CPython's
+        `raw_decode`, it does not skip whitespace before the value — a value
+        has to start exactly at `idx` — and the returned offset is the byte
+        just past the value, with any trailing whitespace left unconsumed.
+
+        Parameters:
+            ParseInt: Replaces the value integer literals decode to.
+            ParseFloat: Replaces the value float literals decode to.
+            ParseConstant: Replaces the value the constants decode to.
+            ObjectHook: Replaces each decoded object, innermost first.
+
+        Args:
+            text: The buffer to read from.
+            idx: Where the value starts.
+
+        Returns:
+            The decoded value and the offset just past it.
+
+        Raises:
+            `JSONDecodeError` if no complete value starts at `idx`, or
+            whatever a hook raises.
+        """
+        var parsed = parse_document[
+            ParseInt, ParseFloat, ParseConstant, ObjectHook
+        ](
+            text.as_bytes(),
+            strict=self.strict,
+            allow_nan=self.allow_nan,
+            start=idx,
+            single_value=True,
+        )
+        var root = parsed.root
+        var end = parsed.end
+        return (JSONValue(tape=ArcPointer(parsed^.take_tape()), idx=root), end)

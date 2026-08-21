@@ -107,6 +107,18 @@ var parsed = decoder.decode(text)
 
 `encoder.write_into(writer, value)` streams instead of returning a `String`.
 
+`decoder.raw_decode(text, idx)` decodes one value and reports where it ended,
+which is how you read documents concatenated in one buffer:
+
+```mojo
+var text = String('{"a":1}{"b":2}')
+var first, after = JSONDecoder().raw_decode(text)
+var second, _ = JSONDecoder().raw_decode(text, after)
+```
+
+Like CPython's, it does not skip whitespace before the value, and it leaves
+trailing whitespace unconsumed.
+
 ## Hooks
 
 `parse_int`, `parse_float`, `parse_constant` and `object_hook` are here, but as

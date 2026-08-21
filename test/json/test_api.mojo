@@ -94,5 +94,57 @@ def test_decoder_matches_loads() raises:
         _ = JSONDecoder(allow_nan=False).decode("NaN")
 
 
+def test_raw_decode_returns_the_end_index() raises:
+    # CPython: `JSONDecoder().raw_decode("[1] rest")` is `([1], 3)`.
+    var decoded, end = JSONDecoder().raw_decode("[1] rest")
+    assert_equal(dumps(decoded), "[1]")
+    assert_equal(end, 3)
+
+
+def test_raw_decode_reads_concatenated_documents() raises:
+    var text = String('{"a":1}{"b":2}')
+    var first, after_first = JSONDecoder().raw_decode(text)
+    assert_equal(dumps(first), '{"a": 1}')
+    assert_equal(after_first, 7)
+
+    var second, after_second = JSONDecoder().raw_decode(text, after_first)
+    assert_equal(dumps(second), '{"b": 2}')
+    assert_equal(after_second, 14)
+
+
+def test_raw_decode_starts_exactly_at_the_index() raises:
+    var third, end = JSONDecoder().raw_decode("  [1]", 2)
+    assert_equal(dumps(third), "[1]")
+    assert_equal(end, 5)
+
+
+def test_raw_decode_does_not_skip_leading_whitespace() raises:
+    # CPython raises here rather than skipping to the value.
+    with assert_raises(contains="Expecting value: line 1 column 1 (char 0)"):
+        _ = JSONDecoder().raw_decode(" [1]")
+
+
+def test_raw_decode_stops_after_a_bare_number() raises:
+    var value, end = JSONDecoder().raw_decode("12 34")
+    assert_equal(value.int(), 12)
+    assert_equal(end, 2)
+
+
+def test_raw_decode_still_reports_syntax_errors() raises:
+    with assert_raises(
+        contains="Expecting ',' delimiter: line 1 column 3 (char 2)"
+    ):
+        _ = JSONDecoder().raw_decode("[1")
+    with assert_raises(contains="Expecting value: line 1 column 1 (char 0)"):
+        _ = JSONDecoder().raw_decode("")
+
+
+def test_raw_decode_honours_decoder_settings() raises:
+    var value, end = JSONDecoder(strict=False).raw_decode('"a\nb" tail')
+    assert_equal(value.string(), "a\nb")
+    # The quoted string is five bytes; the space before "tail" is left behind.
+    assert_equal(end, 5)
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

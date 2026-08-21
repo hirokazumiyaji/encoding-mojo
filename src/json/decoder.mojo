@@ -232,12 +232,22 @@ struct _Parser[
     var allow_nan: Bool
     """Whether `NaN`, `Infinity` and `-Infinity` are accepted."""
 
+    var single_value: Bool
+    """Whether to stop once one value is complete instead of requiring the
+    whole input to be consumed.
+
+    This is what `raw_decode` needs, and it also turns off the leading
+    whitespace skip, because CPython's `raw_decode` expects a value to start
+    exactly at the index it was given."""
+
     def __init__(
         out self,
         src: Span[UInt8, Self.origin],
         *,
         strict: Bool,
         allow_nan: Bool,
+        start: Int = 0,
+        single_value: Bool = False,
     ):
         """Prepares to decode `src`.
 
@@ -245,9 +255,12 @@ struct _Parser[
             src: The document bytes.
             strict: Whether to reject raw control characters in strings.
             allow_nan: Whether to accept the non-standard number literals.
+            start: Where in `src` to begin.
+            single_value: Whether to stop after the first complete value.
         """
         self.src = src
-        self.pos = 0
+        self.pos = start
+        self.single_value = single_value
         self.tape = _Tape(capacity_hint=len(src))
         self.values = []
         self.frames = []
@@ -930,7 +943,8 @@ struct _Parser[
         Raises:
             `JSONDecodeError` if the document is not valid JSON.
         """
-        self._skip_whitespace()
+        if not self.single_value:
+            self._skip_whitespace()
 
         while True:
             # --- a value is expected here ---
@@ -965,6 +979,8 @@ struct _Parser[
             # --- a value has just been completed ---
             while True:
                 if not self.frames:
+                    if self.single_value:
+                        return self.values[0]
                     self._skip_whitespace()
                     if not self._at_end():
                         raise self._error(String("Extra data"), self.pos)
@@ -1040,15 +1056,20 @@ struct ParsedDocument(Movable):
     var root: UInt32
     """The index of the document's root node."""
 
-    def __init__(out self, var tape: _Tape, root: UInt32):
+    var end: Int
+    """The offset just past the last byte the decoder consumed."""
+
+    def __init__(out self, var tape: _Tape, root: UInt32, end: Int):
         """Stores a decoded document.
 
         Args:
             tape: The tape holding every decoded value.
             root: The index of the root node.
+            end: The offset just past the last byte consumed.
         """
         self.tape = tape^
         self.root = root
+        self.end = end
 
     def take_tape(deinit self) -> _Tape:
         """Consumes the document and hands back its tape.
@@ -1067,7 +1088,12 @@ def parse_document[
     ParseConstant: NumberHook = NoNumberHook,
     ObjectHook: ValueHook = NoValueHook,
 ](
-    src: Span[UInt8, origin], *, strict: Bool, allow_nan: Bool
+    src: Span[UInt8, origin],
+    *,
+    strict: Bool,
+    allow_nan: Bool,
+    start: Int = 0,
+    single_value: Bool = False,
 ) raises -> ParsedDocument:
     """Decodes `src` into a fresh tape.
 
@@ -1082,9 +1108,12 @@ def parse_document[
         src: The document bytes.
         strict: Whether to reject raw control characters in strings.
         allow_nan: Whether to accept `NaN`, `Infinity` and `-Infinity`.
+        start: Where in `src` to begin.
+        single_value: Whether to stop after the first complete value instead of
+            requiring the whole input to be consumed.
 
     Returns:
-        The tape and the index of its root node.
+        The tape, the index of its root node, and where decoding stopped.
 
     Raises:
         `JSONDecodeError` if the document is not valid JSON, or whatever a
@@ -1092,6 +1121,13 @@ def parse_document[
     """
     var parser = _Parser[
         origin, ParseInt, ParseFloat, ParseConstant, ObjectHook
-    ](src, strict=strict, allow_nan=allow_nan)
+    ](
+        src,
+        strict=strict,
+        allow_nan=allow_nan,
+        start=start,
+        single_value=single_value,
+    )
     var root = parser.parse()
-    return ParsedDocument(parser^.take_tape(), root)
+    var end = parser.pos
+    return ParsedDocument(parser^.take_tape(), root, end)

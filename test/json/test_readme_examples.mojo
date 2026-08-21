@@ -122,6 +122,14 @@ def test_reusable_settings_example() raises:
     assert_equal(decoder.decode('"a\nb"').string(), "a\nb")
 
 
+def test_raw_decode_example() raises:
+    var text = String('{"a":1}{"b":2}')
+    var first, after = JSONDecoder().raw_decode(text)
+    var second, _ = JSONDecoder().raw_decode(text, after)
+    assert_equal(dumps(first), '{"a": 1}')
+    assert_equal(dumps(second), '{"b": 2}')
+
+
 def test_hook_example() raises:
     var doc = loads[ParseInt=KeepLiteral]("123456789012345678901234567890")
     assert_equal(doc.string(), "123456789012345678901234567890")
