@@ -1,9 +1,9 @@
 # json-mojo
 
 Pure-Mojo data-format libraries with Python-compatible APIs. `json` mirrors
-CPython's `json` module and `yaml` mirrors PyYAML's `safe_load`/`safe_dump`;
-`toml` and `csv` can land beside them without anything moving. Mojo's standard
-library ships none of these.
+CPython's `json` module, `yaml` mirrors PyYAML's `safe_load`/`safe_dump`, and
+`toml` mirrors `tomllib` and `tomli_w`; `csv` can land beside them without
+anything moving. Mojo's standard library ships none of these.
 
 ```mojo
 from json import dumps, loads
@@ -21,9 +21,13 @@ conversion:
 
 ```mojo
 from json import dumps
+from toml import loads as toml_loads
 from yaml import safe_load
 
 print(dumps(safe_load("name: mojo\ntags: [fast, safe]\n")))
+# {"name": "mojo", "tags": ["fast", "safe"]}
+
+print(dumps(toml_loads('name = "mojo"\ntags = ["fast", "safe"]\n')))
 # {"name": "mojo", "tags": ["fast", "safe"]}
 ```
 
@@ -33,8 +37,8 @@ print(dumps(safe_load("name: mojo\ntags: [fast, safe]\n")))
 |---------|-------|-------|
 | [`json`](src/json) | complete | Decoder, encoder, hooks and a mutable document model, checked against CPython's `json` |
 | [`yaml`](src/yaml) | complete | Loader and emitter for the YAML 1.1 PyYAML implements, checked against PyYAML |
-| [`serde`](src/serde) | complete | The `Value` type and tape both packages build on |
-| `toml`  | planned | |
+| [`toml`](src/toml) | complete | TOML 1.0.0 parser and writer, checked against `tomllib` and `tomli_w` |
+| [`serde`](src/serde) | complete | The `Value` type and tape every package builds on |
 | `csv`   | planned | |
 
 ## Why it is fast
@@ -66,6 +70,13 @@ And against PyYAML on the fixtures in `bench/yaml`:
 | config (0.20 MiB) | **61x** faster | **127x** faster |
 | records (0.27 MiB) | **57x** faster | **128x** faster |
 
+And against CPython's `tomllib` and `tomli_w` on the fixtures in `bench/toml`:
+
+| Fixture | `loads` | `dumps` |
+|---------|---------|---------|
+| config (0.20 MiB) | **6.1x** faster | **10.0x** faster |
+| records (0.33 MiB) | **6.5x** faster | **10.0x** faster |
+
 Those YAML numbers are against PyYAML's pure-Python backend, which is what is
 installed here. PyYAML also ships an optional C backend built on libyaml
 (`CSafeLoader`); where that is available the gap is far smaller. The benchmark
@@ -81,6 +92,10 @@ python3 bench/json/bench_python.py   # the same table for CPython
 python3 bench/yaml/gen_data.py
 mojo run -I src bench/yaml/bench_yaml.mojo
 python3 bench/yaml/bench_python.py
+
+python3 bench/toml/gen_data.py
+mojo run -I src bench/toml/bench_toml.mojo
+python3 bench/toml/bench_python.py
 ```
 
 ## Install
@@ -106,6 +121,7 @@ Requires the Mojo compiler (`pip install modular`); developed against Mojo 1.0.
 src/serde/           the shared Value type and its flat arena
 src/json/            the json package
 src/yaml/            the yaml package
+src/toml/            the toml package
 test/<name>/         each package's tests, one module per area
 bench/<name>/        each package's benchmarks, plus the Python baseline
 scripts/             test runner, package build, compat-case generators
@@ -125,17 +141,21 @@ them all with:
 ./scripts/run_tests.sh               # or pass specific files
 ```
 
-`test/json/test_python_compat.mojo` and `test/yaml/test_pyyaml_compat.mojo`
-are generated, not hand-written: the scripts below run several hundred
-documents through CPython's `json` and through PyYAML and record what those
-produced, so each suite is a differential test against the reference
-implementation rather than against someone's reading of the spec. Add cases to
-the generators, not to the generated files:
+`test/json/test_python_compat.mojo`, `test/yaml/test_pyyaml_compat.mojo` and
+`test/toml/test_tomllib_compat.mojo` are generated, not hand-written: the
+scripts below run several hundred documents through CPython's `json`, through
+PyYAML, and through `tomllib`/`tomli_w`, and record what those produced, so
+each suite is a differential test against the reference implementation rather
+than against someone's reading of the spec. Add cases to the generators, not
+to the generated files:
 
 ```bash
 python3 scripts/gen_compat_cases.py
 python3 scripts/gen_yaml_compat_cases.py
+python3 scripts/gen_toml_compat_cases.py
 ```
+
+The generators need `pyyaml` and `tomli_w` installed.
 
 ## License
 
