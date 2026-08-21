@@ -1,0 +1,1324 @@
+"""The TOML parser.
+
+TOML is line-oriented and unambiguous, so the parser is a loop over statements
+rather than a grammar walk: each line is either a table header or a key/value
+pair. Only values recurse, and `_parse_value` handles arrays and inline tables
+inside itself so that recursion is a single function calling itself — a longer
+cycle makes the Mojo elaborator hang.
+
+Values land in the same `_Tape` the json and yaml packages use, so a document
+loaded here can be dumped as JSON or YAML without conversion.
+"""
+
+from std.collections import Set
+
+from serde.tape import (
+    MAX_DEPTH,
+    _KIND_ARRAY,
+    _KIND_BOOL,
+    _KIND_FLOAT,
+    _KIND_INT,
+    _KIND_OBJECT,
+    _KIND_STRING,
+    _Node,
+    _Tape,
+)
+
+from .errors import TOMLDecodeError
+
+comptime _TAB: UInt8 = 0x09
+comptime _NEWLINE: UInt8 = 0x0A
+comptime _RETURN: UInt8 = 0x0D
+comptime _SPACE: UInt8 = 0x20
+comptime _HASH: UInt8 = 0x23
+comptime _SQUOTE: UInt8 = 0x27
+comptime _DQUOTE: UInt8 = 0x22
+comptime _PLUS: UInt8 = 0x2B
+comptime _COMMA: UInt8 = 0x2C
+comptime _MINUS: UInt8 = 0x2D
+comptime _DOT: UInt8 = 0x2E
+comptime _COLON: UInt8 = 0x3A
+comptime _EQUALS: UInt8 = 0x3D
+comptime _LBRACKET: UInt8 = 0x5B
+comptime _RBRACKET: UInt8 = 0x5D
+comptime _BACKSLASH: UInt8 = 0x5C
+comptime _LBRACE: UInt8 = 0x7B
+comptime _RBRACE: UInt8 = 0x7D
+comptime _UNDERSCORE: UInt8 = 0x5F
+
+comptime _ELEMENT = "\x02"
+"""Marks one element of an array of tables inside a registry path.
+
+Two `[[a]]` blocks each own their members, so the registry has to tell them
+apart; a real key can only hold this byte through an explicit escape.
+"""
+
+comptime _SEP = "\x00"
+"""Joins the parts of a key path into one string for the definition registry.
+
+TOML keys may hold almost any character, but a NUL can only reach a key through
+an explicit `\\u0000` escape, so this stays unambiguous in practice.
+"""
+
+
+@always_inline
+def _is_digit(b: UInt8) -> Bool:
+    """Reports whether `b` is an ASCII digit.
+
+    Args:
+        b: The byte to test.
+
+    Returns:
+        True for `0` through `9`.
+    """
+    return b >= 0x30 and b <= 0x39
+
+
+@always_inline
+def _is_bare_key_byte(b: UInt8) -> Bool:
+    """Reports whether `b` may appear in an unquoted key.
+
+    Args:
+        b: The byte to test.
+
+    Returns:
+        True for letters, digits, `_` and `-`.
+    """
+    return (
+        _is_digit(b)
+        or (b >= 0x41 and b <= 0x5A)
+        or (b >= 0x61 and b <= 0x7A)
+        or b == _UNDERSCORE
+        or b == _MINUS
+    )
+
+
+def _join(path: List[String]) -> String:
+    """Renders a key path as one registry key.
+
+    Args:
+        path: The parts of the path.
+
+    Returns:
+        The parts joined by the registry separator.
+    """
+    var out = String()
+    for i in range(len(path)):
+        if i:
+            out += _SEP
+        out += path[i]
+    return out^
+
+
+def _quote_path(path: List[String]) -> String:
+    """Renders a key path the way `tomllib` names it in an error.
+
+    Args:
+        path: The parts of the path.
+
+    Returns:
+        A Python tuple literal such as `('a', 'b')`.
+    """
+    var out = String("(")
+    for i in range(len(path)):
+        if i:
+            out += ", "
+        out += String("'", path[i], "'")
+    if len(path) == 1:
+        out += ","
+    out += ")"
+    return out^
+
+
+struct _Parser(Movable):
+    """One load of one byte stream."""
+
+    var src: ImmSpan[UInt8, ImmUntrackedOrigin]
+    """The bytes being parsed.
+
+    The origin is untracked so the parser is not itself parameterized. The
+    caller keeps the source alive for the whole parse."""
+
+    var pos: Int
+    """The current read offset."""
+
+    var line: Int
+    """The one-based line the cursor is on."""
+
+    var line_start: Int
+    """The offset of the first byte of the current line."""
+
+    var tape: _Tape
+    """The document being built."""
+
+    var root: UInt32
+    """The document's root table."""
+
+    var current: UInt32
+    """The table that key/value pairs currently land in."""
+
+    var current_path: List[String]
+    """The dotted path of `current`, as written, for error messages."""
+
+    var registry_path: List[String]
+    """The path of `current` in the definition registry.
+
+    Each array-of-tables the path crosses contributes an element marker, so
+    the members of one `[[a]]` block never collide with the next one's."""
+
+    var registry_joined: String
+    """`registry_path` already joined, so every key does not rejoin it."""
+
+    var declared: Set[String]
+    """Paths declared with `[table]` or `[[array]]`, which may not repeat."""
+
+    var assigned: Set[String]
+    """Paths given a value, which may not be overwritten."""
+
+    var array_declared: Set[String]
+    """Paths declared with `[[array]]`."""
+
+    var dotted: Set[String]
+    """Paths of tables built by a dotted key, which may not be declared later."""
+
+    var closed: Set[String]
+    """Paths of inline tables and static arrays, which may never be extended."""
+
+    def __init__(out self, src: Span[UInt8, _]):
+        """Prepares to parse `src`.
+
+        Args:
+            src: The document bytes, which must outlive the parser.
+        """
+        self.src = ImmSpan[UInt8, ImmUntrackedOrigin](
+            unsafe_ptr=src.unsafe_ptr()
+            .as_imm()
+            .unsafe_origin_cast[ImmUntrackedOrigin](),
+            length=len(src),
+        )
+        self.pos = 0
+        self.line = 1
+        self.line_start = 0
+        self.tape = _Tape(capacity_hint=len(src))
+        self.root = 0
+        self.current = 0
+        self.current_path = []
+        self.registry_path = []
+        self.registry_joined = String()
+        self.declared = Set[String]()
+        self.assigned = Set[String]()
+        self.array_declared = Set[String]()
+        self.dotted = Set[String]()
+        self.closed = Set[String]()
+
+    def take_tape(deinit self) -> _Tape:
+        """Consumes the parser and hands back the tape it built.
+
+        Returns:
+            The loaded document's tape.
+        """
+        return self.tape^
+
+    # ===-------------------------------------------------------------------===#
+    # Character-level helpers
+    # ===-------------------------------------------------------------------===#
+
+    @always_inline
+    def _at_end(self) -> Bool:
+        """Reports whether the whole input has been consumed.
+
+        Returns:
+            True at end of input.
+        """
+        return self.pos >= len(self.src)
+
+    @always_inline
+    def _byte(self, i: Int) -> UInt8:
+        """Returns the byte at `i`, or 0 outside the input.
+
+        Args:
+            i: The offset to read.
+
+        Returns:
+            The byte, or 0.
+        """
+        return self.src[i] if i < len(self.src) and i >= 0 else UInt8(0)
+
+    @always_inline
+    def _peek(self) -> UInt8:
+        """Returns the byte at the cursor, or 0 past the end.
+
+        Returns:
+            The byte, or 0.
+        """
+        return self._byte(self.pos)
+
+    @always_inline
+    def _column(self) -> Int:
+        """Returns the cursor's one-based column.
+
+        Returns:
+            The column.
+        """
+        return self.pos - self.line_start + 1
+
+    def _error(self, var problem: String) -> TOMLDecodeError:
+        """Builds an error located at the cursor.
+
+        Args:
+            problem: What went wrong.
+
+        Returns:
+            The error, ready to raise.
+        """
+        if self._at_end():
+            return TOMLDecodeError(problem^, 0, 0)
+        return TOMLDecodeError(problem^, self.line, self._column())
+
+    def _skip_spaces(mut self):
+        """Advances the cursor past spaces and tabs."""
+        while not self._at_end():
+            var b = self._peek()
+            if b != _SPACE and b != _TAB:
+                return
+            self.pos += 1
+
+    def _consume_newline(mut self):
+        """Consumes one line ending and moves the line counter on."""
+        if self._peek() == _RETURN:
+            self.pos += 1
+        if self._peek() == _NEWLINE:
+            self.pos += 1
+        self.line += 1
+        self.line_start = self.pos
+
+    def _skip_comment(mut self):
+        """Discards a comment, leaving the cursor on its line ending."""
+        if self._peek() != _HASH:
+            return
+        while not self._at_end() and self._peek() != _NEWLINE:
+            self.pos += 1
+
+    def _skip_to_statement(mut self):
+        """Advances to the next statement, past blank lines and comments."""
+        while not self._at_end():
+            self._skip_spaces()
+            self._skip_comment()
+            if self._at_end():
+                return
+            if self._peek() == _NEWLINE or self._peek() == _RETURN:
+                self._consume_newline()
+                continue
+            return
+
+    def _expect_statement_end(mut self) raises:
+        """Consumes the rest of a statement's line, which must be empty.
+
+        Raises:
+            If anything but a comment follows the statement.
+        """
+        self._skip_spaces()
+        if self._at_end():
+            return
+        if self._peek() == _HASH:
+            self._skip_comment()
+        if self._at_end():
+            return
+        if self._peek() == _NEWLINE or self._peek() == _RETURN:
+            self._consume_newline()
+            return
+        raise self._error(
+            String("Expected newline or end of document after a statement")
+        )
+
+    # ===-------------------------------------------------------------------===#
+    # Definition registry
+    # ===-------------------------------------------------------------------===#
+
+    def _knows(self, registry: Set[String], key: String) -> Bool:
+        """Reports whether `registry` already holds `key`.
+
+        Args:
+            registry: One of the parser's definition sets.
+            key: The joined key path to look for.
+
+        Returns:
+            True if the path is present.
+        """
+        return key in registry
+
+    def _frozen_prefix(self, path: List[String]) -> Int:
+        """Returns how many leading parts of `path` name a closed table.
+
+        An inline table is complete the moment it is written, so nothing may be
+        added to it afterwards.
+
+        Args:
+            path: The full key path being written to.
+
+        Returns:
+            The length of the frozen prefix, or 0 if there is none.
+        """
+        var prefix = String()
+        for length in range(len(path)):
+            if length:
+                prefix += _SEP
+            prefix += path[length]
+            if self._knows(self.closed, prefix):
+                return length + 1
+        return 0
+
+    # ===-------------------------------------------------------------------===#
+    # Keys
+    # ===-------------------------------------------------------------------===#
+
+    def _parse_key_part(mut self) raises -> String:
+        """Reads one part of a key, bare or quoted.
+
+        Returns:
+            The part's text.
+
+        Raises:
+            If no key starts at the cursor.
+        """
+        var b = self._peek()
+        if b == _DQUOTE:
+            return self._scan_basic_string(multiline=False)
+        if b == _SQUOTE:
+            return self._scan_literal_string(multiline=False)
+        var start = self.pos
+        while not self._at_end() and _is_bare_key_byte(self._peek()):
+            self.pos += 1
+        if self.pos == start:
+            raise self._error(String("Invalid statement"))
+        return String(unsafe_from_utf8=self.src[start : self.pos])
+
+    def _parse_key_path(mut self) raises -> List[String]:
+        """Reads a possibly dotted key.
+
+        Returns:
+            The parts of the key, outermost first.
+
+        Raises:
+            If the key is malformed.
+        """
+        var path = List[String]()
+        while True:
+            path.append(self._parse_key_part())
+            self._skip_spaces()
+            if self._peek() != _DOT:
+                return path^
+            self.pos += 1
+            self._skip_spaces()
+
+    # ===-------------------------------------------------------------------===#
+    # Tables
+    # ===-------------------------------------------------------------------===#
+
+    def _child_table(
+        mut self, table: UInt32, name: StringSlice, mut registry: List[String]
+    ) -> UInt32:
+        """Returns the child table called `name`, creating it if absent.
+
+        An array of tables resolves to its last element, which is where a
+        `[parent.child]` header appends, and contributes an element marker to
+        the registry path so that each element keeps its own namespace.
+
+        Args:
+            table: The parent table.
+            name: The child's name.
+            registry: The registry path built so far, extended in place.
+
+        Returns:
+            The child table's node index.
+        """
+        registry.append(String(name))
+        var at = self.tape.find_member(table, name.as_bytes())
+        if at >= 0:
+            var start = Int(self.tape.nodes[Int(table)].a)
+            var child = self.tape.kids[start + 2 * at + 1]
+            if self.tape.nodes[Int(child)].kind == _KIND_ARRAY:
+                var info = self.tape.nodes[Int(child)]
+                if info.b:
+                    registry.append(String(_ELEMENT, Int(info.b) - 1))
+                    return self.tape.kids[Int(info.a) + Int(info.b) - 1]
+            return child
+        var created = self.tape.new_container(_KIND_OBJECT)
+        var key = self.tape.push_string(name.as_bytes())
+        self.tape.object_push(table, key, created)
+        return created
+
+    def _parse_table_header(mut self) raises:
+        """Reads a `[table]` or `[[array]]` header and moves the cursor into it.
+
+        Raises:
+            If the header is malformed or redefines something.
+        """
+        self.pos += 1  # the bracket
+        var is_array = self._peek() == _LBRACKET
+        if is_array:
+            self.pos += 1
+        self._skip_spaces()
+        var path = self._parse_key_path()
+        var probe = List[String]()
+        var probe_table = self.root
+        for i in range(len(path) - 1):
+            probe_table = self._child_table(probe_table, path[i], probe)
+        probe.append(path[len(path) - 1])
+        var joined = _join(probe)
+
+        var frozen = self._frozen_prefix(probe)
+        if frozen or self._knows(self.dotted, joined):
+            raise self._error(
+                String("Cannot declare ", _quote_path(path), " twice")
+            )
+        if is_array:
+            if self._knows(self.declared, joined) or self._knows(
+                self.assigned, joined
+            ):
+                raise self._error(String("Cannot overwrite a value"))
+        elif (
+            self._knows(self.declared, joined)
+            or self._knows(self.array_declared, joined)
+            or self._knows(self.assigned, joined)
+        ):
+            raise self._error(
+                String("Cannot declare ", _quote_path(path), " twice")
+            )
+
+        self._skip_spaces()
+        if is_array:
+            if (
+                self._peek() != _RBRACKET
+                or self._byte(self.pos + 1) != _RBRACKET
+            ):
+                raise self._error(
+                    String(
+                        "Expected ']]' at the end of an array-of-tables"
+                        " declaration"
+                    )
+                )
+            self.pos += 2
+        else:
+            if self._peek() != _RBRACKET:
+                raise self._error(
+                    String("Expected ']' at the end of a table declaration")
+                )
+            self.pos += 1
+
+        var registry = List[String]()
+        var table = self.root
+        for i in range(len(path) - 1):
+            table = self._child_table(table, path[i], registry)
+        var last = path[len(path) - 1]
+
+        if is_array:
+            var at = self.tape.find_member(table, last.as_bytes())
+            var array: UInt32
+            if at >= 0:
+                array = self.tape.kids[
+                    Int(self.tape.nodes[Int(table)].a) + 2 * at + 1
+                ]
+            else:
+                array = self.tape.new_container(_KIND_ARRAY)
+                var key = self.tape.push_string(last.as_bytes())
+                self.tape.object_push(table, key, array)
+            var entry = self.tape.new_container(_KIND_OBJECT)
+            self.tape.array_push(array, entry)
+            self.current = entry
+            self.array_declared.add(joined)
+            registry.append(last)
+            registry.append(
+                String(_ELEMENT, Int(self.tape.nodes[Int(array)].b) - 1)
+            )
+        else:
+            self.current = self._child_table(table, last, registry)
+            self.declared.add(_join(registry))
+
+        self.current_path = path^
+        self.registry_joined = _join(registry)
+        self.registry_path = registry^
+
+    # ===-------------------------------------------------------------------===#
+    # Key/value pairs
+    # ===-------------------------------------------------------------------===#
+
+    def _parse_pair(mut self) raises:
+        """Reads one `key = value` statement into the current table.
+
+        Raises:
+            If the statement is malformed or overwrites something.
+        """
+        var path = self._parse_key_path()
+        self._skip_spaces()
+        if self._peek() != _EQUALS:
+            raise self._error(
+                String("Expected '=' after a key in a key/value pair")
+            )
+        self.pos += 1
+        self._skip_spaces()
+        var value = self._parse_value(0)
+
+        var full = List[String](capacity=len(self.registry_path) + len(path))
+        for i in range(len(self.registry_path)):
+            full.append(self.registry_path[i])
+        for i in range(len(path)):
+            full.append(path[i])
+
+        var joined: String
+        if len(self.registry_path) == 0:
+            joined = _join(path)
+        else:
+            joined = String(self.registry_joined)
+            for i in range(len(path)):
+                joined += _SEP
+                joined += path[i]
+
+        var frozen = self._frozen_prefix(full)
+        if frozen and frozen < len(full):
+            # Name the offending table the way it was written, which means
+            # dropping the element markers the registry path carries.
+            var display = List[String]()
+            for i in range(len(self.current_path)):
+                display.append(self.current_path[i])
+            for i in range(len(path)):
+                display.append(path[i])
+            var prefix = List[String]()
+            var kept = 0
+            for i in range(frozen):
+                if not full[i].startswith(_ELEMENT):
+                    kept += 1
+            for i in range(kept):
+                prefix.append(display[i])
+            raise self._error(
+                String(
+                    "Cannot mutate immutable namespace ", _quote_path(prefix)
+                )
+            )
+        if (
+            self._knows(self.assigned, joined)
+            or self._knows(self.declared, joined)
+            or self._knows(self.array_declared, joined)
+        ):
+            raise self._error(String("Cannot overwrite a value"))
+
+        var table = self.current
+        if len(path) > 1:
+            var walked = List[String]()
+            for i in range(len(self.registry_path)):
+                walked.append(self.registry_path[i])
+            for i in range(len(path) - 1):
+                table = self._child_table(table, path[i], walked)
+                var prefix_key = _join(walked)
+                if not self._knows(self.dotted, prefix_key):
+                    self.dotted.add(prefix_key)
+
+        var last = path[len(path) - 1]
+        if self.tape.find_member(table, last.as_bytes()) >= 0:
+            raise self._error(String("Cannot overwrite a value"))
+        var key = self.tape.push_string(last.as_bytes())
+        self.tape.object_push(table, key, value)
+        self.assigned.add(joined)
+
+        var kind = self.tape.nodes[Int(value)].kind
+        if kind == _KIND_OBJECT or kind == _KIND_ARRAY:
+            # An inline table or a static array is complete as written.
+            self.closed.add(joined)
+
+    # ===-------------------------------------------------------------------===#
+    # Strings
+    # ===-------------------------------------------------------------------===#
+
+    def _read_hex(mut self, count: Int) raises -> Int:
+        """Reads `count` hexadecimal digits of a `\\u` escape.
+
+        Args:
+            count: How many digits the escape carries.
+
+        Returns:
+            The scalar value they encode.
+
+        Raises:
+            If fewer digits are present or one is not hexadecimal.
+        """
+        if self.pos + count > len(self.src):
+            raise self._error(String("Invalid escape sequence"))
+        var value = 0
+        for i in range(count):
+            var b = self._byte(self.pos + i)
+            var digit: Int
+            if _is_digit(b):
+                digit = Int(b - 0x30)
+            elif b >= 0x61 and b <= 0x66:
+                digit = Int(b - 0x61) + 10
+            elif b >= 0x41 and b <= 0x46:
+                digit = Int(b - 0x41) + 10
+            else:
+                raise self._error(String("Invalid escape sequence"))
+            value = value * 16 + digit
+        self.pos += count
+        return value
+
+    def _scan_basic_string(mut self, *, multiline: Bool) raises -> String:
+        """Reads a `"` or `\"\"\"` string, decoding its escapes.
+
+        Args:
+            multiline: Whether the caller already knows this is a `\"\"\"`
+                string. When False the opening delimiter is inspected, so a
+                triple quote is still recognised.
+
+        Returns:
+            The string's text.
+
+        Raises:
+            If the string never closes or holds a bad escape.
+        """
+        var triple = multiline
+        if (
+            not multiline
+            and self._byte(self.pos + 1) == _DQUOTE
+            and self._byte(self.pos + 2) == _DQUOTE
+        ):
+            triple = True
+        self.pos += 3 if triple else 1
+        if triple and (self._peek() == _NEWLINE or self._peek() == _RETURN):
+            # A newline immediately after the opening delimiter is trimmed.
+            self._consume_newline()
+
+        var out = List[UInt8]()
+        while True:
+            if self._at_end():
+                raise self._error(String("Unterminated string"))
+            var b = self._peek()
+            if b == _DQUOTE:
+                if not triple:
+                    self.pos += 1
+                    break
+                if (
+                    self._byte(self.pos + 1) == _DQUOTE
+                    and self._byte(self.pos + 2) == _DQUOTE
+                ):
+                    self.pos += 3
+                    break
+                out.append(b)
+                self.pos += 1
+                continue
+            if b == _NEWLINE or b == _RETURN:
+                if not triple:
+                    raise self._error(String("Illegal character '\\n'"))
+                self._consume_newline()
+                out.append(_NEWLINE)
+                continue
+            if b == _BACKSLASH:
+                self._decode_escape(out, triple)
+                continue
+            out.append(b)
+            self.pos += 1
+        return String(unsafe_from_utf8=Span(out))
+
+    def _decode_escape(mut self, mut out: List[UInt8], triple: Bool) raises:
+        """Consumes one `\\`-escape and appends what it stands for.
+
+        Args:
+            out: The buffer collecting the string's bytes.
+            triple: Whether this is a multi-line string, where a backslash at
+                the end of a line swallows the break and the indent after it.
+
+        Raises:
+            If the escape is not one TOML defines.
+        """
+        var e = self._byte(self.pos + 1)
+        if triple and (
+            e == _NEWLINE or e == _RETURN or e == _SPACE or e == _TAB
+        ):
+            # A line-ending backslash trims the break and the whitespace round
+            # it, so `"""a \<newline>  b"""` is `a b`.
+            var probe = self.pos + 1
+            while probe < len(self.src) and (
+                self._byte(probe) == _SPACE or self._byte(probe) == _TAB
+            ):
+                probe += 1
+            if probe < len(self.src) and (
+                self._byte(probe) == _NEWLINE or self._byte(probe) == _RETURN
+            ):
+                self.pos = probe
+                self._consume_newline()
+                while not self._at_end():
+                    var c = self._peek()
+                    if c == _SPACE or c == _TAB:
+                        self.pos += 1
+                    elif c == _NEWLINE or c == _RETURN:
+                        self._consume_newline()
+                    else:
+                        break
+                return
+        self.pos += 2
+        if e == 0x62:  # b
+            out.append(0x08)
+        elif e == 0x74:  # t
+            out.append(0x09)
+        elif e == 0x6E:  # n
+            out.append(0x0A)
+        elif e == 0x66:  # f
+            out.append(0x0C)
+        elif e == 0x72:  # r
+            out.append(0x0D)
+        elif e == _DQUOTE or e == _BACKSLASH:
+            out.append(e)
+        elif e == 0x75:  # u
+            _append_utf8(out, self._read_hex(4))
+        elif e == 0x55:  # U
+            _append_utf8(out, self._read_hex(8))
+        else:
+            raise self._error(String("Invalid escape sequence"))
+
+    def _scan_literal_string(mut self, *, multiline: Bool) raises -> String:
+        """Reads a `\'` or `\'\'\'` string, which has no escapes.
+
+        Args:
+            multiline: Whether the caller already knows this is a `\'\'\'`
+                string.
+
+        Returns:
+            The string's text, exactly as written.
+
+        Raises:
+            If the string never closes.
+        """
+        var triple = multiline
+        if (
+            not multiline
+            and self._byte(self.pos + 1) == _SQUOTE
+            and self._byte(self.pos + 2) == _SQUOTE
+        ):
+            triple = True
+        self.pos += 3 if triple else 1
+        if triple and (self._peek() == _NEWLINE or self._peek() == _RETURN):
+            self._consume_newline()
+
+        var start = self.pos
+        var out = List[UInt8]()
+        while True:
+            if self._at_end():
+                raise self._error(String("Unterminated string"))
+            var b = self._peek()
+            if b == _SQUOTE:
+                if not triple:
+                    self.pos += 1
+                    break
+                if (
+                    self._byte(self.pos + 1) == _SQUOTE
+                    and self._byte(self.pos + 2) == _SQUOTE
+                ):
+                    self.pos += 3
+                    break
+            if b == _NEWLINE or b == _RETURN:
+                if not triple:
+                    raise self._error(String("Illegal character '\\n'"))
+                self._consume_newline()
+                out.append(_NEWLINE)
+                continue
+            out.append(b)
+            self.pos += 1
+        _ = start
+        return String(unsafe_from_utf8=Span(out))
+
+    # ===-------------------------------------------------------------------===#
+    # Values
+    # ===-------------------------------------------------------------------===#
+
+    def _scan_value_token(mut self) -> Tuple[Int, Int]:
+        """Advances past a bare value and returns its byte range.
+
+        Returns:
+            The start and end offsets of the token.
+        """
+        var start = self.pos
+        while not self._at_end():
+            var b = self._peek()
+            if (
+                b == _SPACE
+                or b == _TAB
+                or b == _NEWLINE
+                or b == _RETURN
+                or b == _COMMA
+                or b == _RBRACKET
+                or b == _RBRACE
+                or b == _HASH
+            ):
+                break
+            self.pos += 1
+        # A date and a time may be separated by a space instead of a `T`.
+        if (
+            self.pos - start >= 10
+            and self._byte(start + 4) == _MINUS
+            and self._peek() == _SPACE
+            and _is_digit(self._byte(self.pos + 1))
+            and _is_digit(self._byte(self.pos + 2))
+            and self._byte(self.pos + 3) == _COLON
+        ):
+            self.pos += 1
+            while not self._at_end():
+                var b = self._peek()
+                if (
+                    b == _SPACE
+                    or b == _TAB
+                    or b == _NEWLINE
+                    or b == _RETURN
+                    or b == _COMMA
+                    or b == _RBRACKET
+                    or b == _RBRACE
+                    or b == _HASH
+                ):
+                    break
+                self.pos += 1
+        return (start, self.pos)
+
+    def _parse_value(mut self, depth: Int) raises -> UInt32:
+        """Parses one value, recursing into arrays and inline tables.
+
+        Both bracketed forms are handled inside this one function so that the
+        recursion is a single function calling itself; a longer cycle makes the
+        Mojo elaborator hang.
+
+        Args:
+            depth: How deeply nested this value is.
+
+        Returns:
+            The index of the new node.
+
+        Raises:
+            `TOMLDecodeError` if the value is malformed.
+        """
+        if depth > MAX_DEPTH:
+            raise self._error(
+                String("Exceeded maximum nesting depth of ", MAX_DEPTH)
+            )
+        var b = self._peek()
+
+        if b == _DQUOTE:
+            var text = self._scan_basic_string(multiline=False)
+            return self.tape.push_string(text.as_bytes())
+        if b == _SQUOTE:
+            var text = self._scan_literal_string(multiline=False)
+            return self.tape.push_string(text.as_bytes())
+
+        if b == _LBRACKET:
+            self.pos += 1
+            var node = self.tape.new_container(_KIND_ARRAY)
+            while True:
+                self._skip_array_space()
+                if self._at_end():
+                    raise TOMLDecodeError(String("Unclosed array"), 0, 0)
+                if self._peek() == _RBRACKET:
+                    self.pos += 1
+                    break
+                var item = self._parse_value(depth + 1)
+                self.tape.array_push(node, item)
+                self._skip_array_space()
+                if self._peek() == _COMMA:
+                    self.pos += 1
+                    continue
+                if self._peek() == _RBRACKET:
+                    self.pos += 1
+                    break
+                if self._at_end():
+                    raise TOMLDecodeError(String("Unclosed array"), 0, 0)
+                raise self._error(String("Unclosed array"))
+            return node
+
+        if b == _LBRACE:
+            self.pos += 1
+            var node = self.tape.new_container(_KIND_OBJECT)
+            self._skip_spaces()
+            if self._peek() == _RBRACE:
+                self.pos += 1
+                return node
+            while True:
+                self._skip_spaces()
+                var path = self._parse_key_path()
+                self._skip_spaces()
+                if self._peek() != _EQUALS:
+                    raise self._error(
+                        String("Expected '=' after a key in a key/value pair")
+                    )
+                self.pos += 1
+                self._skip_spaces()
+                var value = self._parse_value(depth + 1)
+                var table = node
+                var ignored = List[String]()
+                for i in range(len(path) - 1):
+                    table = self._child_table(table, path[i], ignored)
+                var last = path[len(path) - 1]
+                if self.tape.find_member(table, last.as_bytes()) >= 0:
+                    raise self._error(String("Cannot overwrite a value"))
+                var key = self.tape.push_string(last.as_bytes())
+                self.tape.object_push(table, key, value)
+                self._skip_spaces()
+                if self._peek() == _COMMA:
+                    self.pos += 1
+                    continue
+                if self._peek() == _RBRACE:
+                    self.pos += 1
+                    break
+                raise self._error(String("Unclosed inline table"))
+            return node
+
+        var start, end = self._scan_value_token()
+        if end == start:
+            raise self._error(String("Invalid value"))
+        var text = StringSlice(unsafe_from_utf8=self.src[start:end])
+        return self._classify(text, start)
+
+    def _skip_array_space(mut self):
+        """Advances past whitespace, line breaks and comments inside an array.
+        """
+        while not self._at_end():
+            var b = self._peek()
+            if b == _SPACE or b == _TAB:
+                self.pos += 1
+            elif b == _NEWLINE or b == _RETURN:
+                self._consume_newline()
+            elif b == _HASH:
+                self._skip_comment()
+            else:
+                return
+
+    def _classify(mut self, text: StringSlice, start: Int) raises -> UInt32:
+        """Turns a bare token into a node.
+
+        Args:
+            text: The token, exactly as written.
+            start: Where the token began, for error reporting.
+
+        Returns:
+            The index of the new node.
+
+        Raises:
+            If the token is not a value TOML defines.
+        """
+        if text == "true":
+            return self.tape.push(_Node.scalar(_KIND_BOOL, 1))
+        if text == "false":
+            return self.tape.push(_Node.scalar(_KIND_BOOL, 0))
+
+        if _looks_like_datetime(text):
+            # There is no date type here, so the literal is kept verbatim.
+            return self.tape.push_string(text.as_bytes())
+
+        var number = _parse_number(text)
+        if number:
+            var value = number.value()
+            if value.is_float:
+                return self.tape.push(
+                    _Node.scalar(
+                        _KIND_FLOAT, value.floating.to_bits[DType.uint64]()
+                    )
+                )
+            return self.tape.push(
+                _Node.scalar(_KIND_INT, UInt64(Int64(value.integer)))
+            )
+
+        self.pos = start
+        raise self._error(String("Invalid value"))
+
+    # ===-------------------------------------------------------------------===#
+    # Entry point
+    # ===-------------------------------------------------------------------===#
+
+    def parse(mut self) raises -> UInt32:
+        """Decodes the whole document.
+
+        Returns:
+            The index of the root table.
+
+        Raises:
+            `TOMLDecodeError` if the document is not valid TOML.
+        """
+        self.root = self.tape.new_container(_KIND_OBJECT)
+        self.current = self.root
+        while True:
+            self._skip_to_statement()
+            if self._at_end():
+                break
+            if self._peek() == _LBRACKET:
+                self._parse_table_header()
+            else:
+                self._parse_pair()
+            self._expect_statement_end()
+        return self.root
+
+
+def _append_utf8(mut out: List[UInt8], cp: Int):
+    """Appends one codepoint to `out` as UTF-8.
+
+    Args:
+        out: The buffer to append to.
+        cp: The codepoint to encode.
+    """
+    if cp < 0x80:
+        out.append(UInt8(cp))
+    elif cp < 0x800:
+        out.append(UInt8(0xC0 | (cp >> 6)))
+        out.append(UInt8(0x80 | (cp & 0x3F)))
+    elif cp < 0x10000:
+        out.append(UInt8(0xE0 | (cp >> 12)))
+        out.append(UInt8(0x80 | ((cp >> 6) & 0x3F)))
+        out.append(UInt8(0x80 | (cp & 0x3F)))
+    else:
+        out.append(UInt8(0xF0 | (cp >> 18)))
+        out.append(UInt8(0x80 | ((cp >> 12) & 0x3F)))
+        out.append(UInt8(0x80 | ((cp >> 6) & 0x3F)))
+        out.append(UInt8(0x80 | (cp & 0x3F)))
+
+
+def _looks_like_datetime(text: StringSlice) -> Bool:
+    """Reports whether a bare token is a date, a time or a date-time.
+
+    Args:
+        text: The token to inspect.
+
+    Returns:
+        True if it starts with `YYYY-MM-DD` or `HH:MM:SS`.
+    """
+    var b = text.as_bytes()
+    if (
+        len(b) >= 10
+        and _is_digit(b[0])
+        and _is_digit(b[1])
+        and _is_digit(b[2])
+        and _is_digit(b[3])
+        and b[4] == _MINUS
+        and _is_digit(b[5])
+        and _is_digit(b[6])
+        and b[7] == _MINUS
+        and _is_digit(b[8])
+        and _is_digit(b[9])
+    ):
+        return True
+    return (
+        len(b) >= 8
+        and _is_digit(b[0])
+        and _is_digit(b[1])
+        and b[2] == _COLON
+        and _is_digit(b[3])
+        and _is_digit(b[4])
+        and b[5] == _COLON
+        and _is_digit(b[6])
+        and _is_digit(b[7])
+    )
+
+
+@fieldwise_init
+struct _Number(Copyable, ImplicitlyCopyable, Movable):
+    """A parsed numeric literal, integer or float."""
+
+    var is_float: Bool
+    """Whether the literal carried a fraction, an exponent or was non-finite."""
+
+    var integer: Int
+    """The value, when this is an integer."""
+
+    var floating: Float64
+    """The value, when this is a float."""
+
+
+def _strip_underscores(text: StringSlice) -> Optional[String]:
+    """Removes the digit-grouping underscores TOML allows.
+
+    Args:
+        text: The literal to clean.
+
+    Returns:
+        The literal without underscores, or `None` if one sits anywhere other
+        than between two digits.
+    """
+    var bytes = text.as_bytes()
+    var kept = List[UInt8](capacity=len(bytes))
+    for i in range(len(bytes)):
+        if bytes[i] != _UNDERSCORE:
+            kept.append(bytes[i])
+            continue
+        if i == 0 or i + 1 == len(bytes):
+            return None
+        if not _is_hex_digit(bytes[i - 1]) or not _is_hex_digit(bytes[i + 1]):
+            return None
+    return String(unsafe_from_utf8=Span(kept))
+
+
+@always_inline
+def _is_hex_digit(b: UInt8) -> Bool:
+    """Reports whether `b` is a hexadecimal digit.
+
+    Args:
+        b: The byte to test.
+
+    Returns:
+        True for `0`-`9`, `a`-`f` and `A`-`F`.
+    """
+    return (
+        _is_digit(b) or (b >= 0x61 and b <= 0x66) or (b >= 0x41 and b <= 0x46)
+    )
+
+
+def _digits_in_base(text: StringSlice, base: Int) -> Optional[Int]:
+    """Parses `text` as an unsigned integer in `base`.
+
+    Args:
+        text: The digits, already free of underscores.
+        base: The radix, 2, 8, 10 or 16.
+
+    Returns:
+        The value, or `None` if `text` is empty or holds a digit out of range.
+    """
+    var bytes = text.as_bytes()
+    if len(bytes) == 0:
+        return None
+    var value = 0
+    for i in range(len(bytes)):
+        var b = bytes[i]
+        var digit: Int
+        if _is_digit(b):
+            digit = Int(b - 0x30)
+        elif b >= 0x61 and b <= 0x66:
+            digit = Int(b - 0x61) + 10
+        elif b >= 0x41 and b <= 0x46:
+            digit = Int(b - 0x41) + 10
+        else:
+            return None
+        if digit >= base:
+            return None
+        value = value * base + digit
+    return value
+
+
+def _parse_number(text: StringSlice) raises -> Optional[_Number]:
+    """Parses a bare token as a TOML number.
+
+    Args:
+        text: The token, exactly as written.
+
+    Returns:
+        The number it denotes, or `None` if it is not one.
+
+    Raises:
+        Never; the signature matches its caller.
+    """
+    var bytes = text.as_bytes()
+    if len(bytes) == 0:
+        return None
+
+    var negative = False
+    var body_start = 0
+    if bytes[0] == _PLUS or bytes[0] == _MINUS:
+        negative = bytes[0] == _MINUS
+        body_start = 1
+    var body = text[byte = body_start : len(bytes)]
+
+    if body == "inf":
+        var value = Float64("-inf") if negative else Float64("inf")
+        return _Number(True, 0, value)
+    if body == "nan":
+        return _Number(True, 0, Float64("nan"))
+
+    var cleaned_opt = _strip_underscores(body)
+    if not cleaned_opt:
+        return None
+    var cleaned = cleaned_opt.value()
+    var n = cleaned.byte_length()
+    if n == 0:
+        return None
+
+    var first = cleaned.as_bytes()[0]
+    var second = cleaned.as_bytes()[1] if n > 1 else UInt8(0)
+    if first == 0x30 and n > 1 and (second | 0x20) == 0x78:  # 0x
+        var magnitude = _digits_in_base(cleaned[byte=2:n], 16)
+        if not magnitude:
+            return None
+        return _Number(
+            False, -magnitude.value() if negative else magnitude.value(), 0
+        )
+    if first == 0x30 and n > 1 and (second | 0x20) == 0x6F:  # 0o
+        var magnitude = _digits_in_base(cleaned[byte=2:n], 8)
+        if not magnitude:
+            return None
+        return _Number(
+            False, -magnitude.value() if negative else magnitude.value(), 0
+        )
+    if first == 0x30 and n > 1 and (second | 0x20) == 0x62:  # 0b
+        var magnitude = _digits_in_base(cleaned[byte=2:n], 2)
+        if not magnitude:
+            return None
+        return _Number(
+            False, -magnitude.value() if negative else magnitude.value(), 0
+        )
+
+    var has_dot = False
+    var has_exponent = False
+    for i in range(n):
+        var b = cleaned.as_bytes()[i]
+        if b == _DOT:
+            has_dot = True
+        elif (b | 0x20) == 0x65 and i > 0:
+            has_exponent = True
+
+    if not has_dot and not has_exponent:
+        # A leading zero is only allowed on its own, so `01` is not a number.
+        if n > 1 and first == 0x30:
+            return None
+        var magnitude = _digits_in_base(cleaned, 10)
+        if not magnitude:
+            return None
+        return _Number(
+            False, -magnitude.value() if negative else magnitude.value(), 0
+        )
+
+    if not _is_valid_float(cleaned):
+        return None
+    var value = atof(cleaned)
+    return _Number(True, 0, -value if negative else value)
+
+
+def _is_valid_float(text: StringSlice) -> Bool:
+    """Checks the shape of a decimal float literal.
+
+    TOML wants digits on both sides of the point and at least one digit in the
+    exponent, so `1.` and `.5` and `1e` are not floats.
+
+    Args:
+        text: The literal, without a sign or underscores.
+
+    Returns:
+        True if the literal is a well-formed float.
+    """
+    var bytes = text.as_bytes()
+    var i = 0
+    var digits = 0
+    while i < len(bytes) and _is_digit(bytes[i]):
+        digits += 1
+        i += 1
+    if digits == 0:
+        return False
+    if digits > 1 and bytes[0] == 0x30:
+        return False
+    if i < len(bytes) and bytes[i] == _DOT:
+        i += 1
+        var fraction = 0
+        while i < len(bytes) and _is_digit(bytes[i]):
+            fraction += 1
+            i += 1
+        if fraction == 0:
+            return False
+    if i < len(bytes):
+        if (bytes[i] | 0x20) != 0x65:
+            return False
+        i += 1
+        if i < len(bytes) and (bytes[i] == _PLUS or bytes[i] == _MINUS):
+            i += 1
+        var exponent = 0
+        while i < len(bytes) and _is_digit(bytes[i]):
+            exponent += 1
+            i += 1
+        if exponent == 0:
+            return False
+    return i == len(bytes)

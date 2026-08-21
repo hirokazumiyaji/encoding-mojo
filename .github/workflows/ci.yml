@@ -15,15 +15,17 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Mojo and PyYAML
-        run: pip install modular pyyaml
+      - name: Install Mojo and the reference libraries
+        run: pip install modular pyyaml tomli_w
 
       - name: Check generated compatibility cases are current
         run: |
           python3 scripts/gen_compat_cases.py
           python3 scripts/gen_yaml_compat_cases.py
+          python3 scripts/gen_toml_compat_cases.py
           git diff --exit-code test/json/test_python_compat.mojo
           git diff --exit-code test/yaml/test_pyyaml_compat.mojo
+          git diff --exit-code test/toml/test_tomllib_compat.mojo
 
       - name: Run tests
         run: ./scripts/run_tests.sh
@@ -40,8 +42,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Mojo and PyYAML
-        run: pip install modular pyyaml
+      - name: Install Mojo and the reference libraries
+        run: pip install modular pyyaml tomli_w
 
       - name: Benchmark json against CPython
         run: |
@@ -58,3 +60,11 @@ jobs:
           mojo run -I src bench/yaml/bench_yaml.mojo
           echo "== PyYAML"
           python3 bench/yaml/bench_python.py
+
+      - name: Benchmark toml against tomllib
+        run: |
+          python3 bench/toml/gen_data.py
+          echo "== toml-mojo"
+          mojo run -I src bench/toml/bench_toml.mojo
+          echo "== CPython"
+          python3 bench/toml/bench_python.py
