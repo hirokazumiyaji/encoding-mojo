@@ -15,5 +15,6 @@ document can be dumped as JSON without conversion.
 from serde import Value as YAMLValue
 from serde import ValueType as YAMLType
 
-from .api import safe_load, safe_load_all
+from .api import safe_dump, safe_dump_all, safe_load, safe_load_all
+from .emitter import EmitOptions
 from .errors import YAMLError

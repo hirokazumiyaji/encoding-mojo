@@ -245,7 +245,7 @@ struct _Parser(Movable):
         if not self._at_end():
             self._consume_break()
 
-    def _find_content(mut self) -> Int:
+    def _find_content(mut self) raises -> Int:
         """Advances to the next content character and returns its column.
 
         Blank lines and comment-only lines are skipped. If the cursor already
@@ -253,14 +253,25 @@ struct _Parser(Movable):
 
         Returns:
             The column of the content, or -1 at end of input.
+
+        Raises:
+            `YAMLError` if a line is indented with a tab, which YAML forbids.
         """
         while True:
-            self._skip_blanks_inline()
+            var from_line_start = self.pos == self.line_start
+            var saw_tab = False
+            while not self._at_end() and self._is_blank(self._peek()):
+                saw_tab = saw_tab or self._peek() == _TAB
+                self.pos += 1
             if self._at_end():
                 return -1
             if self._at_line_end():
                 self._skip_rest_of_line()
                 continue
+            if from_line_start and saw_tab:
+                raise self._error(
+                    String("found a tab character where an indent is expected")
+                )
             return self._column()
 
     def _at_document_marker(self) -> Bool:
@@ -549,6 +560,7 @@ struct _Parser(Movable):
 
         Args:
             indent: The column of the mapping's keys.
+            depth: How deeply nested this mapping is.
 
         Returns:
             The index of the new mapping node.
@@ -637,8 +649,10 @@ struct _Parser(Movable):
         """
         var kind = self.tape.nodes[Int(source)].kind
         if kind == _KIND_ARRAY:
+            # PyYAML reverses a list of merge sources before applying it, so
+            # the first mapping in the list wins over the later ones.
             var info = self.tape.nodes[Int(source)]
-            for i in range(Int(info.b)):
+            for i in reversed(range(Int(info.b))):
                 self._merge_into(node, self.tape.kids[Int(info.a) + i])
             return
         if kind != _KIND_OBJECT:
@@ -698,6 +712,7 @@ struct _Parser(Movable):
 
         Args:
             indent: The column of the mapping's keys.
+            depth: How deeply nested the mapping is.
 
         Returns:
             The index of the key's node.
@@ -842,6 +857,7 @@ struct _Parser(Movable):
             tag: The explicit tag in front of the node, if any. A tagged plain
                 scalar keeps its literal text so the tag decides its type,
                 which is why `!!str 0x10` stays `"0x10"`.
+            depth: How deeply nested this scalar is.
 
         Returns:
             The index of the new node.

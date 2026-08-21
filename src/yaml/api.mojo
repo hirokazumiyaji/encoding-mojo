@@ -5,6 +5,7 @@ from std.memory import ArcPointer
 from serde import Value
 from serde.tape import _Tape
 
+from .emitter import EmitOptions, emit_document
 from .errors import YAMLError
 from .parser import _Parser
 
@@ -50,4 +51,85 @@ def safe_load_all(text: StringSlice) raises -> List[Value]:
     var out = List[Value](capacity=len(roots))
     for i in range(len(roots)):
         out.append(Value(tape=tape, idx=roots[i]))
+    return out^
+
+
+def safe_dump(
+    value: Value,
+    *,
+    indent: Int = 2,
+    default_flow_style: Bool = False,
+    sort_keys: Bool = True,
+    allow_unicode: Bool = False,
+    explicit_start: Bool = False,
+) raises -> String:
+    """Serializes one value as a YAML document.
+
+    The defaults are PyYAML's: block style, a two-space indent, keys sorted,
+    and non-ASCII escaped.
+
+    Args:
+        value: The value to serialize.
+        indent: Spaces added for each level of block nesting.
+        default_flow_style: Whether to write the document on one line in flow
+            style.
+        sort_keys: Whether mapping members are emitted in sorted key order.
+        allow_unicode: Whether non-ASCII codepoints may be written verbatim
+            instead of escaped.
+        explicit_start: Whether to precede the document with `---`.
+
+    Returns:
+        The YAML text, ending in a newline.
+
+    Raises:
+        `YAMLError` if the document nests deeper than `MAX_DEPTH`.
+    """
+    var opts = EmitOptions(
+        indent=indent,
+        default_flow_style=default_flow_style,
+        sort_keys=sort_keys,
+        allow_unicode=allow_unicode,
+        explicit_start=explicit_start,
+    )
+    var out = String()
+    emit_document(out, value._tape[], value._idx, opts)
+    return out^
+
+
+def safe_dump_all(
+    values: List[Value],
+    *,
+    indent: Int = 2,
+    default_flow_style: Bool = False,
+    sort_keys: Bool = True,
+    allow_unicode: Bool = False,
+    explicit_start: Bool = False,
+) raises -> String:
+    """Serializes several values as one multi-document YAML stream.
+
+    Args:
+        values: The documents to serialize, in order.
+        indent: Spaces added for each level of block nesting.
+        default_flow_style: Whether to write each document in flow style.
+        sort_keys: Whether mapping members are emitted in sorted key order.
+        allow_unicode: Whether non-ASCII codepoints may be written verbatim.
+        explicit_start: Whether to precede every document with `---`, rather
+            than only the ones that need a separator.
+
+    Returns:
+        The YAML text, ending in a newline.
+
+    Raises:
+        `YAMLError` if a document nests deeper than `MAX_DEPTH`.
+    """
+    var out = String()
+    for i in range(len(values)):
+        var opts = EmitOptions(
+            indent=indent,
+            default_flow_style=default_flow_style,
+            sort_keys=sort_keys,
+            allow_unicode=allow_unicode,
+            explicit_start=explicit_start or i > 0,
+        )
+        emit_document(out, values[i]._tape[], values[i]._idx, opts)
     return out^

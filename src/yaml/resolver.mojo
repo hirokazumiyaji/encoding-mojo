@@ -316,3 +316,78 @@ def resolve_plain(mut tape: _Tape, text: StringSlice) raises -> UInt32:
             )
 
     return tape.push_string(text.as_bytes())
+
+
+def _is_timestamp(text: StringSlice) -> Bool:
+    """Reports whether `text` looks like a YAML 1.1 timestamp.
+
+    This library has no date type, so a timestamp loads as a string — but it
+    still has to be quoted when dumped, or reading the output back with PyYAML
+    would turn it into a `datetime`.
+
+    Args:
+        text: The plain scalar.
+
+    Returns:
+        True if the text starts with a `YYYY-MM-DD` date.
+    """
+    var bytes = text.as_bytes()
+    if len(bytes) < 8:
+        return False
+    for i in range(4):
+        if not _is_digit(bytes[i]):
+            return False
+    if bytes[4] != 0x2D:
+        return False
+    var i = 5
+    var digits = 0
+    while i < len(bytes) and _is_digit(bytes[i]):
+        digits += 1
+        i += 1
+    if digits < 1 or digits > 2 or i >= len(bytes) or bytes[i] != 0x2D:
+        return False
+    i += 1
+    digits = 0
+    while i < len(bytes) and _is_digit(bytes[i]):
+        digits += 1
+        i += 1
+    return digits >= 1 and digits <= 2
+
+
+def loads_as_string(text: StringSlice) raises -> Bool:
+    """Reports whether a plain scalar with this text would load as a string.
+
+    The dumper uses this to decide whether a string needs quotes: anything
+    that would come back as a different type has to be quoted to survive a
+    round trip.
+
+    Args:
+        text: The text to test.
+
+    Returns:
+        True if the text has no implicit type of its own.
+
+    Raises:
+        Never; the signature matches its caller.
+    """
+    if text.byte_length() == 0 or _matches(text, "~", "null", "Null", "NULL"):
+        return False
+    if _matches(
+        text, "true", "True", "TRUE", "yes", "Yes", "YES", "on", "On", "ON"
+    ):
+        return False
+    if _matches(
+        text, "false", "False", "FALSE", "no", "No", "NO", "off", "Off", "OFF"
+    ):
+        return False
+    if _matches(text, "<<", "="):
+        return False
+    if _is_timestamp(text):
+        return False
+    var first = text.as_bytes()[0]
+    if _is_digit(first) or first == 0x2B or first == 0x2D or first == 0x2E:
+        if _resolve_int(text):
+            return False
+        if _resolve_float(text):
+            return False
+    return True
