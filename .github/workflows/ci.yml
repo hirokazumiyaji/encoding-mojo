@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Mojo
+        run: pip install modular
+
+      - name: Check generated compatibility cases are current
+        run: |
+          python3 scripts/gen_compat_cases.py
+          git diff --exit-code test/json/test_python_compat.mojo
+
+      - name: Run tests
+        run: ./scripts/run_tests.sh
+
+      - name: Build packages
+        run: ./scripts/build_packages.sh
+
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Mojo
+        run: pip install modular
+
+      - name: Benchmark against CPython
+        run: |
+          python3 bench/json/gen_data.py
+          echo "== json-mojo"
+          mojo run -I src bench/json/bench_json.mojo
+          echo "== CPython"
+          python3 bench/json/bench_python.py
