@@ -262,6 +262,39 @@ def test_matches_pyyaml_005() raises:
         "a: 1\n",
     )
     _check(
+        "'<<': 1\n",
+        '{"<<":1}',
+        "'<<': 1\n",
+    )
+    _check(
+        '"<<": 1\n',
+        '{"<<":1}',
+        "'<<': 1\n",
+    )
+    _check(
+        "{'<<': 1}\n",
+        '{"<<":1}',
+        "'<<': 1\n",
+    )
+    _check(
+        "a: 1:59\nb: 1:30\nc: 1:0\nd: 1:00\ne: 12:34:56\nf: 1_0:30\n",
+        '{"a":119,"b":90,"c":60,"d":60,"e":45296,"f":630}',
+        "a: 119\nb: 90\nc: 60\nd: 60\ne: 45296\nf: 630\n",
+    )
+    _check(
+        "a: 1:60\nb: 1:99\nc: 1:005\nd: 0:30\ne: 01:30\n",
+        '{"a":"1:60","b":"1:99","c":"1:005","d":"0:30","e":"01:30"}',
+        "a: 1:60\nb: 1:99\nc: 1:005\nd: 0:30\ne: 01:30\n",
+    )
+
+
+def test_matches_pyyaml_006() raises:
+    _check(
+        "a: 1:30.5\nb: 0:30.5\nc: 1:2:3.5\nd: 1:60.5\n",
+        '{"a":90.5,"b":30.5,"c":3723.5,"d":"1:60.5"}',
+        "a: 90.5\nb: 30.5\nc: 3723.5\nd: 1:60.5\n",
+    )
+    _check(
         "'q key': 1\n",
         '{"q key":1}',
         "q key: 1\n",
@@ -292,9 +325,6 @@ def test_matches_pyyaml_005() raises:
             "  - null\n"
         ),
     )
-
-
-def test_matches_pyyaml_006() raises:
     _check(
         "'1.5'\n",
         '"1.5"',
@@ -305,6 +335,9 @@ def test_matches_pyyaml_006() raises:
         '[[],-2.371,""]',
         "- []\n- -2.371\n- ''\n",
     )
+
+
+def test_matches_pyyaml_007() raises:
     _check(
         "[]\n",
         "[]",
@@ -335,9 +368,6 @@ def test_matches_pyyaml_006() raises:
         '"  padded "',
         "'  padded '\n",
     )
-
-
-def test_matches_pyyaml_007() raises:
     _check(
         "日本語\n...\n",
         '"\\u65e5\\u672c\\u8a9e"',
@@ -348,6 +378,9 @@ def test_matches_pyyaml_007() raises:
         '"true"',
         "'true'\n",
     )
+
+
+def test_matches_pyyaml_008() raises:
     _check(
         "'*star'\n",
         '"*star"',
@@ -378,9 +411,6 @@ def test_matches_pyyaml_007() raises:
         "null",
         "null\n...\n",
     )
-
-
-def test_matches_pyyaml_008() raises:
     _check(
         "{}\n",
         "{}",
@@ -391,6 +421,9 @@ def test_matches_pyyaml_008() raises:
         '"\\u65e5\\u672c\\u8a9e"',
         '"\\u65E5\\u672C\\u8A9E"\n',
     )
+
+
+def test_matches_pyyaml_009() raises:
     _check(
         "k215: ''\n",
         '{"k215":""}',
@@ -421,9 +454,6 @@ def test_matches_pyyaml_008() raises:
         "[[]]",
         "- []\n",
     )
-
-
-def test_matches_pyyaml_009() raises:
     _check(
         (
             "- {}\n- nested7: null\n- - - 99.7713\n    - it's\n    - ''\n  -"
@@ -440,6 +470,9 @@ def test_matches_pyyaml_009() raises:
         '{"k112":{"a5":{"b7":"yes","key12":null}}}',
         "k112:\n  a5:\n    b7: 'yes'\n    key12: null\n",
     )
+
+
+def test_matches_pyyaml_010() raises:
     _check(
         "false\n...\n",
         "false",
@@ -476,9 +509,6 @@ def test_matches_pyyaml_009() raises:
         "{}",
         "{}\n",
     )
-
-
-def test_matches_pyyaml_010() raises:
     _check(
         "true\n...\n",
         "true",
@@ -489,6 +519,9 @@ def test_matches_pyyaml_010() raises:
         '{"b3":false}',
         "b3: false\n",
     )
+
+
+def test_matches_pyyaml_011() raises:
     _check(
         "- - - 98.3481\n",
         "[[[98.3481]]]",
@@ -519,9 +552,6 @@ def test_matches_pyyaml_010() raises:
         "{}",
         "{}\n",
     )
-
-
-def test_matches_pyyaml_011() raises:
     _check(
         "k111: {}\nk27:\n  k26:\n    x14: '1.5'\nx2: []\n",
         '{"k111":{},"k27":{"k26":{"x14":"1.5"}},"x2":[]}',
@@ -532,6 +562,9 @@ def test_matches_pyyaml_011() raises:
         "null",
         "null\n...\n",
     )
+
+
+def test_matches_pyyaml_012() raises:
     _check(
         '- {}\n- false\n- "\\u65E5\\u672C\\u8A9E"\n',
         '[{},false,"\\u65e5\\u672c\\u8a9e"]',
@@ -562,9 +595,6 @@ def test_matches_pyyaml_011() raises:
         "null",
         "null\n...\n",
     )
-
-
-def test_matches_pyyaml_012() raises:
     _check(
         "4.5431\n...\n",
         "4.5431",
@@ -575,6 +605,9 @@ def test_matches_pyyaml_012() raises:
         '["true",[]]',
         "- 'true'\n- []\n",
     )
+
+
+def test_matches_pyyaml_013() raises:
     _check(
         "- null\n- a6:\n  - -557\n  - null\n  b4:\n    nested6: ''\n- 254\n",
         '[null,{"a6":[-557,null],"b4":{"nested6":""}},254]',
@@ -605,9 +638,6 @@ def test_matches_pyyaml_012() raises:
         '"tab\\there"',
         '"tab\\there"\n',
     )
-
-
-def test_matches_pyyaml_013() raises:
     _check(
         "- a16:\n    a18: true\n    k14: it's\n",
         '[{"a16":{"a18":true,"k14":"it\'s"}}]',
@@ -642,6 +672,10 @@ def test_rejects_like_pyyaml_000() raises:
 def test_rejects_like_pyyaml_001() raises:
     with assert_raises():
         _ = safe_load("a: b: c\n")
+    with assert_raises():
+        _ = safe_load("a: - b\n")
+    with assert_raises():
+        _ = safe_load("a: - b\n  - c\n")
 
 
 def main() raises:

@@ -134,8 +134,8 @@ def _resolve_int(text: StringSlice) -> Optional[Int]:
     elif n > 1 and b0 == 0x30:
         # A leading zero means octal in YAML 1.1; `0o17` is not a number at all.
         magnitude = _digits_in_base(cleaned[byte=1:n], 8)
-    elif _sexagesimal_parts(cleaned) > 1:
-        magnitude = _resolve_sexagesimal_int(cleaned)
+    elif _has_colon(cleaned):
+        magnitude = _sexagesimal_value(cleaned, allow_leading_zero=False)
     else:
         if n > 1 and b0 == 0x30:
             return None
@@ -146,53 +146,70 @@ def _resolve_int(text: StringSlice) -> Optional[Int]:
     return -magnitude.value() if negative else magnitude.value()
 
 
-def _sexagesimal_parts(text: StringSlice) -> Int:
-    """Counts the colon-separated parts of a base-60 literal.
+def _has_colon(text: StringSlice) -> Bool:
+    """Reports whether `text` holds a colon.
 
     Args:
-        text: The literal, without a sign.
+        text: The literal to scan.
 
     Returns:
-        How many parts it has, or 0 if it is not base-60 at all.
+        True if a colon is present.
     """
     var bytes = text.as_bytes()
-    if len(bytes) == 0:
-        return 0
-    var parts = 1
     for i in range(len(bytes)):
         if bytes[i] == 0x3A:
-            parts += 1
-        elif not _is_digit(bytes[i]) and bytes[i] != 0x2E:
-            return 0
-    return parts
+            return True
+    return False
 
 
-def _resolve_sexagesimal_int(text: StringSlice) -> Optional[Int]:
-    """Parses a base-60 integer such as `1:30`.
+def _sexagesimal_value(
+    text: StringSlice, *, allow_leading_zero: Bool
+) -> Optional[Int]:
+    """Parses a base-60 literal such as `1:30`.
+
+    YAML 1.1 writes these as `[1-9][0-9_]*(:[0-5]?[0-9])+` for integers and
+    `[0-9][0-9_]*(:[0-5]?[0-9])+.[0-9_]*` for the whole part of a float. Every
+    component after the first is one or two digits and may not exceed 59, which
+    is why `1:60` and `1:005` stay strings.
 
     Args:
         text: The literal, without a sign or underscores.
+        allow_leading_zero: Whether the first component may start with `0`,
+            which the float form permits and the integer form does not.
 
     Returns:
-        The value, or `None` if a part is out of range.
+        The value, or `None` if the literal is not base-60 after all.
     """
+    var bytes = text.as_bytes()
+    if len(bytes) == 0:
+        return None
+
     var value = 0
     var part = 0
-    var seen = False
-    var bytes = text.as_bytes()
+    var digits = 0
+    var component = 0
+
     for i in range(len(bytes)):
-        if bytes[i] == 0x3A:
-            if not seen:
+        var b = bytes[i]
+        if b == 0x3A:
+            if digits == 0:
+                return None
+            if component == 0:
+                if not allow_leading_zero and bytes[0] == 0x30:
+                    return None
+            elif digits > 2 or part > 59:
                 return None
             value = value * 60 + part
             part = 0
-            seen = False
-        elif _is_digit(bytes[i]):
-            part = part * 10 + Int(bytes[i] - 0x30)
-            seen = True
+            digits = 0
+            component += 1
+        elif _is_digit(b):
+            part = part * 10 + Int(b - 0x30)
+            digits += 1
         else:
             return None
-    if not seen:
+
+    if component == 0 or digits == 0 or digits > 2 or part > 59:
         return None
     return value * 60 + part
 
@@ -222,7 +239,7 @@ def _resolve_float(text: StringSlice) raises -> Optional[Float64]:
         return None
 
     # Base-60 with a fraction, such as `1:30.5`.
-    if _sexagesimal_parts(cleaned) > 1:
+    if _has_colon(cleaned):
         var dot = -1
         for i in range(n):
             if cleaned.as_bytes()[i] == 0x2E:
@@ -230,7 +247,9 @@ def _resolve_float(text: StringSlice) raises -> Optional[Float64]:
                 break
         if dot < 0:
             return None
-        var whole = _resolve_sexagesimal_int(cleaned[byte=0:dot])
+        var whole = _sexagesimal_value(
+            cleaned[byte=0:dot], allow_leading_zero=True
+        )
         if not whole:
             return None
         var fraction = atof(String("0", cleaned[byte=dot:n]))

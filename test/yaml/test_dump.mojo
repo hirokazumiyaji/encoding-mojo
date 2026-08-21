@@ -157,6 +157,19 @@ def test_dump_explicit_start() raises:
     )
 
 
+def test_dump_recursive_alias() raises:
+    assert_equal(
+        safe_dump(safe_load("&a [1, *a]\n")), "&id001\n- 1\n- *id001\n"
+    )
+    assert_equal(
+        safe_dump(safe_load("&a {self: *a}\n")), "&id001\nself: *id001\n"
+    )
+
+
+def test_dump_literal_merge_key() raises:
+    _round("'<<': 1\n", "'<<': 1\n")
+
+
 def test_dump_all() raises:
     var docs = safe_load_all("a: 1\n---\nb: 2\n")
     assert_equal(safe_dump_all(docs), "a: 1\n---\nb: 2\n")

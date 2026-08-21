@@ -43,9 +43,12 @@ len(doc["nested"])          # 1
 
 Supported: block and flow collections, plain, single-quoted, double-quoted,
 literal (`|`) and folded (`>`) scalars with their chomping indicators and
-explicit indent, comments, document markers, anchors and aliases, merge keys
-(`<<`), and the standard `!!str`, `!!int`, `!!float`, `!!bool` and `!!null`
-tags.
+explicit indent, comments, document markers, anchors and aliases — including
+recursive ones such as `&a [1, *a]` — merge keys (`<<`), and the standard
+`!!str`, `!!int`, `!!float`, `!!bool` and `!!null` tags.
+
+A merge key only merges when it is written plain: `'<<': 1` is an ordinary
+string key, and the emitter quotes a literal `<<` key so that it round-trips.
 
 Failures raise a `YAMLError` naming the problem and the position:
 
@@ -66,7 +69,7 @@ The differences bite in practice:
 | `0o17`   | `"0o17"`       | 1.2's octal prefix is not a number in 1.1 |
 | `1_000`  | `1000`         | digits may be grouped |
 | `1e3`    | `"1e3"`        | an exponent needs an explicit sign, so this is a string |
-| `1:30`   | `90`           | base 60 |
+| `1:30`   | `90`           | base 60; components after the first must be 0-59, so `1:60` is a string |
 | `y`, `n` | `"y"`, `"n"`   | single letters are not booleans |
 
 ## Dumping

@@ -73,6 +73,14 @@ DOCUMENTS = [
     # Documents.
     "---\na: 1\n",
     "---\na: 1\n...\n",
+    # Merge keys only merge when written plain.
+    "'<<': 1\n",
+    '"<<": 1\n',
+    "{'<<': 1}\n",
+    # Base-60 scalars, whose components must stay inside 0..59.
+    "a: 1:59\nb: 1:30\nc: 1:0\nd: 1:00\ne: 12:34:56\nf: 1_0:30\n",
+    "a: 1:60\nb: 1:99\nc: 1:005\nd: 0:30\ne: 01:30\n",
+    "a: 1:30.5\nb: 0:30.5\nc: 1:2:3.5\nd: 1:60.5\n",
     # Keys.
     "'q key': 1\n",
     '"d key": 1\n',
@@ -91,6 +99,8 @@ BAD = [
     "a: *missing\n",
     'a: "\\q"\n',
     "a: b: c\n",
+    "a: - b\n",
+    "a: - b\n  - c\n",
 ]
 
 

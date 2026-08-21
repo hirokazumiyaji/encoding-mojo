@@ -202,6 +202,60 @@ def test_multiple_documents_rejected_by_safe_load() raises:
         _ = safe_load("---\na: 1\n---\nb: 2\n")
 
 
+def test_quoted_merge_key_is_an_ordinary_key() raises:
+    # Only a *plain* `<<` merges; quoting it makes it an ordinary string key.
+    _check("'<<': 1\n", '{"<<":1}')
+    _check('"<<": 1\n', '{"<<":1}')
+    _check("{'<<': 1}\n", '{"<<":1}')
+
+
+def test_recursive_anchor_on_a_sequence() raises:
+    # PyYAML registers an anchor before parsing the collection it names, so a
+    # collection may alias itself.
+    var doc = safe_load("&a [1, *a]\n")
+    assert_equal(len(doc), 2)
+    assert_equal(doc[0].int(), 1)
+    assert_equal(doc[1][0].int(), 1)
+
+
+def test_recursive_anchor_on_a_mapping() raises:
+    var doc = safe_load("&a {self: *a}\n")
+    assert_equal(len(doc), 1)
+    assert_equal(len(doc["self"]["self"]["self"]), 1)
+
+
+def test_recursive_anchor_inside_a_document() raises:
+    var doc = safe_load("a: &x [1, *x]\n")
+    assert_equal(doc["a"][1][0].int(), 1)
+
+
+def test_sexagesimal_components_must_be_in_range() raises:
+    _check(
+        "a: 1:59\nb: 1:30\nc: 1:0\nd: 1:00\n", '{"a":119,"b":90,"c":60,"d":60}'
+    )
+    # A component above 59, three digits, or a leading zero on the first part
+    # all leave the scalar a string.
+    _check(
+        "a: 1:60\nb: 1:99\nc: 1:005\nd: 0:30\ne: 01:30\n",
+        '{"a":"1:60","b":"1:99","c":"1:005","d":"0:30","e":"01:30"}',
+    )
+    _check("a: 12:34:56\nb: 1_0:30\nc: -1:30\n", '{"a":45296,"b":630,"c":-90}')
+
+
+def test_sexagesimal_floats() raises:
+    _check(
+        "a: 1:30.5\nb: 0:30.5\nc: 1:2:3.5\n", '{"a":90.5,"b":30.5,"c":3723.5}'
+    )
+    _check("a: 1:60.5\n", '{"a":"1:60.5"}')
+
+
+def test_inline_block_sequence_after_a_key_is_rejected() raises:
+    with assert_raises(contains="sequence entries are not allowed here"):
+        _ = safe_load("a: - b\n")
+    # A dash that is not followed by a space is just a plain scalar.
+    _check("a: -b\n", '{"a":"-b"}')
+
+
 def test_standard_tags() raises:
     _check('a: !!str 123\nb: !!int "42"\n', '{"a":"123","b":42}')
 

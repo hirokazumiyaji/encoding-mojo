@@ -508,7 +508,11 @@ struct _Parser(Movable):
         if not same_line and self._starts_block_entry():
             # A block sequence, inlined rather than delegated: keeping this
             # loop inside the hub holds the recursion cycle to two functions.
+            # The node exists before its children are parsed so that an anchor
+            # on it can already be resolved from inside, which is what makes a
+            # self-referencing collection such as `&a [1, *a]` work.
             node = self.tape.new_container(_KIND_ARRAY)
+            self._register_anchor(props, node)
             while True:
                 var at = self._find_content()
                 if at != col or self._at_document_marker():
@@ -519,10 +523,24 @@ struct _Parser(Movable):
                 var item = self._parse_node(col, depth + 1, seq_entry=True)
                 self.tape.array_push(node, item)
         elif not same_line and self._looks_like_key():
-            node = self._parse_block_mapping(col, depth)
+            node = self.tape.new_container(_KIND_OBJECT)
+            self._register_anchor(props, node)
+            self._parse_block_mapping(col, depth, node)
+        elif self._peek() == _LBRACKET:
+            node = self.tape.new_container(_KIND_ARRAY)
+            self._register_anchor(props, node)
+            self._parse_flow_sequence(depth + 1, node)
+        elif self._peek() == _LBRACE:
+            node = self.tape.new_container(_KIND_OBJECT)
+            self._register_anchor(props, node)
+            self._parse_flow_mapping(depth + 1, node)
         else:
             if same_line and self._looks_like_key():
                 raise self._error(String("mapping values are not allowed here"))
+            if same_line and self._starts_block_entry():
+                raise self._error(
+                    String("sequence entries are not allowed here")
+                )
             node = self._parse_scalar_node(parent_indent, props.tag, depth)
 
         self._register_anchor(props, node)
@@ -550,8 +568,8 @@ struct _Parser(Movable):
     # ===-------------------------------------------------------------------===#
 
     def _parse_block_mapping(
-        mut self, indent: Int, depth: Int
-    ) raises -> UInt32:
+        mut self, indent: Int, depth: Int, node: UInt32
+    ) raises:
         """Parses a block mapping whose keys sit at column `indent`.
 
         Merge keys are collected as they are seen and applied first, so an
@@ -561,9 +579,8 @@ struct _Parser(Movable):
         Args:
             indent: The column of the mapping's keys.
             depth: How deeply nested this mapping is.
-
-        Returns:
-            The index of the new mapping node.
+            node: The empty mapping node to fill. The caller creates it first
+                so that an anchor on it resolves from inside its own members.
 
         Raises:
             `YAMLError` if a member is malformed.
@@ -599,6 +616,7 @@ struct _Parser(Movable):
                     values.append(self._push_null())
                 continue
 
+            var key_is_plain = not _starts_quoted_or_flow(self._peek())
             var key_node = self._parse_key_node(indent, depth)
             self._skip_blanks_inline()
             if self._peek() != _COLON:
@@ -608,18 +626,16 @@ struct _Parser(Movable):
             var value = self._parse_node(
                 indent, depth + 1, inline_after_key=True
             )
-            if self._is_merge_key(key_node):
+            if key_is_plain and self._is_merge_key(key_node):
                 merges.append(value)
             else:
                 keys.append(self._key_text(key_node))
                 values.append(value)
 
-        var node = self.tape.new_container(_KIND_OBJECT)
         for i in range(len(merges)):
             self._merge_into(node, merges[i])
         for i in range(len(keys)):
             self._put(node, keys[i], values[i])
-        return node
 
     def _put(mut self, node: UInt32, key: StringSlice, value: UInt32):
         """Stores one member, replacing any earlier one with the same key.
@@ -667,7 +683,12 @@ struct _Parser(Movable):
             self._put(node, text, value)
 
     def _is_merge_key(self, node: UInt32) -> Bool:
-        """Reports whether `node` is the `<<` merge key.
+        """Reports whether `node` holds the merge key's text.
+
+        Callers also check that the key was written plain: a quoted `\'<<\'` is
+        an ordinary string key, and treating it as a merge would both reject
+        valid documents and break this library's own round trip, since the
+        emitter quotes a literal `<<` key.
 
         Args:
             node: The key node.
@@ -1317,9 +1338,13 @@ struct _Parser(Movable):
         var b = self._peek()
         var node: UInt32
         if b == _LBRACKET:
-            node = self._parse_flow_sequence(depth + 1)
+            node = self.tape.new_container(_KIND_ARRAY)
+            self._register_anchor(props, node)
+            self._parse_flow_sequence(depth + 1, node)
         elif b == _LBRACE:
-            node = self._parse_flow_mapping(depth + 1)
+            node = self.tape.new_container(_KIND_OBJECT)
+            self._register_anchor(props, node)
+            self._parse_flow_mapping(depth + 1, node)
         elif b == _SQUOTE:
             var text = self._scan_single_quoted()
             node = self.tape.push_string(text.as_bytes())
@@ -1335,17 +1360,18 @@ struct _Parser(Movable):
         self._register_anchor(props, node)
         return self._apply_tag(props, node)
 
-    def _parse_flow_sequence(mut self, depth: Int) raises -> UInt32:
+    def _parse_flow_sequence(mut self, depth: Int, node: UInt32) raises:
         """Parses a `[...]` flow sequence.
 
-        Returns:
-            The index of the new sequence node.
+        Args:
+            depth: How deeply nested this sequence is.
+            node: The empty sequence node to fill. The caller creates it first
+                so that an anchor on it resolves from inside its own elements.
 
         Raises:
             `YAMLError` if the sequence is malformed.
         """
         self.pos += 1  # the bracket
-        var node = self.tape.new_container(_KIND_ARRAY)
         while True:
             self._skip_flow_space()
             if self._at_end():
@@ -1379,13 +1405,14 @@ struct _Parser(Movable):
                 self.pos += 1
                 break
             raise self._error(String("expected ',' or ']'"))
-        return node
 
-    def _parse_flow_mapping(mut self, depth: Int) raises -> UInt32:
+    def _parse_flow_mapping(mut self, depth: Int, node: UInt32) raises:
         """Parses a `{...}` flow mapping.
 
-        Returns:
-            The index of the new mapping node.
+        Args:
+            depth: How deeply nested this mapping is.
+            node: The empty mapping node to fill. The caller creates it first
+                so that an anchor on it resolves from inside its own members.
 
         Raises:
             `YAMLError` if the mapping is malformed.
@@ -1405,6 +1432,8 @@ struct _Parser(Movable):
                 self.pos += 1
                 break
 
+            self._skip_flow_space()
+            var key_is_plain = not _starts_quoted_or_flow(self._peek())
             var key_node = self._parse_flow_node(depth + 1)
             self._skip_flow_space()
             var value: UInt32
@@ -1418,7 +1447,7 @@ struct _Parser(Movable):
             else:
                 value = self._push_null()
 
-            if self._is_merge_key(key_node):
+            if key_is_plain and self._is_merge_key(key_node):
                 merges.append(value)
             else:
                 keys.append(self._key_text(key_node))
@@ -1433,12 +1462,10 @@ struct _Parser(Movable):
                 break
             raise self._error(String("expected ',' or '}'"))
 
-        var node = self.tape.new_container(_KIND_OBJECT)
         for i in range(len(merges)):
             self._merge_into(node, merges[i])
         for i in range(len(keys)):
             self._put(node, keys[i], values[i])
-        return node
 
     # ===-------------------------------------------------------------------===#
     # Tags
@@ -1660,3 +1687,19 @@ def _assemble_block(
         return out^
     out += "\n"
     return out^
+
+
+@always_inline
+def _starts_quoted_or_flow(b: UInt8) -> Bool:
+    """Reports whether `b` opens a quoted scalar or a flow collection.
+
+    A key that starts with one of these is not a plain scalar, so it can never
+    be the `<<` merge key however it reads.
+
+    Args:
+        b: The first byte of the key.
+
+    Returns:
+        True for `\'`, `"`, `[` and `{`.
+    """
+    return b == _SQUOTE or b == _DQUOTE or b == _LBRACKET or b == _LBRACE
