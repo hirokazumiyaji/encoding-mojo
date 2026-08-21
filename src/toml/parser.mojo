@@ -46,19 +46,84 @@ comptime _LBRACE: UInt8 = 0x7B
 comptime _RBRACE: UInt8 = 0x7D
 comptime _UNDERSCORE: UInt8 = 0x5F
 
-comptime _ELEMENT = "\x02"
-"""Marks one element of an array of tables inside a registry path.
+comptime _HEX_LOWER = StaticString("0123456789abcdef")
+
+comptime _DIGITS = StaticString("0123456789")
+
+comptime _ELEMENT = "e"
+"""Tags a registry component that names one element of an array of tables.
 
 Two `[[a]]` blocks each own their members, so the registry has to tell them
-apart; a real key can only hold this byte through an explicit escape.
+apart.
 """
 
-comptime _SEP = "\x00"
-"""Joins the parts of a key path into one string for the definition registry.
+comptime _KEY = "k"
+"""Tags a registry component that names a key as the document wrote it.
 
-TOML keys may hold almost any character, but a NUL can only reach a key through
-an explicit `\\u0000` escape, so this stays unambiguous in practice.
+A key may hold any character at all, including the `e` an element marker
+starts with, so every component carries a tag saying which of the two it is.
 """
+
+
+def _component(tag: StringSlice, text: StringSlice) -> String:
+    """Builds one registry path component.
+
+    Args:
+        tag: `_KEY` or `_ELEMENT`.
+        text: The key, or the element's index.
+
+    Returns:
+        The tagged component.
+    """
+    return String(tag, text)
+
+
+def _append_int(mut out: String, value: Int):
+    """Appends a small non-negative number without building a `String` for it.
+
+    Args:
+        out: The buffer to append to.
+        value: The number to append.
+    """
+    if value >= 100:
+        out += String(value)
+        return
+    if value >= 10:
+        var hi = value // 10
+        var lo = value % 10
+        out += _DIGITS[byte = hi : hi + 1]
+        out += _DIGITS[byte = lo : lo + 1]
+        return
+    out += _DIGITS[byte = value : value + 1]
+
+
+def _append_encoded(mut out: String, component: StringSlice):
+    """Appends one already-tagged component to a registry path.
+
+    A key may hold any byte, a NUL included, so no separator is safe to join
+    on. Writing each component's byte length in front of it is.
+
+    Args:
+        out: The path being built.
+        component: The component to append.
+    """
+    _append_int(out, component.byte_length())
+    out += ":"
+    out += component
+
+
+def _append_tagged(mut out: String, tag: StringSlice, text: StringSlice):
+    """Tags a key or an element index and appends it to a registry path.
+
+    Args:
+        out: The path being built.
+        tag: `_KEY` or `_ELEMENT`.
+        text: The key, or the element's index.
+    """
+    _append_int(out, tag.byte_length() + text.byte_length())
+    out += ":"
+    out += tag
+    out += text
 
 
 @always_inline
@@ -104,10 +169,59 @@ def _join(path: List[String]) -> String:
     """
     var out = String()
     for i in range(len(path)):
-        if i:
-            out += _SEP
-        out += path[i]
+        _append_encoded(out, path[i])
     return out^
+
+
+@always_inline
+def _is_control(b: UInt8) -> Bool:
+    """Reports whether a byte is one TOML never allows raw.
+
+    Args:
+        b: The byte to test.
+
+    Returns:
+        True for `U+0000`-`U+001F` and `U+007F`, tab excepted. A line ending
+        is included, because the contexts that allow one test for it first.
+    """
+    return (b < 0x20 and b != _TAB) or b == 0x7F
+
+
+def _quote_byte(b: UInt8) -> String:
+    """Renders a control byte the way Python's `repr` writes it.
+
+    Args:
+        b: The byte to render.
+
+    Returns:
+        The byte quoted, such as `'\\x01'` or `'\\r'`.
+    """
+    if b == _TAB:
+        return String("'\\t'")
+    if b == _NEWLINE:
+        return String("'\\n'")
+    if b == _RETURN:
+        return String("'\\r'")
+    var hi = Int(b >> 4)
+    var lo = Int(b & 0xF)
+    return String(
+        "'\\x",
+        _HEX_LOWER[byte = hi : hi + 1],
+        _HEX_LOWER[byte = lo : lo + 1],
+        "'",
+    )
+
+
+def _quote_one(key: StringSlice) -> String:
+    """Renders one key the way `tomllib` names it in an error.
+
+    Args:
+        key: The key to render.
+
+    Returns:
+        The key in single quotes.
+    """
+    return String("'", key, "'")
 
 
 def _quote_path(path: List[String]) -> String:
@@ -283,30 +397,59 @@ struct _Parser(Movable):
                 return
             self.pos += 1
 
+    def _at_newline(self) -> Bool:
+        """Reports whether a line ending starts at the cursor.
+
+        TOML lines end with `LF` or `CRLF`; a carriage return on its own is
+        an ordinary control character, illegal wherever one is.
+
+        Returns:
+            True if the cursor is on `\\n` or on `\\r\\n`.
+        """
+        var b = self._peek()
+        if b == _NEWLINE:
+            return True
+        return b == _RETURN and self._byte(self.pos + 1) == _NEWLINE
+
     def _consume_newline(mut self):
         """Consumes one line ending and moves the line counter on."""
-        if self._peek() == _RETURN:
+        if self._peek() == _RETURN and self._byte(self.pos + 1) == _NEWLINE:
             self.pos += 1
         if self._peek() == _NEWLINE:
             self.pos += 1
         self.line += 1
         self.line_start = self.pos
 
-    def _skip_comment(mut self):
-        """Discards a comment, leaving the cursor on its line ending."""
+    def _skip_comment(mut self) raises:
+        """Discards a comment, leaving the cursor on its line ending.
+
+        Raises:
+            If the comment holds a control character, which TOML allows only
+            as an escape and only inside a string.
+        """
         if self._peek() != _HASH:
             return
-        while not self._at_end() and self._peek() != _NEWLINE:
+        self.pos += 1
+        while not self._at_end() and not self._at_newline():
+            var b = self._peek()
+            if _is_control(b):
+                raise self._error(
+                    String("Found invalid character ", _quote_byte(b))
+                )
             self.pos += 1
 
-    def _skip_to_statement(mut self):
-        """Advances to the next statement, past blank lines and comments."""
+    def _skip_to_statement(mut self) raises:
+        """Advances to the next statement, past blank lines and comments.
+
+        Raises:
+            If a comment on the way holds a control character.
+        """
         while not self._at_end():
             self._skip_spaces()
             self._skip_comment()
             if self._at_end():
                 return
-            if self._peek() == _NEWLINE or self._peek() == _RETURN:
+            if self._at_newline():
                 self._consume_newline()
                 continue
             return
@@ -324,7 +467,7 @@ struct _Parser(Movable):
             self._skip_comment()
         if self._at_end():
             return
-        if self._peek() == _NEWLINE or self._peek() == _RETURN:
+        if self._at_newline():
             self._consume_newline()
             return
         raise self._error(
@@ -361,12 +504,36 @@ struct _Parser(Movable):
         """
         var prefix = String()
         for length in range(len(path)):
-            if length:
-                prefix += _SEP
-            prefix += path[length]
+            _append_encoded(prefix, path[length])
             if self._knows(self.closed, prefix):
                 return length + 1
         return 0
+
+    def _frozen_pair_prefix(self, path: List[String]) -> Bool:
+        """Reports whether the key's parent namespace is already complete.
+
+        Only the prefixes that reach into `path`, and stop short of its last
+        part, can matter. A table header rejects a frozen prefix of
+        `registry_path` before that table becomes the current one, and every
+        `closed` entry added while it is current extends `registry_path`, so
+        no prefix of it can become frozen underneath us. A path of one part
+        therefore has nothing to test, which is the common case.
+
+        Args:
+            path: The key path being written, as the document wrote it.
+
+        Returns:
+            True if the pair would reach inside a table or array that was
+            already written out in full.
+        """
+        if len(path) < 2:
+            return False
+        var prefix = String(self.registry_joined)
+        for i in range(len(path) - 1):
+            _append_tagged(prefix, _KEY, path[i])
+            if self._knows(self.closed, prefix):
+                return True
+        return False
 
     # ===-------------------------------------------------------------------===#
     # Keys
@@ -416,7 +583,12 @@ struct _Parser(Movable):
     # ===-------------------------------------------------------------------===#
 
     def _child_table(
-        mut self, table: UInt32, name: StringSlice, mut registry: List[String]
+        mut self,
+        table: UInt32,
+        name: StringSlice,
+        mut registry: List[String],
+        *,
+        access_arrays: Bool = True,
     ) raises -> UInt32:
         """Returns the child table called `name`, creating it if absent.
 
@@ -428,6 +600,9 @@ struct _Parser(Movable):
             table: The parent table.
             name: The child's name.
             registry: The registry path built so far, extended in place.
+            access_arrays: Whether an array of tables resolves to its last
+                element. Inside an inline table it does not, which is what
+                keeps `{ a = [{}], a.b = 1 }` out.
 
         Returns:
             The child table's node index.
@@ -437,19 +612,21 @@ struct _Parser(Movable):
             `a = 1` followed by `a.b = 2` is rejected rather than writing
             through the integer.
         """
-        registry.append(String(name))
+        registry.append(_component(_KEY, name))
         var at = self.tape.find_member(table, name.as_bytes())
         if at >= 0:
             var start = Int(self.tape.nodes[Int(table)].a)
             var child = self.tape.kids[start + 2 * at + 1]
             var kind = self.tape.nodes[Int(child)].kind
-            if kind == _KIND_ARRAY:
+            if kind == _KIND_ARRAY and access_arrays:
                 var info = self.tape.nodes[Int(child)]
                 if info.b:
                     var last = self.tape.kids[Int(info.a) + Int(info.b) - 1]
                     if self.tape.nodes[Int(last)].kind != _KIND_OBJECT:
                         raise self._error(String("Cannot overwrite a value"))
-                    registry.append(String(_ELEMENT, Int(info.b) - 1))
+                    registry.append(
+                        _component(_ELEMENT, String(Int(info.b) - 1))
+                    )
                     return last
                 raise self._error(String("Cannot overwrite a value"))
             if kind != _KIND_OBJECT:
@@ -483,7 +660,7 @@ struct _Parser(Movable):
         var walking = True
         var blocked = False
         for i in range(len(path) - 1):
-            probe.append(path[i])
+            probe.append(_component(_KEY, path[i]))
             if not walking:
                 continue
             var at = self.tape.find_member(probe_table, path[i].as_bytes())
@@ -501,12 +678,14 @@ struct _Parser(Movable):
                 if info.b:
                     var last = self.tape.kids[Int(info.a) + Int(info.b) - 1]
                     if self.tape.nodes[Int(last)].kind == _KIND_OBJECT:
-                        probe.append(String(_ELEMENT, Int(info.b) - 1))
+                        probe.append(
+                            _component(_ELEMENT, String(Int(info.b) - 1))
+                        )
                         probe_table = last
                         continue
             walking = False
             blocked = True
-        probe.append(path[len(path) - 1])
+        probe.append(_component(_KEY, path[len(path) - 1]))
         var joined = _join(probe)
 
         var frozen = self._frozen_prefix(probe)
@@ -537,6 +716,17 @@ struct _Parser(Movable):
                 raise self._error(String("Cannot overwrite a value"))
         if blocked:
             raise self._error(String("Cannot overwrite a value"))
+        if is_array and walking:
+            # An implicitly created table leaves no trace in the registries,
+            # so the node itself has to be checked before appending to it.
+            var at = self.tape.find_member(
+                probe_table, path[len(path) - 1].as_bytes()
+            )
+            if at >= 0:
+                var start = Int(self.tape.nodes[Int(probe_table)].a)
+                var existing = self.tape.kids[start + 2 * at + 1]
+                if self.tape.nodes[Int(existing)].kind != _KIND_ARRAY:
+                    raise self._error(String("Cannot overwrite a value"))
 
         self._skip_spaces()
         if is_array:
@@ -579,9 +769,11 @@ struct _Parser(Movable):
             self.tape.array_push(array, entry)
             self.current = entry
             self.array_declared.add(joined)
-            registry.append(last)
+            registry.append(_component(_KEY, last))
             registry.append(
-                String(_ELEMENT, Int(self.tape.nodes[Int(array)].b) - 1)
+                _component(
+                    _ELEMENT, String(Int(self.tape.nodes[Int(array)].b) - 1)
+                )
             )
         else:
             self.current = self._child_table(table, last, registry)
@@ -611,40 +803,21 @@ struct _Parser(Movable):
         self._skip_spaces()
         var value = self._parse_value(0)
 
-        var full = List[String](capacity=len(self.registry_path) + len(path))
-        for i in range(len(self.registry_path)):
-            full.append(self.registry_path[i])
+        var joined = String(self.registry_joined)
         for i in range(len(path)):
-            full.append(path[i])
+            _append_tagged(joined, _KEY, path[i])
 
-        var joined: String
-        if len(self.registry_path) == 0:
-            joined = _join(path)
-        else:
-            joined = String(self.registry_joined)
-            for i in range(len(path)):
-                joined += _SEP
-                joined += path[i]
-
-        var frozen = self._frozen_prefix(full)
-        if frozen and frozen < len(full):
-            # Name the offending table the way it was written, which means
-            # dropping the element markers the registry path carries.
-            var display = List[String]()
+        if self._frozen_pair_prefix(path):
+            # `tomllib` names the key's parent here, written the way the
+            # document wrote it, so the element markers stay out of it.
+            var parent = List[String]()
             for i in range(len(self.current_path)):
-                display.append(self.current_path[i])
-            for i in range(len(path)):
-                display.append(path[i])
-            var prefix = List[String]()
-            var kept = 0
-            for i in range(frozen):
-                if not full[i].startswith(_ELEMENT):
-                    kept += 1
-            for i in range(kept):
-                prefix.append(display[i])
+                parent.append(self.current_path[i])
+            for i in range(len(path) - 1):
+                parent.append(path[i])
             raise self._error(
                 String(
-                    "Cannot mutate immutable namespace ", _quote_path(prefix)
+                    "Cannot mutate immutable namespace ", _quote_path(parent)
                 )
             )
         if (
@@ -753,7 +926,7 @@ struct _Parser(Movable):
         ):
             triple = True
         self.pos += 3 if triple else 1
-        if triple and (self._peek() == _NEWLINE or self._peek() == _RETURN):
+        if triple and self._at_newline():
             # A newline immediately after the opening delimiter is trimmed.
             self._consume_newline()
 
@@ -782,15 +955,15 @@ struct _Parser(Movable):
                 out.append(b)
                 self.pos += 1
                 continue
-            if b == _NEWLINE or b == _RETURN:
-                if not triple:
-                    raise self._error(String("Illegal character '\\n'"))
+            if triple and self._at_newline():
                 self._consume_newline()
                 out.append(_NEWLINE)
                 continue
             if b == _BACKSLASH:
                 self._decode_escape(out, triple)
                 continue
+            if _is_control(b):
+                raise self._error(String("Illegal character ", _quote_byte(b)))
             out.append(b)
             self.pos += 1
         return String(unsafe_from_utf8=Span(out))
@@ -817,20 +990,20 @@ struct _Parser(Movable):
                 self._byte(probe) == _SPACE or self._byte(probe) == _TAB
             ):
                 probe += 1
-            if probe < len(self.src) and (
-                self._byte(probe) == _NEWLINE or self._byte(probe) == _RETURN
-            ):
-                self.pos = probe
+            var saved = self.pos
+            self.pos = probe
+            if self._at_newline():
                 self._consume_newline()
                 while not self._at_end():
                     var c = self._peek()
                     if c == _SPACE or c == _TAB:
                         self.pos += 1
-                    elif c == _NEWLINE or c == _RETURN:
+                    elif self._at_newline():
                         self._consume_newline()
                     else:
                         break
                 return
+            self.pos = saved
         self.pos += 2
         if e == 0x62:  # b
             out.append(0x08)
@@ -872,7 +1045,7 @@ struct _Parser(Movable):
         ):
             triple = True
         self.pos += 3 if triple else 1
-        if triple and (self._peek() == _NEWLINE or self._peek() == _RETURN):
+        if triple and self._at_newline():
             self._consume_newline()
 
         var start = self.pos
@@ -898,12 +1071,14 @@ struct _Parser(Movable):
                         out.append(_SQUOTE)
                         self.pos += 1
                     break
-            if b == _NEWLINE or b == _RETURN:
-                if not triple:
-                    raise self._error(String("Illegal character '\\n'"))
+            if triple and self._at_newline():
                 self._consume_newline()
                 out.append(_NEWLINE)
                 continue
+            if _is_control(b):
+                raise self._error(
+                    String("Found invalid character ", _quote_byte(b))
+                )
             out.append(b)
             self.pos += 1
         _ = start
@@ -996,6 +1171,11 @@ struct _Parser(Movable):
             if self._peek() == _RBRACE:
                 self.pos += 1
                 return node
+            # An inline table keeps its own frozen set, exactly as `tomllib`
+            # gives each one a fresh flag table: a member holding a table or
+            # an array is complete as written and may not be reopened by a
+            # later dotted key in the same braces.
+            var frozen = Set[String]()
             while True:
                 self._skip_spaces()
                 var path = self._parse_key_path()
@@ -1007,15 +1187,34 @@ struct _Parser(Movable):
                 self.pos += 1
                 self._skip_spaces()
                 var value = self._parse_value(depth + 1)
+
+                var walked = String()
+                for i in range(len(path)):
+                    _append_tagged(walked, _KEY, path[i])
+                    if walked in frozen:
+                        raise self._error(
+                            String(
+                                "Cannot mutate immutable namespace ",
+                                _quote_path(path),
+                            )
+                        )
+
                 var table = node
                 var ignored = List[String]()
                 for i in range(len(path) - 1):
-                    table = self._child_table(table, path[i], ignored)
+                    table = self._child_table(
+                        table, path[i], ignored, access_arrays=False
+                    )
                 var last = path[len(path) - 1]
                 if self.tape.find_member(table, last.as_bytes()) >= 0:
-                    raise self._error(String("Cannot overwrite a value"))
+                    raise self._error(
+                        String("Duplicate inline table key ", _quote_one(last))
+                    )
                 var key = self.tape.push_string(last.as_bytes())
                 self.tape.object_push(table, key, value)
+                var kind = self.tape.nodes[Int(value)].kind
+                if kind == _KIND_OBJECT or kind == _KIND_ARRAY:
+                    frozen.add(walked)
                 self._skip_spaces()
                 if self._peek() == _COMMA:
                     self.pos += 1
@@ -1044,14 +1243,17 @@ struct _Parser(Movable):
         var text = StringSlice(unsafe_from_utf8=self.src[start:end])
         return self._classify(text, start)
 
-    def _skip_array_space(mut self):
+    def _skip_array_space(mut self) raises:
         """Advances past whitespace, line breaks and comments inside an array.
+
+        Raises:
+            If a comment on the way holds a control character.
         """
         while not self._at_end():
             var b = self._peek()
             if b == _SPACE or b == _TAB:
                 self.pos += 1
-            elif b == _NEWLINE or b == _RETURN:
+            elif self._at_newline():
                 self._consume_newline()
             elif b == _HASH:
                 self._skip_comment()
@@ -1270,6 +1472,10 @@ def _is_real_date(text: StringSlice) -> Bool:
     )
     var month = Int(b[5] - 0x30) * 10 + Int(b[6] - 0x30)
     var day = Int(b[8] - 0x30) * 10 + Int(b[9] - 0x30)
+
+    if year == 0:
+        # `datetime.date` starts at year 1, so `tomllib` rejects `0000-01-01`.
+        return False
 
     var length: Int
     if month == 2:

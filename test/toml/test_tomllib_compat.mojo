@@ -529,6 +529,75 @@ def test_matches_tomllib_007() raises:
         ),
     )
     _check(
+        '"a\\u0000b" = 1\na.b = 2\n',
+        '{"a\\u0000b":1,"a":{"b":2}}',
+        '"a\\u0000b" = 1\n\n[a]\nb = 2\n',
+        '"a\\u0000b" = 1\n\n[a]\nb = 2\n',
+    )
+    _check(
+        '"ke" = 1\n"k" = {}\n',
+        '{"ke":1,"k":{}}',
+        "ke = 1\n\n[k]\n",
+        "ke = 1\n\n[k]\n",
+    )
+    _check(
+        '[["a\\u0000b"]]\nx = 1\n[["a"]]\n',
+        '{"a\\u0000b":[{"x":1}],"a":[{}]}',
+        '"a\\u0000b" = [\n    { x = 1 },\n]\na = [\n    {},\n]\n',
+        '"a\\u0000b" = [\n    { x = 1 },\n]\na = [\n    {},\n]\n',
+    )
+    _check(
+        '"e0" = 1\n[["e"]]\n',
+        '{"e0":1,"e":[{}]}',
+        "e0 = 1\ne = [\n    {},\n]\n",
+        "e0 = 1\ne = [\n    {},\n]\n",
+    )
+    _check(
+        '[[e]]\n"0" = 1\n',
+        '{"e":[{"0":1}]}',
+        "e = [\n    { 0 = 1 },\n]\n",
+        "e = [\n    { 0 = 1 },\n]\n",
+    )
+    _check(
+        'a = "x\ty"\n',
+        '{"a":"x\\ty"}',
+        'a = "x\ty"\n',
+        'a = "x\ty"\n',
+    )
+
+
+def test_matches_tomllib_008() raises:
+    _check(
+        "b = 'x\ty'\n",
+        '{"b":"x\\ty"}',
+        'b = "x\ty"\n',
+        'b = "x\ty"\n',
+    )
+    _check(
+        'a = """x\ty"""\n',
+        '{"a":"x\\ty"}',
+        'a = "x\ty"\n',
+        'a = "x\ty"\n',
+    )
+    _check(
+        "# c\r\na = 1\r\n[t]\r\nb = 2\r\n",
+        '{"a":1,"t":{"b":2}}',
+        "a = 1\n\n[t]\nb = 2\n",
+        "a = 1\n\n[t]\nb = 2\n",
+    )
+    _check(
+        "x = { a.b = 1, a.c = 2 }\n",
+        '{"x":{"a":{"b":1,"c":2}}}',
+        "[x.a]\nb = 1\nc = 2\n",
+        "[x.a]\nb = 1\nc = 2\n",
+    )
+    _check(
+        "x = { y = {}, z = { y = { a = 1 } } }\n",
+        '{"x":{"y":{},"z":{"y":{"a":1}}}}',
+        "[x.y]\n\n[x.z.y]\na = 1\n",
+        "[x.y]\n\n[x.z.y]\na = 1\n",
+    )
+    _check(
         (
             'a = "line\\nbreak"\nb = "carriage\\r\\nreturn"\nc ='
             ' "ctrl\\u0001char"\n'
@@ -567,6 +636,9 @@ def test_matches_tomllib_007() raises:
             "     -53,\n        -210,\n    ],\n    false,\n]\nk10 = true\n"
         ),
     )
+
+
+def test_matches_tomllib_009() raises:
     _check(
         'a16 = "say \\"hi\\""\n',
         '{"a16":"say \\"hi\\""}',
@@ -585,9 +657,6 @@ def test_matches_tomllib_007() raises:
         '0 = []\nk12 = "日本語"\nnested7 = "tab\there"\n',
         '0 = []\nk12 = "日本語"\nnested7 = "tab\there"\n',
     )
-
-
-def test_matches_tomllib_008() raises:
     _check(
         (
             '0 = -9.9551\nb1 = -708\nkey0 = """\ncrlf\nhere"""\n\n[key4]\nk112'
@@ -649,6 +718,9 @@ def test_matches_tomllib_008() raises:
         "k17 = true\nx18 = 487\nx9 = 74.362\n\n[a6]\n",
         "k17 = true\nx18 = 487\nx9 = 74.362\n\n[a6]\n",
     )
+
+
+def test_matches_tomllib_010() raises:
     _check(
         "[k116]\n",
         '{"k116":{}}',
@@ -678,9 +750,6 @@ def test_matches_tomllib_008() raises:
             ' "",\n]\n'
         ),
     )
-
-
-def test_matches_tomllib_009() raises:
     _check(
         '[key6]\nx14 = "tab\there"\n',
         '{"key6":{"x14":"tab\\there"}}',
@@ -747,6 +816,9 @@ def test_matches_tomllib_009() raises:
             ' "",\n    ],\n    "1.5",\n]\n'
         ),
     )
+
+
+def test_matches_tomllib_011() raises:
     _check(
         (
             'a2 = "  padded "\nlong_key_name1 = [\n    [\n        [\n          '
@@ -783,9 +855,6 @@ def test_matches_tomllib_009() raises:
         "b3 = []\nx0 = 642\n",
         "b3 = []\nx0 = 642\n",
     )
-
-
-def test_matches_tomllib_010() raises:
     _check(
         (
             'a17 = "it\'s"\nb19 = [\n    [],\n]\nk112 = -540\n\n["with'
@@ -897,6 +966,9 @@ def test_matches_tomllib_010() raises:
             " 74\n\n[b16.k111.2]\nkey8 = false\n"
         ),
     )
+
+
+def test_matches_tomllib_012() raises:
     _check(
         'long_key_name7 = "line\\nbreak"\n',
         '{"long_key_name7":"line\\nbreak"}',
@@ -930,9 +1002,6 @@ def test_matches_tomllib_010() raises:
             " false\nlong_key_name1 = -414\n"
         ),
     )
-
-
-def test_matches_tomllib_011() raises:
     _check(
         "long_key_name8 = -41.1111\n",
         '{"long_key_name8":-41.1111}',
@@ -972,6 +1041,9 @@ def test_matches_tomllib_011() raises:
         '11 = []\nx16 = [\n    { 12 = 17.1926, 18 = "", x10 = {} },\n]\n',
         '11 = []\nx16 = [\n    { 12 = 17.1926, 18 = "", x10 = {} },\n]\n',
     )
+
+
+def test_matches_tomllib_013() raises:
     _check(
         (
             'x2 = "tab\there"\n"with space8" = [\n    false,\n    {'
@@ -1024,9 +1096,6 @@ def test_matches_tomllib_011() raises:
             ' false,\n        "1.5",\n    ],\n    226,\n    20.656,\n]\n'
         ),
     )
-
-
-def test_matches_tomllib_012() raises:
     _check(
         '"with space6" = true\n',
         '{"with space6":true}',
@@ -1104,6 +1173,9 @@ def test_matches_tomllib_012() raises:
             '      7.5462,\n    ],\n    """\nline\nbreak""",\n]\n'
         ),
     )
+
+
+def test_matches_tomllib_014() raises:
     _check(
         (
             '"with space13" = [\n    [],\n    [\n        { 2 = false },\n   '
@@ -1140,9 +1212,6 @@ def test_matches_tomllib_012() raises:
             " = 464\nkey14 = -587\n8 = []\n"
         ),
     )
-
-
-def test_matches_tomllib_013() raises:
     _check(
         (
             'x7 = [\n    [\n        """\nline\nbreak""",\n    ],\n    [\n      '
@@ -1244,6 +1313,9 @@ def test_matches_tomllib_013() raises:
             ' false\n\n[long_key_name16]\nb1 = "1.5"\n'
         ),
     )
+
+
+def test_matches_tomllib_015() raises:
     _check(
         "key1 = -26.9157\n",
         '{"key1":-26.9157}',
@@ -1286,9 +1358,6 @@ def test_matches_tomllib_013() raises:
             ' "ctrl\\u0001char"\na11 = 28.3775\n'
         ),
     )
-
-
-def test_matches_tomllib_014() raises:
     _check(
         'key19 = "1.5"\na17 = """\ncrlf\nhere"""\n',
         '{"key19":"1.5","a17":"crlf\\nhere"}',
@@ -1343,6 +1412,9 @@ def test_matches_tomllib_014() raises:
         'key13 = "crlf\\nhere"\na11 = "true"\n',
         'key13 = """\ncrlf\nhere"""\na11 = "true"\n',
     )
+
+
+def test_matches_tomllib_016() raises:
     _check(
         '"with space8" = -6.935\n',
         '{"with space8":-6.935}',
@@ -1525,6 +1597,75 @@ def test_rejects_like_tomllib_007() raises:
 
 
 def test_rejects_like_tomllib_008() raises:
+    with assert_raises():
+        _ = loads('a = "x\x01y"\n')
+    with assert_raises():
+        _ = loads('a = "x\x7fy"\n')
+    with assert_raises():
+        _ = loads("a = 'x\x01y'\n")
+    with assert_raises():
+        _ = loads("a = 'x\x7fy'\n")
+    with assert_raises():
+        _ = loads('a = """x\x01y"""\n')
+    with assert_raises():
+        _ = loads("a = '''x\x7fy'''\n")
+    with assert_raises():
+        _ = loads('"x\x01y" = 1\n')
+    with assert_raises():
+        _ = loads("# c\x01omment\na = 1\n")
+
+
+def test_rejects_like_tomllib_009() raises:
+    with assert_raises():
+        _ = loads("a = 1\rb = 2\n")
+    with assert_raises():
+        _ = loads("a = 1\r")
+    with assert_raises():
+        _ = loads('a = """x\ry"""\n')
+    with assert_raises():
+        _ = loads("a = '''x\ry'''\n")
+    with assert_raises():
+        _ = loads("# c\rb = 2\n")
+    with assert_raises():
+        _ = loads("[t]\ra = 1\n")
+    with assert_raises():
+        _ = loads("a = [1,\r2]\n")
+    with assert_raises():
+        _ = loads("a = 0000-01-01\n")
+
+
+def test_rejects_like_tomllib_010() raises:
+    with assert_raises():
+        _ = loads("a = 0000-01-01T00:00:00\n")
+    with assert_raises():
+        _ = loads("a = 0001-02-29\n")
+    with assert_raises():
+        _ = loads("[a.b]\nx = 1\n[[a]]\n")
+    with assert_raises():
+        _ = loads("[a]\nx = 1\n[[a]]\n")
+    with assert_raises():
+        _ = loads("x = { a = {}, a.b = 1 }\n")
+    with assert_raises():
+        _ = loads("x = { a = [{ x = 1 }], a.y = 2 }\n")
+    with assert_raises():
+        _ = loads("x = { a = { b = {} }, a.b.c = 1 }\n")
+    with assert_raises():
+        _ = loads("x = { a = [1], a = 2 }\n")
+
+
+def test_rejects_like_tomllib_011() raises:
+    with assert_raises():
+        _ = loads("x = { a = {}, a = 1 }\n")
+    with assert_raises():
+        _ = loads("x = { a = 1, a = 2 }\n")
+    with assert_raises():
+        _ = loads("x = { a = 1, a.b = 2 }\n")
+    with assert_raises():
+        _ = loads("x = [{ a = {}, a.b = 1 }]\n")
+    with assert_raises():
+        _ = loads("x = { y = { a = {}, a.b = 1 } }\n")
+    with assert_raises():
+        _ = loads("a = { b = 1 }\na.c = 2\n")
     with assert_raises():
         _ = loads('a = """abc""""""\n')
     with assert_raises():

@@ -74,8 +74,8 @@ And against CPython's `tomllib` and `tomli_w` on the fixtures in `bench/toml`:
 
 | Fixture | `loads` | `dumps` |
 |---------|---------|---------|
-| config (0.20 MiB) | **5.9x** faster | **9.5x** faster |
-| records (0.33 MiB) | **6.2x** faster | **11.7x** faster |
+| config (0.20 MiB) | **6.8x** faster | **10.5x** faster |
+| records (0.33 MiB) | **7.6x** faster | **10.8x** faster |
 
 Those YAML numbers are against PyYAML's pure-Python backend, which is what is
 installed here. PyYAML also ships an optional C backend built on libyaml

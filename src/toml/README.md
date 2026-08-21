@@ -51,8 +51,12 @@ headers; comments; and CRLF line endings.
 
 The rules that make TOML strict are enforced too: a key cannot be defined
 twice, a `[table]` cannot be declared twice or after a dotted key already
-built it, an inline table can never be extended, and a statically defined
-array can never be appended to.
+built it, a value that is not a table cannot be reopened as one, an inline
+table can never be extended — from a later dotted key inside the same braces
+either — and a statically defined array can never be appended to. Control
+characters reach a string only through an escape, an escape has to name a
+Unicode scalar value, and a line ends with `LF` or `CRLF`, never with a
+carriage return on its own.
 
 Failures raise a `TOMLDecodeError` naming the problem and the position, in the
 same shape `tomllib` uses:
@@ -107,8 +111,12 @@ fixtures in `bench/toml`:
 
 | Fixture | `loads` | `dumps` |
 |---------|---------|---------|
-| config (0.20 MiB) | **5.9x** faster | **9.5x** faster |
-| records (0.33 MiB) | **6.2x** faster | **11.7x** faster |
+| config (0.20 MiB) | **6.8x** faster | **10.5x** faster |
+| records (0.33 MiB) | **7.6x** faster | **10.8x** faster |
+
+Median of three runs on each side, taken back to back on one 4-core x86-64
+Linux box; the ratio is what travels, the absolute times are not comparable
+across machines.
 
 Reproduce with:
 

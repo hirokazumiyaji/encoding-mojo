@@ -98,6 +98,22 @@ DOCUMENTS = [
     # `datetime` objects for them, which have no counterpart to compare with.
     # Numbers at the edge of the signed 64-bit range.
     "a = 9223372036854775807\nb = -9223372036854775808\nc = 0x7FFFFFFFFFFFFFFF\n",
+    # Registry paths must survive keys that hold the bytes a naive encoding
+    # would join or tag with.
+    '"a\\u0000b" = 1\na.b = 2\n',
+    '"ke" = 1\n"k" = {}\n',
+    '[["a\\u0000b"]]\nx = 1\n[["a"]]\n',
+    '"e0" = 1\n[["e"]]\n',
+    "[[e]]\n\"0\" = 1\n",
+    # A tab is the one control character a string may hold raw.
+    "a = \"x\ty\"\n",
+    "b = 'x\ty'\n",
+    "a = \"\"\"x\ty\"\"\"\n",
+    # CRLF line endings, including on a comment.
+    "# c\r\na = 1\r\n[t]\r\nb = 2\r\n",
+    # Dotted keys inside one inline table build the same table.
+    "x = { a.b = 1, a.c = 2 }\n",
+    "x = { y = {}, z = { y = { a = 1 } } }\n",
     # Strings that only a multi-line form can hold verbatim.
     'a = "line\\nbreak"\nb = "carriage\\r\\nreturn"\nc = "ctrl\\u0001char"\n',
     'a = "tab\\there"\nb = "del\\u007f"\n',
@@ -173,6 +189,41 @@ BAD = [
     "a = 0B1\n",
     "a = +0x1\n",
     "a = -0x1\n",
+    # A control character reaches a string only through an escape.
+    "a = \"x\x01y\"\n",
+    "a = \"x\x7fy\"\n",
+    "a = 'x\x01y'\n",
+    "a = 'x\x7fy'\n",
+    "a = \"\"\"x\x01y\"\"\"\n",
+    "a = '''x\x7fy'''\n",
+    "\"x\x01y\" = 1\n",
+    "# c\x01omment\na = 1\n",
+    # A line ends with LF or CRLF; a carriage return on its own does not.
+    "a = 1\rb = 2\n",
+    "a = 1\r",
+    "a = \"\"\"x\ry\"\"\"\n",
+    "a = '''x\ry'''\n",
+    "# c\rb = 2\n",
+    "[t]\ra = 1\n",
+    "a = [1,\r2]\n",
+    # `tomllib` builds a `datetime.date`, which has no year zero.
+    "a = 0000-01-01\n",
+    "a = 0000-01-01T00:00:00\n",
+    "a = 0001-02-29\n",
+    # An array of tables may only append to an array.
+    "[a.b]\nx = 1\n[[a]]\n",
+    "[a]\nx = 1\n[[a]]\n",
+    # A member of an inline table is complete as written.
+    "x = { a = {}, a.b = 1 }\n",
+    "x = { a = [{ x = 1 }], a.y = 2 }\n",
+    "x = { a = { b = {} }, a.b.c = 1 }\n",
+    "x = { a = [1], a = 2 }\n",
+    "x = { a = {}, a = 1 }\n",
+    "x = { a = 1, a = 2 }\n",
+    "x = { a = 1, a.b = 2 }\n",
+    "x = [{ a = {}, a.b = 1 }]\n",
+    "x = { y = { a = {}, a.b = 1 } }\n",
+    "a = { b = 1 }\na.c = 2\n",
     # Six quotes do not close a multi-line string.
     'a = """abc""""""\n',
     "a = '''abc''''''\n",

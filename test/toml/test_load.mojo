@@ -303,5 +303,88 @@ def test_table_redefinition_is_rejected() raises:
         _ = loads("a.b = 1\n[a]\n")
 
 
+def test_raw_control_characters_are_rejected() raises:
+    with assert_raises(contains="Illegal character '\\x01'"):
+        _ = loads('a = "x\x01y"\n')
+    with assert_raises(contains="Illegal character '\\x7f'"):
+        _ = loads('a = "x\x7fy"\n')
+    with assert_raises(contains="Found invalid character '\\x01'"):
+        _ = loads("a = 'x\x01y'\n")
+    with assert_raises(contains="Illegal character '\\x01'"):
+        _ = loads('a = """x\x01y"""\n')
+    with assert_raises(contains="Found invalid character '\\x7f'"):
+        _ = loads("a = '''x\x7fy'''\n")
+    with assert_raises(contains="Illegal character '\\x01'"):
+        _ = loads('"x\x01y" = 1\n')
+    with assert_raises(contains="Found invalid character '\\x01'"):
+        _ = loads("# c\x01omment\na = 1\n")
+    # A tab is the exception TOML makes.
+    _check('a = "x\ty"\n', '{"a":"x\\ty"}')
+    _check("a = 'x\ty'\n", '{"a":"x\\ty"}')
+
+
+def test_a_bare_carriage_return_is_not_a_line_ending() raises:
+    _check("a = 1\r\nb = 2\r\n", '{"a":1,"b":2}')
+    _check("# c\r\na = 1\r\n", '{"a":1}')
+    _check('a = """x\r\ny"""\n', '{"a":"x\\ny"}')
+    with assert_raises(contains="Expected newline"):
+        _ = loads("a = 1\rb = 2\n")
+    with assert_raises(contains="Illegal character '\\r'"):
+        _ = loads('a = """x\ry"""\n')
+    with assert_raises(contains="Found invalid character '\\r'"):
+        _ = loads("# c\rb = 2\n")
+    with assert_raises(contains="Expected newline"):
+        _ = loads("[t]\ra = 1\n")
+
+
+def test_year_zero_is_not_a_date() raises:
+    with assert_raises(contains="Invalid date or datetime"):
+        _ = loads("a = 0000-01-01\n")
+    with assert_raises(contains="Invalid date or datetime"):
+        _ = loads("a = 0000-01-01T00:00:00\n")
+    _check("a = 0001-01-01\n", '{"a":"0001-01-01"}')
+
+
+def test_array_of_tables_needs_an_array() raises:
+    # An implicitly created table leaves no trace in the registries, so the
+    # node itself has to be checked before appending to it.
+    with assert_raises(contains="Cannot overwrite a value"):
+        _ = loads("[a.b]\nx = 1\n[[a]]\n")
+    with assert_raises(contains="Cannot overwrite a value"):
+        _ = loads("[a]\nx = 1\n[[a]]\n")
+    _check("[[a]]\n[[a]]\n", '{"a":[{},{}]}')
+
+
+def test_an_inline_table_member_is_complete_as_written() raises:
+    with assert_raises(contains="Cannot mutate immutable namespace ('a', 'b')"):
+        _ = loads("x = { a = {}, a.b = 1 }\n")
+    with assert_raises(contains="Cannot mutate immutable namespace ('a', 'y')"):
+        _ = loads("x = { a = [{ x = 1 }], a.y = 2 }\n")
+    with assert_raises(contains="Cannot mutate immutable namespace ('a',)"):
+        _ = loads("x = { a = {}, a = 1 }\n")
+    with assert_raises(contains="Duplicate inline table key 'a'"):
+        _ = loads("x = { a = 1, a = 2 }\n")
+    with assert_raises(contains="Cannot overwrite a value"):
+        _ = loads("x = { a = 1, a.b = 2 }\n")
+    # Each set of braces keeps its own bookkeeping.
+    _check("x = { a.b = 1, a.c = 2 }\n", '{"x":{"a":{"b":1,"c":2}}}')
+    _check(
+        "x = { y = {}, z = { y = { a = 1 } } }\n",
+        '{"x":{"y":{},"z":{"y":{"a":1}}}}',
+    )
+
+
+def test_registry_paths_survive_awkward_keys() raises:
+    # A key may hold any character, so the definition registry can neither
+    # join paths on a separator byte nor tag a component with a bare prefix.
+    _check('"a\\u0000b" = 1\na.b = 2\n', '{"a\\u0000b":1,"a":{"b":2}}')
+    _check('"ke" = 1\n"k" = {}\n', '{"ke":1,"k":{}}')
+    _check('"e0" = 1\n[["e"]]\n', '{"e0":1,"e":[{}]}')
+    _check(
+        '[["a\\u0000b"]]\nx = 1\n[["a"]]\n',
+        '{"a\\u0000b":[{"x":1}],"a":[{}]}',
+    )
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()
