@@ -85,6 +85,19 @@ DOCUMENTS = [
     # Long inline tables cross the width where `tomli_w` stops inlining.
     '[[p]]\nk = "%s"\n' % ("x" * 80),
     '[[p]]\nk = "%s"\n' % ("x" * 90),
+    # Up to two quotes may sit against a multi-line closing delimiter.
+    'a = """abc""""\n',
+    'a = """abc"""""\n',
+    "a = '''abc''''\n",
+    "a = '''abc'''''\n",
+    'a = """a""b"""\n',
+    'a = """"""\nb = \'\'\'\'\'\'\n',
+    # Escapes that name a real character, at both ends of the range.
+    'a = "\\u0000"\nb = "\\uD7FF"\nc = "\\uE000"\nd = "\\U0010FFFF"\n',
+    # Valid date and time literals live in `test_load.mojo`; `tomllib` builds
+    # `datetime` objects for them, which have no counterpart to compare with.
+    # Numbers at the edge of the signed 64-bit range.
+    "a = 9223372036854775807\nb = -9223372036854775808\nc = 0x7FFFFFFFFFFFFFFF\n",
     # Strings that only a multi-line form can hold verbatim.
     'a = "line\\nbreak"\nb = "carriage\\r\\nreturn"\nc = "ctrl\\u0001char"\n',
     'a = "tab\\there"\nb = "del\\u007f"\n',
@@ -121,6 +134,48 @@ BAD = [
     "a = { b = 1 }\n[a.c]\nd = 2\n",
     "a = [1]\n[[a]]\n",
     "a = \"\\x7f\"\n",
+    # An escape must name a Unicode scalar value.
+    'a = "\\uD800"\n',
+    'a = "\\uDFFF"\n',
+    'a = "\\U00110000"\n',
+    'a = "\\UFFFFFFFF"\n',
+    # A value that is not a table cannot be opened as one.
+    "a = 1\na.b = 2\n",
+    "a = 1\n[a.b]\n",
+    'a = "x"\na.b = 2\n',
+    "a = [1]\n[a.b]\nc = 1\n",
+    "a = [{ b = 1 }]\n[a.c]\nd = 1\n",
+    "a = []\n[a.b]\nc = 1\n",
+    "a = 1\n[[a]]\n",
+    "[a]\nb = 1\n[a.b]\n",
+    # Date and time literals are validated in full.
+    "a = 2023-99-99\n",
+    "a = 12:99:99\n",
+    "a = 2023-01-01junk\n",
+    "a = 2023-02-30\n",
+    "a = 2023-02-29\n",
+    "a = 1900-02-29\n",
+    "a = 2023-04-31\n",
+    "a = 24:00:00\n",
+    "a = 07:32\n",
+    "a = 1979-05-27T07:32:00+25:00\n",
+    "a = 1979-05-27T\n",
+    # A separator sits between two digits of the same kind.
+    "a = 1_e2\n",
+    "a = 1e_2\n",
+    "a = 1._0\n",
+    "a = 0x_1\n",
+    "a = 0b_1\n",
+    "a = 1_.0\n",
+    # A radix prefix is lower case and never signed.
+    "a = 0X1\n",
+    "a = 0O17\n",
+    "a = 0B1\n",
+    "a = +0x1\n",
+    "a = -0x1\n",
+    # Six quotes do not close a multi-line string.
+    'a = """abc""""""\n',
+    "a = '''abc''''''\n",
 ]
 
 

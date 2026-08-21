@@ -155,6 +155,117 @@ def test_datetimes_stay_strings() raises:
     )
 
 
+def test_datetime_forms_that_tomllib_accepts() raises:
+    # Each of these loads in `tomllib`, so each has to load here too. The
+    # generated suite cannot carry them: there is no `datetime` to compare to.
+    _check(
+        "a = 1979-05-27t07:32:00\nb = 1979-05-27 07:32:00\n",
+        '{"a":"1979-05-27t07:32:00","b":"1979-05-27 07:32:00"}',
+    )
+    _check(
+        "a = 1979-05-27T07:32:00z\nb = 1979-05-27T00:32:00-07:00\n",
+        '{"a":"1979-05-27T07:32:00z","b":"1979-05-27T00:32:00-07:00"}',
+    )
+    _check(
+        "a = 1979-05-27T00:32:00.999999+23:59\n",
+        '{"a":"1979-05-27T00:32:00.999999+23:59"}',
+    )
+    _check(
+        "a = 00:00:00.000001\nb = 23:59:59.9999999999\n",
+        '{"a":"00:00:00.000001","b":"23:59:59.9999999999"}',
+    )
+    _check(
+        "a = 2024-02-29\nb = 2000-02-29\nc = 1979-12-31\n",
+        '{"a":"2024-02-29","b":"2000-02-29","c":"1979-12-31"}',
+    )
+    _check("a = [1979-05-27, 07:32:00]\n", '{"a":["1979-05-27","07:32:00"]}')
+    # The space form only applies when a time really follows.
+    _check("a = 1979-05-27 # not a time\n", '{"a":"1979-05-27"}')
+
+
+def test_datetime_syntax_is_validated() raises:
+    # There is no date type, but the literal still has to be a real date.
+    with assert_raises(contains="Invalid date or datetime"):
+        _ = loads("a = 2023-02-30\n")
+    with assert_raises(contains="Invalid date or datetime"):
+        _ = loads("a = 1900-02-29\n")
+    with assert_raises(contains="Invalid value"):
+        _ = loads("a = 2023-99-99\n")
+    with assert_raises(contains="Invalid value"):
+        _ = loads("a = 12:99:99\n")
+    with assert_raises(contains="Expected newline"):
+        _ = loads("a = 2023-01-01junk\n")
+
+
+def test_escapes_must_name_a_scalar_value() raises:
+    with assert_raises(
+        contains="Escaped character is not a Unicode scalar value"
+    ):
+        _ = loads('a = "\\uD800"\n')
+    with assert_raises(
+        contains="Escaped character is not a Unicode scalar value"
+    ):
+        _ = loads('a = "\\U00110000"\n')
+    _check('a = "\\uD7FF\\uE000"\n', '{"a":"\\ud7ff\\ue000"}')
+
+
+def test_multiline_strings_may_end_with_quotes() raises:
+    _check('a = """abc""""\n', '{"a":"abc\\""}')
+    _check('a = """abc"""""\n', '{"a":"abc\\"\\""}')
+    _check("a = '''abc''''\n", '{"a":"abc\'"}')
+    _check("a = '''abc'''''\n", '{"a":"abc\'\'"}')
+    with assert_raises(contains="Expected newline"):
+        _ = loads('a = """abc""""""\n')
+
+
+def test_a_value_cannot_be_reopened_as_a_table() raises:
+    with assert_raises(contains="Cannot overwrite a value"):
+        _ = loads("a = 1\na.b = 2\n")
+    with assert_raises(contains="Cannot overwrite a value"):
+        _ = loads("a = 1\n[a.b]\n")
+    with assert_raises(contains="Cannot overwrite a value"):
+        _ = loads("[a]\nb = 1\n[a.b]\n")
+    with assert_raises(contains="Cannot declare"):
+        _ = loads("a = [1]\n[a.b]\nc = 1\n")
+
+
+def test_integers_outside_64_bits_are_rejected() raises:
+    _check(
+        "a = 9223372036854775807\nb = -9223372036854775808\n",
+        '{"a":9223372036854775807,"b":-9223372036854775808}',
+    )
+    with assert_raises(contains="out of range"):
+        _ = loads("a = 9223372036854775808\n")
+    with assert_raises(contains="out of range"):
+        _ = loads("a = -9223372036854775809\n")
+    with assert_raises(contains="out of range"):
+        _ = loads("a = 0xFFFFFFFFFFFFFFFF\n")
+
+
+def test_separators_sit_between_digits_of_the_same_kind() raises:
+    _check(
+        "a = 1_0e2\nb = 1e1_0\nc = 0xf_f\n",
+        '{"a":1000.0,"b":10000000000.0,"c":255}',
+    )
+    with assert_raises(contains="Invalid value"):
+        _ = loads("a = 1_e2\n")
+    with assert_raises(contains="Invalid value"):
+        _ = loads("a = 1e_2\n")
+    with assert_raises(contains="Invalid value"):
+        _ = loads("a = 0x_1\n")
+
+
+def test_radix_prefixes_are_lower_case_and_unsigned() raises:
+    with assert_raises(contains="Invalid value"):
+        _ = loads("a = 0X1\n")
+    with assert_raises(contains="Invalid value"):
+        _ = loads("a = 0O17\n")
+    with assert_raises(contains="Invalid value"):
+        _ = loads("a = 0B1\n")
+    with assert_raises(contains="Invalid value"):
+        _ = loads("a = +0x1\n")
+
+
 def test_errors() raises:
     with assert_raises(contains="Expected '=' after a key in a key/value pair"):
         _ = loads("key\n")

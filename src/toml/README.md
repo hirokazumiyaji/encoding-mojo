@@ -83,11 +83,14 @@ The document handed to `dumps` must be a table; anything else raises.
 
 - **No date or time types.** `tomllib` returns `datetime`, `date` and `time`
   objects; a `Value` has no such type, so `dob = 1979-05-27` loads as the
-  string `"1979-05-27"` with its literal spelling preserved. The syntax is
-  still validated, and dumping writes the value back as a quoted string, so a
-  round trip through this package turns a date into a string.
+  string `"1979-05-27"` with its literal spelling preserved. The literal is
+  still checked in full — both its syntax and its calendar date, so
+  `2023-02-30` and `12:99:99` are rejected — and dumping writes the value back
+  as a quoted string, so a round trip through this package turns a date into a
+  string.
 - **Integers are 64-bit.** TOML requires at least a signed 64-bit range;
-  a literal outside it is rejected rather than promoted.
+  a literal outside it is rejected rather than promoted, where `tomllib`
+  returns an arbitrary-precision `int`.
 - **`loads` takes text, not bytes.** `tomllib.load` reads a binary file
   because it decodes UTF-8 itself; here the file is read as text first.
 - Nesting is capped at `MAX_DEPTH` (1000) levels.

@@ -417,7 +417,7 @@ struct _Parser(Movable):
 
     def _child_table(
         mut self, table: UInt32, name: StringSlice, mut registry: List[String]
-    ) -> UInt32:
+    ) raises -> UInt32:
         """Returns the child table called `name`, creating it if absent.
 
         An array of tables resolves to its last element, which is where a
@@ -431,17 +431,29 @@ struct _Parser(Movable):
 
         Returns:
             The child table's node index.
+
+        Raises:
+            If a value that is not a table already holds that name, so that
+            `a = 1` followed by `a.b = 2` is rejected rather than writing
+            through the integer.
         """
         registry.append(String(name))
         var at = self.tape.find_member(table, name.as_bytes())
         if at >= 0:
             var start = Int(self.tape.nodes[Int(table)].a)
             var child = self.tape.kids[start + 2 * at + 1]
-            if self.tape.nodes[Int(child)].kind == _KIND_ARRAY:
+            var kind = self.tape.nodes[Int(child)].kind
+            if kind == _KIND_ARRAY:
                 var info = self.tape.nodes[Int(child)]
                 if info.b:
+                    var last = self.tape.kids[Int(info.a) + Int(info.b) - 1]
+                    if self.tape.nodes[Int(last)].kind != _KIND_OBJECT:
+                        raise self._error(String("Cannot overwrite a value"))
                     registry.append(String(_ELEMENT, Int(info.b) - 1))
-                    return self.tape.kids[Int(info.a) + Int(info.b) - 1]
+                    return last
+                raise self._error(String("Cannot overwrite a value"))
+            if kind != _KIND_OBJECT:
+                raise self._error(String("Cannot overwrite a value"))
             return child
         var created = self.tape.new_container(_KIND_OBJECT)
         var key = self.tape.push_string(name.as_bytes())
@@ -460,31 +472,71 @@ struct _Parser(Movable):
             self.pos += 1
         self._skip_spaces()
         var path = self._parse_key_path()
+
+        # Follow the path as far as the document already goes, creating and
+        # writing nothing, so that the checks below see the registry path this
+        # header lands on. A part naming something that is not a table stops
+        # the walk, but is only reported after those checks, which is the
+        # order `tomllib` applies them in.
         var probe = List[String]()
         var probe_table = self.root
+        var walking = True
+        var blocked = False
         for i in range(len(path) - 1):
-            probe_table = self._child_table(probe_table, path[i], probe)
+            probe.append(path[i])
+            if not walking:
+                continue
+            var at = self.tape.find_member(probe_table, path[i].as_bytes())
+            if at < 0:
+                walking = False
+                continue
+            var start = Int(self.tape.nodes[Int(probe_table)].a)
+            var child = self.tape.kids[start + 2 * at + 1]
+            var kind = self.tape.nodes[Int(child)].kind
+            if kind == _KIND_OBJECT:
+                probe_table = child
+                continue
+            if kind == _KIND_ARRAY:
+                var info = self.tape.nodes[Int(child)]
+                if info.b:
+                    var last = self.tape.kids[Int(info.a) + Int(info.b) - 1]
+                    if self.tape.nodes[Int(last)].kind == _KIND_OBJECT:
+                        probe.append(String(_ELEMENT, Int(info.b) - 1))
+                        probe_table = last
+                        continue
+            walking = False
+            blocked = True
         probe.append(path[len(path) - 1])
         var joined = _join(probe)
 
         var frozen = self._frozen_prefix(probe)
-        if frozen or self._knows(self.dotted, joined):
-            raise self._error(
-                String("Cannot declare ", _quote_path(path), " twice")
-            )
         if is_array:
-            if self._knows(self.declared, joined) or self._knows(
-                self.assigned, joined
+            if frozen:
+                raise self._error(
+                    String(
+                        "Cannot mutate immutable namespace ", _quote_path(path)
+                    )
+                )
+            if (
+                self._knows(self.dotted, joined)
+                or self._knows(self.declared, joined)
+                or self._knows(self.assigned, joined)
             ):
                 raise self._error(String("Cannot overwrite a value"))
-        elif (
-            self._knows(self.declared, joined)
-            or self._knows(self.array_declared, joined)
-            or self._knows(self.assigned, joined)
-        ):
-            raise self._error(
-                String("Cannot declare ", _quote_path(path), " twice")
-            )
+        else:
+            if (
+                frozen
+                or self._knows(self.dotted, joined)
+                or self._knows(self.declared, joined)
+                or self._knows(self.array_declared, joined)
+            ):
+                raise self._error(
+                    String("Cannot declare ", _quote_path(path), " twice")
+                )
+            if self._knows(self.assigned, joined):
+                raise self._error(String("Cannot overwrite a value"))
+        if blocked:
+            raise self._error(String("Cannot overwrite a value"))
 
         self._skip_spaces()
         if is_array:
@@ -659,6 +711,26 @@ struct _Parser(Movable):
         self.pos += count
         return value
 
+    def _scalar_value(mut self, count: Int) raises -> Int:
+        """Reads a `\\u` or `\\U` escape and checks it names a real character.
+
+        Args:
+            count: How many hexadecimal digits the escape carries.
+
+        Returns:
+            The codepoint it encodes.
+
+        Raises:
+            If the digits are malformed, or encode a surrogate or a value
+            above U+10FFFF, neither of which is a Unicode scalar value.
+        """
+        var value = self._read_hex(count)
+        if value > 0x10FFFF or (value >= 0xD800 and value <= 0xDFFF):
+            raise self._error(
+                String("Escaped character is not a Unicode scalar value")
+            )
+        return value
+
     def _scan_basic_string(mut self, *, multiline: Bool) raises -> String:
         """Reads a `"` or `\"\"\"` string, decoding its escapes.
 
@@ -699,6 +771,13 @@ struct _Parser(Movable):
                     and self._byte(self.pos + 2) == _DQUOTE
                 ):
                     self.pos += 3
+                    # A run of four or five quotes ends the string too; the
+                    # one or two beyond the delimiter belong to the value.
+                    for _ in range(2):
+                        if self._peek() != _DQUOTE:
+                            break
+                        out.append(_DQUOTE)
+                        self.pos += 1
                     break
                 out.append(b)
                 self.pos += 1
@@ -766,9 +845,9 @@ struct _Parser(Movable):
         elif e == _DQUOTE or e == _BACKSLASH:
             out.append(e)
         elif e == 0x75:  # u
-            _append_utf8(out, self._read_hex(4))
+            _append_utf8(out, self._scalar_value(4))
         elif e == 0x55:  # U
-            _append_utf8(out, self._read_hex(8))
+            _append_utf8(out, self._scalar_value(8))
         else:
             raise self._error(String("Invalid escape sequence"))
 
@@ -811,6 +890,13 @@ struct _Parser(Movable):
                     and self._byte(self.pos + 2) == _SQUOTE
                 ):
                     self.pos += 3
+                    # A run of four or five apostrophes ends the string too;
+                    # the extras belong to the value.
+                    for _ in range(2):
+                        if self._peek() != _SQUOTE:
+                            break
+                        out.append(_SQUOTE)
+                        self.pos += 1
                     break
             if b == _NEWLINE or b == _RETURN:
                 if not triple:
@@ -848,30 +934,6 @@ struct _Parser(Movable):
             ):
                 break
             self.pos += 1
-        # A date and a time may be separated by a space instead of a `T`.
-        if (
-            self.pos - start >= 10
-            and self._byte(start + 4) == _MINUS
-            and self._peek() == _SPACE
-            and _is_digit(self._byte(self.pos + 1))
-            and _is_digit(self._byte(self.pos + 2))
-            and self._byte(self.pos + 3) == _COLON
-        ):
-            self.pos += 1
-            while not self._at_end():
-                var b = self._peek()
-                if (
-                    b == _SPACE
-                    or b == _TAB
-                    or b == _NEWLINE
-                    or b == _RETURN
-                    or b == _COMMA
-                    or b == _RBRACKET
-                    or b == _RBRACE
-                    or b == _HASH
-                ):
-                    break
-                self.pos += 1
         return (start, self.pos)
 
     def _parse_value(mut self, depth: Int) raises -> UInt32:
@@ -964,6 +1026,18 @@ struct _Parser(Movable):
                 raise self._error(String("Unclosed inline table"))
             return node
 
+        var stamp = _match_datetime(self.src, self.pos)
+        if stamp > 0:
+            # There is no date type here, so the literal is kept verbatim —
+            # but only after its syntax and calendar date are checked.
+            var text = StringSlice(
+                unsafe_from_utf8=self.src[self.pos : self.pos + stamp]
+            )
+            if not _is_real_date(text):
+                raise self._error(String("Invalid date or datetime"))
+            self.pos += stamp
+            return self.tape.push_string(text.as_bytes())
+
         var start, end = self._scan_value_token()
         if end == start:
             raise self._error(String("Invalid value"))
@@ -1002,11 +1076,8 @@ struct _Parser(Movable):
         if text == "false":
             return self.tape.push(_Node.scalar(_KIND_BOOL, 0))
 
-        if _looks_like_datetime(text):
-            # There is no date type here, so the literal is kept verbatim.
-            return self.tape.push_string(text.as_bytes())
-
-        var number = _parse_number(text)
+        var overflow = False
+        var number = _parse_number(text, overflow)
         if number:
             var value = number.value()
             if value.is_float:
@@ -1020,6 +1091,10 @@ struct _Parser(Movable):
             )
 
         self.pos = start
+        if overflow:
+            raise self._error(
+                String("Integer is out of range for a signed 64-bit value")
+            )
         raise self._error(String("Invalid value"))
 
     # ===-------------------------------------------------------------------===#
@@ -1072,41 +1147,153 @@ def _append_utf8(mut out: List[UInt8], cp: Int):
         out.append(UInt8(0x80 | (cp & 0x3F)))
 
 
-def _looks_like_datetime(text: StringSlice) -> Bool:
-    """Reports whether a bare token is a date, a time or a date-time.
+def _two_digits(src: Span[UInt8, _], pos: Int, low: Int, high: Int) -> Bool:
+    """Reports whether two digits at `pos` spell a number within a range.
 
     Args:
-        text: The token to inspect.
+        src: The document bytes.
+        pos: Where the pair starts.
+        low: The smallest value accepted.
+        high: The largest value accepted.
 
     Returns:
-        True if it starts with `YYYY-MM-DD` or `HH:MM:SS`.
+        True if both bytes are digits and the pair is in range.
+    """
+    if pos + 1 >= len(src):
+        return False
+    if not _is_digit(src[pos]) or not _is_digit(src[pos + 1]):
+        return False
+    var value = Int(src[pos] - 0x30) * 10 + Int(src[pos + 1] - 0x30)
+    return value >= low and value <= high
+
+
+def _match_time(src: Span[UInt8, _], pos: Int) -> Int:
+    """Matches `HH:MM:SS` with an optional fraction.
+
+    Args:
+        src: The document bytes.
+        pos: Where the time would start.
+
+    Returns:
+        Its length, or 0 if no time starts there.
+    """
+    if not _two_digits(src, pos, 0, 23):
+        return 0
+    if pos + 2 >= len(src) or src[pos + 2] != _COLON:
+        return 0
+    if not _two_digits(src, pos + 3, 0, 59):
+        return 0
+    if pos + 5 >= len(src) or src[pos + 5] != _COLON:
+        return 0
+    if not _two_digits(src, pos + 6, 0, 59):
+        return 0
+    var end = pos + 8
+    if end < len(src) and src[end] == _DOT and _is_digit_at(src, end + 1):
+        end += 1
+        while end < len(src) and _is_digit(src[end]):
+            end += 1
+    return end - pos
+
+
+def _match_datetime(src: Span[UInt8, _], pos: Int) -> Int:
+    """Matches a TOML date, time or date-time at `pos`.
+
+    The shapes accepted are the ones `tomllib` accepts, ranges included: a
+    date is `YYYY-MM-DD` with a month of 01-12 and a day of 01-31, a time is
+    `HH:MM:SS` with an optional fraction, and a date-time joins them with `T`,
+    `t` or a space and may carry a `Z` or a `+HH:MM` offset. Whether the day
+    actually exists in that month is left to `_is_real_date`.
+
+    Args:
+        src: The document bytes.
+        pos: Where the literal would start.
+
+    Returns:
+        The length matched, or 0 if nothing here is a date or a time.
+    """
+    var is_date = (
+        pos + 9 < len(src)
+        and _is_digit(src[pos])
+        and _is_digit(src[pos + 1])
+        and _is_digit(src[pos + 2])
+        and _is_digit(src[pos + 3])
+        and src[pos + 4] == _MINUS
+        and _two_digits(src, pos + 5, 1, 12)
+        and src[pos + 7] == _MINUS
+        and _two_digits(src, pos + 8, 1, 31)
+    )
+    if not is_date:
+        return _match_time(src, pos)
+
+    var end = pos + 10
+    if end >= len(src):
+        return end - pos
+    var separator = src[end]
+    if separator != 0x54 and separator != 0x74 and separator != _SPACE:
+        return end - pos
+    var time = _match_time(src, end + 1)
+    if time == 0:
+        # A date on its own, followed by whatever came after it.
+        return end - pos
+    end += 1 + time
+
+    if end < len(src) and (src[end] == 0x5A or src[end] == 0x7A):  # Z, z
+        return end + 1 - pos
+    if (
+        end + 5 < len(src)
+        and (src[end] == _PLUS or src[end] == _MINUS)
+        and _two_digits(src, end + 1, 0, 23)
+        and src[end + 3] == _COLON
+        and _two_digits(src, end + 4, 0, 59)
+    ):
+        return end + 6 - pos
+    return end - pos
+
+
+def _is_real_date(text: StringSlice) -> Bool:
+    """Reports whether a matched literal names a day that exists.
+
+    Args:
+        text: The literal, already known to have the right shape.
+
+    Returns:
+        True unless the day is past the end of its month.
     """
     var b = text.as_bytes()
-    if (
-        len(b) >= 10
-        and _is_digit(b[0])
-        and _is_digit(b[1])
-        and _is_digit(b[2])
-        and _is_digit(b[3])
-        and b[4] == _MINUS
-        and _is_digit(b[5])
-        and _is_digit(b[6])
-        and b[7] == _MINUS
-        and _is_digit(b[8])
-        and _is_digit(b[9])
-    ):
-        return True
-    return (
-        len(b) >= 8
-        and _is_digit(b[0])
-        and _is_digit(b[1])
-        and b[2] == _COLON
-        and _is_digit(b[3])
-        and _is_digit(b[4])
-        and b[5] == _COLON
-        and _is_digit(b[6])
-        and _is_digit(b[7])
+    if len(b) < 10 or b[4] != _MINUS:
+        return True  # A bare time has no calendar date to check.
+    var year = (
+        Int(b[0] - 0x30) * 1000
+        + Int(b[1] - 0x30) * 100
+        + Int(b[2] - 0x30) * 10
+        + Int(b[3] - 0x30)
     )
+    var month = Int(b[5] - 0x30) * 10 + Int(b[6] - 0x30)
+    var day = Int(b[8] - 0x30) * 10 + Int(b[9] - 0x30)
+
+    var length: Int
+    if month == 2:
+        var leap = (year % 4 == 0 and year % 100 != 0) or year % 400 == 0
+        length = 29 if leap else 28
+    elif month == 4 or month == 6 or month == 9 or month == 11:
+        length = 30
+    else:
+        length = 31
+    return day <= length
+
+
+@always_inline
+def _is_digit_at(src: Span[UInt8, _], pos: Int) -> Bool:
+    """Reports whether `src` holds a digit at `pos`.
+
+    Args:
+        src: The document bytes.
+        pos: The offset to test.
+
+    Returns:
+        True if the offset is in range and holds `0`-`9`.
+    """
+    return pos < len(src) and _is_digit(src[pos])
 
 
 @fieldwise_init
@@ -1123,11 +1310,16 @@ struct _Number(Copyable, ImplicitlyCopyable, Movable):
     """The value, when this is a float."""
 
 
-def _strip_underscores(text: StringSlice) -> Optional[String]:
+def _strip_underscores(
+    text: StringSlice, hexadecimal: Bool
+) -> Optional[String]:
     """Removes the digit-grouping underscores TOML allows.
 
     Args:
         text: The literal to clean.
+        hexadecimal: Whether `a`-`f` count as digits, which they do only in a
+            `0x` literal. Everywhere else `1_e2` and `1e_2` are malformed,
+            because a separator must sit between two decimal digits.
 
     Returns:
         The literal without underscores, or `None` if one sits anywhere other
@@ -1141,7 +1333,12 @@ def _strip_underscores(text: StringSlice) -> Optional[String]:
             continue
         if i == 0 or i + 1 == len(bytes):
             return None
-        if not _is_hex_digit(bytes[i - 1]) or not _is_hex_digit(bytes[i + 1]):
+        var before = bytes[i - 1]
+        var after = bytes[i + 1]
+        if hexadecimal:
+            if not _is_hex_digit(before) or not _is_hex_digit(after):
+                return None
+        elif not _is_digit(before) or not _is_digit(after):
             return None
     return String(unsafe_from_utf8=Span(kept))
 
@@ -1161,20 +1358,27 @@ def _is_hex_digit(b: UInt8) -> Bool:
     )
 
 
-def _digits_in_base(text: StringSlice, base: Int) -> Optional[Int]:
+def _digits_in_base(
+    text: StringSlice, base: Int, mut overflow: Bool
+) -> Optional[UInt64]:
     """Parses `text` as an unsigned integer in `base`.
 
     Args:
         text: The digits, already free of underscores.
         base: The radix, 2, 8, 10 or 16.
+        overflow: Set when the digits are a number but one too large to hold,
+            so the caller can say so instead of calling the literal invalid.
 
     Returns:
-        The value, or `None` if `text` is empty or holds a digit out of range.
+        The value, or `None` if `text` is empty, holds a digit out of range,
+        or does not fit in 64 bits.
     """
     var bytes = text.as_bytes()
     if len(bytes) == 0:
         return None
-    var value = 0
+    var radix = UInt64(base)
+    var limit = UInt64.MAX
+    var value = UInt64(0)
     for i in range(len(bytes)):
         var b = bytes[i]
         var digit: Int
@@ -1188,15 +1392,51 @@ def _digits_in_base(text: StringSlice, base: Int) -> Optional[Int]:
             return None
         if digit >= base:
             return None
-        value = value * base + digit
+        if value > (limit - UInt64(digit)) // radix:
+            overflow = True
+            return None
+        value = value * radix + UInt64(digit)
     return value
 
 
-def _parse_number(text: StringSlice) raises -> Optional[_Number]:
+def _signed(
+    magnitude: Optional[UInt64], negative: Bool, mut overflow: Bool
+) -> Optional[_Number]:
+    """Applies a sign to a magnitude, rejecting what 64 bits cannot hold.
+
+    Args:
+        magnitude: The digits' value, or `None` if they were not a number.
+        negative: Whether the literal carried a `-`.
+        overflow: Set when the magnitude is past the signed 64-bit range.
+
+    Returns:
+        The integer, or `None` if there is none to make.
+    """
+    if not magnitude:
+        return None
+    var value = magnitude.value()
+    if negative:
+        if value > UInt64(1) << 63:
+            overflow = True
+            return None
+        if value == UInt64(1) << 63:
+            return _Number(False, Int(Int64.MIN), 0)
+        return _Number(False, -Int(value), 0)
+    if value > UInt64(Int64.MAX):
+        overflow = True
+        return None
+    return _Number(False, Int(value), 0)
+
+
+def _parse_number(
+    text: StringSlice, mut overflow: Bool
+) raises -> Optional[_Number]:
     """Parses a bare token as a TOML number.
 
     Args:
         text: The token, exactly as written.
+        overflow: Set when the token is an integer too large for 64 bits, so
+            the caller can report that rather than calling it invalid.
 
     Returns:
         The number it denotes, or `None` if it is not one.
@@ -1221,7 +1461,16 @@ def _parse_number(text: StringSlice) raises -> Optional[_Number]:
     if body == "nan":
         return _Number(True, 0, Float64("nan"))
 
-    var cleaned_opt = _strip_underscores(body)
+    var raw = body.as_bytes()
+    var prefixed = (
+        len(raw) > 1
+        and raw[0] == 0x30
+        and (raw[1] == 0x78 or raw[1] == 0x6F or raw[1] == 0x62)  # x, o, b
+    )
+    if prefixed and body_start != 0:
+        # `+0x1` is not a TOML integer; only the decimal form takes a sign.
+        return None
+    var cleaned_opt = _strip_underscores(body, prefixed and raw[1] == 0x78)
     if not cleaned_opt:
         return None
     var cleaned = cleaned_opt.value()
@@ -1231,26 +1480,17 @@ def _parse_number(text: StringSlice) raises -> Optional[_Number]:
 
     var first = cleaned.as_bytes()[0]
     var second = cleaned.as_bytes()[1] if n > 1 else UInt8(0)
-    if first == 0x30 and n > 1 and (second | 0x20) == 0x78:  # 0x
-        var magnitude = _digits_in_base(cleaned[byte=2:n], 16)
-        if not magnitude:
-            return None
-        return _Number(
-            False, -magnitude.value() if negative else magnitude.value(), 0
+    if first == 0x30 and n > 1 and second == 0x78:  # 0x
+        return _signed(
+            _digits_in_base(cleaned[byte=2:n], 16, overflow), negative, overflow
         )
-    if first == 0x30 and n > 1 and (second | 0x20) == 0x6F:  # 0o
-        var magnitude = _digits_in_base(cleaned[byte=2:n], 8)
-        if not magnitude:
-            return None
-        return _Number(
-            False, -magnitude.value() if negative else magnitude.value(), 0
+    if first == 0x30 and n > 1 and second == 0x6F:  # 0o
+        return _signed(
+            _digits_in_base(cleaned[byte=2:n], 8, overflow), negative, overflow
         )
-    if first == 0x30 and n > 1 and (second | 0x20) == 0x62:  # 0b
-        var magnitude = _digits_in_base(cleaned[byte=2:n], 2)
-        if not magnitude:
-            return None
-        return _Number(
-            False, -magnitude.value() if negative else magnitude.value(), 0
+    if first == 0x30 and n > 1 and second == 0x62:  # 0b
+        return _signed(
+            _digits_in_base(cleaned[byte=2:n], 2, overflow), negative, overflow
         )
 
     var has_dot = False
@@ -1266,11 +1506,8 @@ def _parse_number(text: StringSlice) raises -> Optional[_Number]:
         # A leading zero is only allowed on its own, so `01` is not a number.
         if n > 1 and first == 0x30:
             return None
-        var magnitude = _digits_in_base(cleaned, 10)
-        if not magnitude:
-            return None
-        return _Number(
-            False, -magnitude.value() if negative else magnitude.value(), 0
+        return _signed(
+            _digits_in_base(cleaned, 10, overflow), negative, overflow
         )
 
     if not _is_valid_float(cleaned):
