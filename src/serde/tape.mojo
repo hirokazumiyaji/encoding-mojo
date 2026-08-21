@@ -58,8 +58,8 @@ comptime _KIND_OBJECT: UInt8 = 6
 
 
 @fieldwise_init
-struct JSONType(Equatable, ImplicitlyCopyable, Movable, Writable):
-    """The type tag of a `JSONValue`, mirroring the JSON data model.
+struct ValueType(Equatable, ImplicitlyCopyable, Movable, Writable):
+    """The type tag of a `Value`, mirroring the JSON data model.
 
     `INT` and `FLOAT` are distinct so that a document round-trips exactly:
     Python's `json` also gives back `1` for `"1"` and `1.0` for `"1.0"`.

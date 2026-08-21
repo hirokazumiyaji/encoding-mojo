@@ -23,7 +23,7 @@ at compile time, so the unused path — and the `String` it would have had to
 build — is never emitted.
 """
 
-from .value import JSONValue
+from serde import Value as JSONValue
 
 
 trait NumberHook:

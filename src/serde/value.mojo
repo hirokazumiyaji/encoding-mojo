@@ -1,6 +1,6 @@
-"""The public `JSONValue` type.
+"""The document model shared by every format in this repository.
 
-A `JSONValue` is a reference-counted handle on a `_Tape` plus the index of one
+A `Value` is a reference-counted handle on a `_Tape` plus the index of one
 node inside it, so it is 12 bytes wide and copying one is a refcount bump.
 That also gives Python's reference semantics for free: `doc["a"]` shares the
 tape with `doc`, so mutating one mutates the other.
@@ -8,9 +8,9 @@ tape with `doc`, so mutating one mutates the other.
 
 from std.memory import ArcPointer
 
-from .encoder import write_default
+from .json_text import write_default
 from .tape import (
-    JSONType,
+    ValueType,
     MAX_DEPTH,
     _KIND_ARRAY,
     _KIND_BOOL,
@@ -26,11 +26,11 @@ from .tape import (
 
 
 # ===-----------------------------------------------------------------------===#
-# JSONValue
+# Value
 # ===-----------------------------------------------------------------------===#
 
 
-struct JSONValue(
+struct Value(
     Boolable,
     Copyable,
     Equatable,
@@ -42,7 +42,7 @@ struct JSONValue(
     """A single JSON value: `null`, a bool, a number, a string, an array or an
     object.
 
-    A `JSONValue` is a handle into a shared document, so copies are cheap and
+    A `Value` is a handle into a shared document, so copies are cheap and
     alias each other exactly like Python's `dict` and `list` do:
 
     ```mojo
@@ -185,13 +185,13 @@ struct JSONValue(
         """
         return self._node().kind
 
-    def type(self) -> JSONType:
+    def type(self) -> ValueType:
         """Returns the JSON type of this value.
 
         Returns:
             The type tag.
         """
-        return JSONType(self._kind())
+        return ValueType(self._kind())
 
     def is_null(self) -> Bool:
         """Reports whether this value is JSON `null`.
@@ -379,7 +379,7 @@ struct JSONValue(
 
         Values already living in this document are aliased, so inserting one
         gives Python's reference semantics. Values from another document are
-        deep-copied, because a `JSONValue` cannot span two tapes.
+        deep-copied, because a `Value` cannot span two tapes.
 
         Args:
             value: The value to place into this document.
@@ -470,7 +470,7 @@ struct JSONValue(
         """Appends `null` to this array.
 
         This exact overload keeps `arr.append(None)` unambiguous: without it
-        the literal could convert either to `NoneType` or to a `JSONValue`.
+        the literal could convert either to `NoneType` or to a `Value`.
 
         Args:
             value: Always `None`.
@@ -669,7 +669,7 @@ struct JSONValue(
     # Not a conformance to `Iterable`: that trait's `__iter__` cannot raise,
     # and iterating a scalar has to fail the way Python's `TypeError` does.
     # A `for` loop only needs the method to exist.
-    def __iter__(self) raises -> _JSONIter:
+    def __iter__(self) raises -> _ValueIter:
         """Iterates this container, following Python's rules.
 
         Arrays yield their elements and objects yield their keys, as JSON
@@ -683,7 +683,7 @@ struct JSONValue(
         """
         if not self.is_container():
             raise Error("'", self.type(), "' object is not iterable")
-        return _JSONIter(self, 0, Int(self._node().b))
+        return _ValueIter(self, 0, Int(self._node().b))
 
     def update(self, other: Self) raises:
         """Copies every member of `other` into this object.
@@ -1045,13 +1045,13 @@ def _count_codepoints(bytes: Span[UInt8, _]) -> Int:
     return count
 
 
-struct _JSONIter(Copyable, ImplicitlyCopyable, Iterator, Movable):
+struct _ValueIter(Copyable, ImplicitlyCopyable, Iterator, Movable):
     """Iterates an array's elements or an object's keys."""
 
-    comptime Element = JSONValue
+    comptime Element = Value
     """What `__next__` yields."""
 
-    var _value: JSONValue
+    var _value: Value
     """The container being iterated. Holding it keeps the document alive."""
 
     var _index: Int
@@ -1060,7 +1060,7 @@ struct _JSONIter(Copyable, ImplicitlyCopyable, Iterator, Movable):
     var _length: Int
     """The container's length, captured when iteration started."""
 
-    def __init__(out self, value: JSONValue, index: Int, length: Int):
+    def __init__(out self, value: Value, index: Int, length: Int):
         """Starts an iteration.
 
         Args:
@@ -1072,7 +1072,7 @@ struct _JSONIter(Copyable, ImplicitlyCopyable, Iterator, Movable):
         self._index = index
         self._length = length
 
-    def __next__(mut self) raises StopIteration -> JSONValue:
+    def __next__(mut self) raises StopIteration -> Value:
         """Yields the next element or key.
 
         Returns:
@@ -1087,7 +1087,7 @@ struct _JSONIter(Copyable, ImplicitlyCopyable, Iterator, Movable):
         var stride = 2 if node.kind == _KIND_OBJECT else 1
         var child = self._value._tape[].kids[Int(node.a) + stride * self._index]
         self._index += 1
-        return JSONValue(tape=self._value._tape, idx=child)
+        return Value(tape=self._value._tape, idx=child)
 
     def bounds(self) -> Tuple[Int, Optional[Int]]:
         """Reports how many elements remain.
