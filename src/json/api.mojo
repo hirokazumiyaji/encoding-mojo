@@ -5,8 +5,8 @@ from std.memory import ArcPointer
 
 from .decoder import parse_document
 from .hooks import NoNumberHook, NoValueHook, NumberHook, ValueHook
-from .encoder import EncodeOptions, Indent, write_value
-from .value import JSONValue
+from serde import EncodeOptions, Indent, write_value
+from serde import Value as JSONValue
 
 
 def dumps(

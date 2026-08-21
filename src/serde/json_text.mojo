@@ -1,5 +1,9 @@
 """Serialization of tape nodes back into JSON text.
 
+JSON is the canonical text form of the shared document model, so this lives
+beside the model rather than in the `json` package: `Value.write_to` needs it,
+and every format's values print the same way.
+
 The output is byte-for-byte compatible with CPython's `json.dumps` for every
 option this module exposes, including the default separators (`", "` and
 `": "`), `ensure_ascii` escaping with surrogate pairs, `NaN`/`Infinity`

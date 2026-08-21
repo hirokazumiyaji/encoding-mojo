@@ -1,7 +1,6 @@
 *.mojopkg
 *.mojoc
-*.mojoc
 .build/
+build/
 __pycache__/
 bench/*/data/
-build/

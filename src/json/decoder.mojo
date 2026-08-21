@@ -18,8 +18,8 @@ from std.memory import ArcPointer
 
 from .errors import JSONDecodeError
 from .hooks import NoNumberHook, NoValueHook, NumberHook, ValueHook
-from .value import JSONValue
-from .tape import (
+from serde import Value as JSONValue
+from serde.tape import (
     MAX_DEPTH,
     _reserve_extra,
     _KIND_ARRAY,
