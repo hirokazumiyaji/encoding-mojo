@@ -15,6 +15,7 @@ from csv import (
     read_records,
     reader,
     unix,
+    write_records,
     writer,
     writes,
 )
@@ -69,11 +70,37 @@ def test_records_example() raises:
     assert_equal(dumps(read_records("a,b\n1,2\n")[0]), '{"a": "1", "b": "2"}')
 
 
+def test_records_keep_their_types() raises:
+    from csv import QUOTE_NONNUMERIC
+
+    var record = Value.object()
+    record["a"] = 1
+    record["b"] = "x"
+    var names: List[String] = ["a", "b"]
+    var records: List[Value] = [record]
+    assert_equal(
+        write_records(records, names, Dialect(quoting=QUOTE_NONNUMERIC)),
+        '"a","b"\r\n1,"x"\r\n',
+    )
+
+
+def test_surplus_fields_are_dropped_without_a_restkey() raises:
+    assert_equal(
+        dumps(read_records("a,b\n1,2,3\n")[0]),
+        '{"a": "1", "b": "2"}',
+    )
+
+
 def test_documented_deviations() raises:
     from csv import QUOTE_NONNUMERIC
 
     # A number read under QUOTE_NONNUMERIC comes back as Python would print it.
     assert_equal(reader("1\n", Dialect(quoting=QUOTE_NONNUMERIC))[0][0], "1.0")
+    # The conversion is Python's whole `float`, Unicode digits included.
+    assert_equal(
+        reader("\uff11\uff12\n", Dialect(quoting=QUOTE_NONNUMERIC))[0][0],
+        "12.0",
+    )
     with assert_raises(contains="could not convert string to float: 'a'"):
         _ = reader("a\n", Dialect(quoting=QUOTE_NONNUMERIC))
     # `field_size_limit` belongs to the dialect.

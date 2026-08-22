@@ -213,5 +213,39 @@ def test_field_size_limit() raises:
     _check_with("aaa\n", Dialect(field_size_limit=3), "[['aaa']]")
 
 
+def test_unicode_digits_are_numbers() raises:
+    # Python's `float` takes any Unicode decimal digit, so `csv` does too.
+    var d = Dialect(quoting=QUOTE_NONNUMERIC)
+    _check_with("\u0661\n", d, "[['1.0']]")
+    _check_with("\uff11\uff12\n", d, "[['12.0']]")
+    _check_with("\u0661.\u0662\n", d, "[['1.2']]")
+    _check_with("\u06f1\n", d, "[['1.0']]")
+    _check_with("\uff11_\uff12\n", d, "[['12.0']]")
+    # A Roman numeral and a superscript are not decimal digits.
+    with assert_raises(contains="could not convert string to float"):
+        _ = reader("\u2160\n", d)
+    with assert_raises(contains="could not convert string to float"):
+        _ = reader("\u00b2\n", d)
+
+
+def test_unicode_blanks_are_stripped_around_a_number() raises:
+    var d = Dialect(quoting=QUOTE_NONNUMERIC)
+    _check_with("\u3000\uff11\uff12\u3000\n", d, "[['12.0']]")
+    _check_with("\u00a0 1\n", d, "[['1.0']]")
+    # A zero-width space is not blank, and `float` says so too.
+    with assert_raises(contains="could not convert string to float"):
+        _ = reader("\u200b1\n", d)
+
+
+def test_carriage_returns_may_be_dialect_characters() raises:
+    # CPython accepts these and the line break still wins over them, so a
+    # newline delimiter never splits a field. Matching that is the point.
+    _check_with("a\nb\n", Dialect(delimiter="\n"), "[['a'], ['b']]")
+    _check_with("a,b\nc\n", Dialect(delimiter="\n"), "[['a,b'], ['c']]")
+    _check_with("a\rb\r", Dialect(delimiter="\r"), "[['a'], ['b']]")
+    _check_with("\na\n,b\n", Dialect(quotechar="\n"), "[[], ['a'], ['', 'b']]")
+    _check_with("a\rbc,d\n", Dialect(escapechar="\r"), "[['a'], ['bc', 'd']]")
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

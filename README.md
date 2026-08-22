@@ -86,8 +86,8 @@ the fixtures in `bench/csv`:
 
 | Fixture | `reader` | `writer` |
 |---------|----------|----------|
-| plain (0.47 MiB) | **1.0x** | **1.6x** faster |
-| quoted (0.42 MiB) | **0.9x** | **1.6x** faster |
+| plain (0.47 MiB) | **1.0x** | **1.2x** faster |
+| quoted (0.42 MiB) | **0.9x** | **1.2x** faster |
 
 Those YAML numbers are against PyYAML's pure-Python backend, which is what is
 installed here. PyYAML also ships an optional C backend built on libyaml

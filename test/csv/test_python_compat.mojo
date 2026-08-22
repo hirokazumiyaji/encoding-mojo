@@ -156,6 +156,18 @@ def test_matches_python_002() raises:
         "a,b,c\r\n1,2,3\r\n",
     )
     _check(
+        "a,b,c\n1,2,3\n",
+        Dialect(delimiter="\n"),
+        "[['a,b,c'], ['1,2,3']]",
+        "a,b,c\r\n1,2,3\r\n",
+    )
+    _check(
+        "a,b,c\n1,2,3\n",
+        Dialect(escapechar="\r"),
+        "[['a', 'b', 'c'], ['1', '2', '3']]",
+        "a,b,c\r\n1,2,3\r\n",
+    )
+    _check(
         "a,b\n1,2",
         Dialect(),
         "[['a', 'b'], ['1', '2']]",
@@ -167,6 +179,9 @@ def test_matches_python_002() raises:
         "[['a,b'], ['1,2']]",
         "a,b\r\n1,2\r\n",
     )
+
+
+def test_matches_python_003() raises:
     _check(
         "a,b\n1,2",
         unix(),
@@ -179,9 +194,6 @@ def test_matches_python_002() raises:
         "[['a,b'], ['1,2']]",
         "a,b\r\n1,2\r\n",
     )
-
-
-def test_matches_python_003() raises:
     _check(
         "a,b\n1,2",
         Dialect(delimiter="|"),
@@ -206,6 +218,9 @@ def test_matches_python_003() raises:
         "[['a', 'b'], ['1', '2']]",
         "a,b\r\n1,2\r\n",
     )
+
+
+def test_matches_python_004() raises:
     _check(
         "a,b\n1,2",
         Dialect(doublequote=False),
@@ -218,9 +233,6 @@ def test_matches_python_003() raises:
         "[['a', 'b'], ['1', '2']]",
         "a,b\r\n1,2\r\n",
     )
-
-
-def test_matches_python_004() raises:
     _check(
         "a,b\n1,2",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -245,6 +257,21 @@ def test_matches_python_004() raises:
         "[['a,b'], ['1,2']]",
         "a,b\r\n1,2\r\n",
     )
+
+
+def test_matches_python_005() raises:
+    _check(
+        "a,b\n1,2",
+        Dialect(delimiter="\n"),
+        "[['a,b'], ['1,2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\n1,2",
+        Dialect(escapechar="\r"),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
     _check(
         "",
         Dialect(),
@@ -257,9 +284,6 @@ def test_matches_python_004() raises:
         "[]",
         "",
     )
-
-
-def test_matches_python_005() raises:
     _check(
         "",
         unix(),
@@ -269,30 +293,6 @@ def test_matches_python_005() raises:
     _check(
         "",
         Dialect(delimiter=";"),
-        "[]",
-        "",
-    )
-    _check(
-        "",
-        Dialect(delimiter="|"),
-        "[]",
-        "",
-    )
-    _check(
-        "",
-        Dialect(skipinitialspace=True),
-        "[]",
-        "",
-    )
-    _check(
-        "",
-        Dialect(quotechar="'"),
-        "[]",
-        "",
-    )
-    _check(
-        "",
-        Dialect(escapechar="\\"),
         "[]",
         "",
     )
@@ -301,6 +301,30 @@ def test_matches_python_005() raises:
 def test_matches_python_006() raises:
     _check(
         "",
+        Dialect(delimiter="|"),
+        "[]",
+        "",
+    )
+    _check(
+        "",
+        Dialect(skipinitialspace=True),
+        "[]",
+        "",
+    )
+    _check(
+        "",
+        Dialect(quotechar="'"),
+        "[]",
+        "",
+    )
+    _check(
+        "",
+        Dialect(escapechar="\\"),
+        "[]",
+        "",
+    )
+    _check(
+        "",
         Dialect(doublequote=False),
         "[]",
         "",
@@ -308,30 +332,6 @@ def test_matches_python_006() raises:
     _check(
         "",
         Dialect(doublequote=False, escapechar="\\"),
-        "[]",
-        "",
-    )
-    _check(
-        "",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[]",
-        "",
-    )
-    _check(
-        "",
-        Dialect(quoting=QUOTE_ALL),
-        "[]",
-        "",
-    )
-    _check(
-        "",
-        Dialect(lineterminator="\n"),
-        "[]",
-        "",
-    )
-    _check(
-        "",
-        Dialect(delimiter="\u20ac"),
         "[]",
         "",
     )
@@ -340,7 +340,46 @@ def test_matches_python_006() raises:
 def test_matches_python_007() raises:
     _check(
         "",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[]",
+        "",
+    )
+    _check(
+        "",
+        Dialect(quoting=QUOTE_ALL),
+        "[]",
+        "",
+    )
+    _check(
+        "",
+        Dialect(lineterminator="\n"),
+        "[]",
+        "",
+    )
+    _check(
+        "",
+        Dialect(delimiter="\u20ac"),
+        "[]",
+        "",
+    )
+    _check(
+        "",
         Dialect(quoting=QUOTE_NONNUMERIC),
+        "[]",
+        "",
+    )
+    _check(
+        "",
+        Dialect(delimiter="\n"),
+        "[]",
+        "",
+    )
+
+
+def test_matches_python_008() raises:
+    _check(
+        "",
+        Dialect(escapechar="\r"),
         "[]",
         "",
     )
@@ -376,7 +415,7 @@ def test_matches_python_007() raises:
     )
 
 
-def test_matches_python_008() raises:
+def test_matches_python_009() raises:
     _check(
         "\n",
         Dialect(skipinitialspace=True),
@@ -415,7 +454,7 @@ def test_matches_python_008() raises:
     )
 
 
-def test_matches_python_009() raises:
+def test_matches_python_010() raises:
     _check(
         "\n",
         Dialect(quoting=QUOTE_ALL),
@@ -441,6 +480,21 @@ def test_matches_python_009() raises:
         "\r\n",
     )
     _check(
+        "\n",
+        Dialect(delimiter="\n"),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\n",
+        Dialect(escapechar="\r"),
+        "[[]]",
+        "\r\n",
+    )
+
+
+def test_matches_python_011() raises:
+    _check(
         "\n\n",
         Dialect(),
         "[[], []]",
@@ -452,9 +506,6 @@ def test_matches_python_009() raises:
         "[[], []]",
         "\r\n\r\n",
     )
-
-
-def test_matches_python_010() raises:
     _check(
         "\n\n",
         unix(),
@@ -479,6 +530,9 @@ def test_matches_python_010() raises:
         "[[], []]",
         "\r\n\r\n",
     )
+
+
+def test_matches_python_012() raises:
     _check(
         "\n\n",
         Dialect(quotechar="'"),
@@ -491,9 +545,6 @@ def test_matches_python_010() raises:
         "[[], []]",
         "\r\n\r\n",
     )
-
-
-def test_matches_python_011() raises:
     _check(
         "\n\n",
         Dialect(doublequote=False),
@@ -518,6 +569,9 @@ def test_matches_python_011() raises:
         "[[], []]",
         "\r\n\r\n",
     )
+
+
+def test_matches_python_013() raises:
     _check(
         "\n\n",
         Dialect(lineterminator="\n"),
@@ -530,12 +584,21 @@ def test_matches_python_011() raises:
         "[[], []]",
         "\r\n\r\n",
     )
-
-
-def test_matches_python_012() raises:
     _check(
         "\n\n",
         Dialect(quoting=QUOTE_NONNUMERIC),
+        "[[], []]",
+        "\r\n\r\n",
+    )
+    _check(
+        "\n\n",
+        Dialect(delimiter="\n"),
+        "[[], []]",
+        "\r\n\r\n",
+    )
+    _check(
+        "\n\n",
+        Dialect(escapechar="\r"),
         "[[], []]",
         "\r\n\r\n",
     )
@@ -545,6 +608,9 @@ def test_matches_python_012() raises:
         "[['a', 'b'], [], ['c', 'd']]",
         "a,b\r\n\r\nc,d\r\n",
     )
+
+
+def test_matches_python_014() raises:
     _check(
         "a,b\n\nc,d\n",
         excel_tab(),
@@ -569,9 +635,6 @@ def test_matches_python_012() raises:
         "[['a,b'], [], ['c,d']]",
         "a,b\r\n\r\nc,d\r\n",
     )
-
-
-def test_matches_python_013() raises:
     _check(
         "a,b\n\nc,d\n",
         Dialect(skipinitialspace=True),
@@ -584,6 +647,9 @@ def test_matches_python_013() raises:
         "[['a', 'b'], [], ['c', 'd']]",
         "a,b\r\n\r\nc,d\r\n",
     )
+
+
+def test_matches_python_015() raises:
     _check(
         "a,b\n\nc,d\n",
         Dialect(escapechar="\\"),
@@ -608,9 +674,6 @@ def test_matches_python_013() raises:
         "[['a', 'b'], [], ['c', 'd']]",
         "a,b\r\n\r\nc,d\r\n",
     )
-
-
-def test_matches_python_014() raises:
     _check(
         "a,b\n\nc,d\n",
         Dialect(quoting=QUOTE_ALL),
@@ -623,10 +686,25 @@ def test_matches_python_014() raises:
         "[['a', 'b'], [], ['c', 'd']]",
         "a,b\n\nc,d\n",
     )
+
+
+def test_matches_python_016() raises:
     _check(
         "a,b\n\nc,d\n",
         Dialect(delimiter="\u20ac"),
         "[['a,b'], [], ['c,d']]",
+        "a,b\r\n\r\nc,d\r\n",
+    )
+    _check(
+        "a,b\n\nc,d\n",
+        Dialect(delimiter="\n"),
+        "[['a,b'], [], ['c,d']]",
+        "a,b\r\n\r\nc,d\r\n",
+    )
+    _check(
+        "a,b\n\nc,d\n",
+        Dialect(escapechar="\r"),
+        "[['a', 'b'], [], ['c', 'd']]",
         "a,b\r\n\r\nc,d\r\n",
     )
     _check(
@@ -649,7 +727,7 @@ def test_matches_python_014() raises:
     )
 
 
-def test_matches_python_015() raises:
+def test_matches_python_017() raises:
     _check(
         ",,\n",
         Dialect(delimiter=";"),
@@ -688,7 +766,7 @@ def test_matches_python_015() raises:
     )
 
 
-def test_matches_python_016() raises:
+def test_matches_python_018() raises:
     _check(
         ",,\n",
         Dialect(doublequote=False, escapechar="\\"),
@@ -727,7 +805,19 @@ def test_matches_python_016() raises:
     )
 
 
-def test_matches_python_017() raises:
+def test_matches_python_019() raises:
+    _check(
+        ",,\n",
+        Dialect(delimiter="\n"),
+        "[[',,']]",
+        ",,\r\n",
+    )
+    _check(
+        ",,\n",
+        Dialect(escapechar="\r"),
+        "[['', '', '']]",
+        ",,\r\n",
+    )
     _check(
         "a,b,\n",
         Dialect(),
@@ -752,6 +842,9 @@ def test_matches_python_017() raises:
         "[['a,b,']]",
         "a,b,\r\n",
     )
+
+
+def test_matches_python_020() raises:
     _check(
         "a,b,\n",
         Dialect(delimiter="|"),
@@ -764,9 +857,6 @@ def test_matches_python_017() raises:
         "[['a', 'b', '']]",
         "a,b,\r\n",
     )
-
-
-def test_matches_python_018() raises:
     _check(
         "a,b,\n",
         Dialect(quotechar="'"),
@@ -791,6 +881,9 @@ def test_matches_python_018() raises:
         "[['a', 'b', '']]",
         "a,b,\r\n",
     )
+
+
+def test_matches_python_021() raises:
     _check(
         "a,b,\n",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -803,9 +896,6 @@ def test_matches_python_018() raises:
         "[['a', 'b', '']]",
         '"a","b",""\r\n',
     )
-
-
-def test_matches_python_019() raises:
     _check(
         "a,b,\n",
         Dialect(lineterminator="\n"),
@@ -818,6 +908,21 @@ def test_matches_python_019() raises:
         "[['a,b,']]",
         "a,b,\r\n",
     )
+    _check(
+        "a,b,\n",
+        Dialect(delimiter="\n"),
+        "[['a,b,']]",
+        "a,b,\r\n",
+    )
+    _check(
+        "a,b,\n",
+        Dialect(escapechar="\r"),
+        "[['a', 'b', '']]",
+        "a,b,\r\n",
+    )
+
+
+def test_matches_python_022() raises:
     _check(
         ",a\n",
         Dialect(),
@@ -842,9 +947,6 @@ def test_matches_python_019() raises:
         "[[',a']]",
         ",a\r\n",
     )
-
-
-def test_matches_python_020() raises:
     _check(
         ",a\n",
         Dialect(delimiter="|"),
@@ -857,6 +959,9 @@ def test_matches_python_020() raises:
         "[['', 'a']]",
         ",a\r\n",
     )
+
+
+def test_matches_python_023() raises:
     _check(
         ",a\n",
         Dialect(quotechar="'"),
@@ -881,9 +986,6 @@ def test_matches_python_020() raises:
         "[['', 'a']]",
         ",a\r\n",
     )
-
-
-def test_matches_python_021() raises:
     _check(
         ",a\n",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -896,6 +998,9 @@ def test_matches_python_021() raises:
         "[['', 'a']]",
         '"","a"\r\n',
     )
+
+
+def test_matches_python_024() raises:
     _check(
         ",a\n",
         Dialect(lineterminator="\n"),
@@ -906,6 +1011,18 @@ def test_matches_python_021() raises:
         ",a\n",
         Dialect(delimiter="\u20ac"),
         "[[',a']]",
+        ",a\r\n",
+    )
+    _check(
+        ",a\n",
+        Dialect(delimiter="\n"),
+        "[[',a']]",
+        ",a\r\n",
+    )
+    _check(
+        ",a\n",
+        Dialect(escapechar="\r"),
+        "[['', 'a']]",
         ",a\r\n",
     )
     _check(
@@ -922,7 +1039,7 @@ def test_matches_python_021() raises:
     )
 
 
-def test_matches_python_022() raises:
+def test_matches_python_025() raises:
     _check(
         "a\n",
         unix(),
@@ -961,7 +1078,7 @@ def test_matches_python_022() raises:
     )
 
 
-def test_matches_python_023() raises:
+def test_matches_python_026() raises:
     _check(
         "a\n",
         Dialect(doublequote=False),
@@ -1000,164 +1117,188 @@ def test_matches_python_023() raises:
     )
 
 
-def test_matches_python_024() raises:
-    _check(
-        "a,b\r\n1,2\r\n",
-        Dialect(),
-        "[['a', 'b'], ['1', '2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r\n1,2\r\n",
-        excel_tab(),
-        "[['a,b'], ['1,2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r\n1,2\r\n",
-        unix(),
-        "[['a', 'b'], ['1', '2']]",
-        '"a","b"\n"1","2"\n',
-    )
-    _check(
-        "a,b\r\n1,2\r\n",
-        Dialect(delimiter=";"),
-        "[['a,b'], ['1,2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r\n1,2\r\n",
-        Dialect(delimiter="|"),
-        "[['a,b'], ['1,2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r\n1,2\r\n",
-        Dialect(skipinitialspace=True),
-        "[['a', 'b'], ['1', '2']]",
-        "a,b\r\n1,2\r\n",
-    )
-
-
-def test_matches_python_025() raises:
-    _check(
-        "a,b\r\n1,2\r\n",
-        Dialect(quotechar="'"),
-        "[['a', 'b'], ['1', '2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r\n1,2\r\n",
-        Dialect(escapechar="\\"),
-        "[['a', 'b'], ['1', '2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r\n1,2\r\n",
-        Dialect(doublequote=False),
-        "[['a', 'b'], ['1', '2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r\n1,2\r\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['a', 'b'], ['1', '2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r\n1,2\r\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['a', 'b'], ['1', '2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r\n1,2\r\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[['a', 'b'], ['1', '2']]",
-        '"a","b"\r\n"1","2"\r\n',
-    )
-
-
-def test_matches_python_026() raises:
-    _check(
-        "a,b\r\n1,2\r\n",
-        Dialect(lineterminator="\n"),
-        "[['a', 'b'], ['1', '2']]",
-        "a,b\n1,2\n",
-    )
-    _check(
-        "a,b\r\n1,2\r\n",
-        Dialect(delimiter="\u20ac"),
-        "[['a,b'], ['1,2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r1,2\r",
-        Dialect(),
-        "[['a', 'b'], ['1', '2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r1,2\r",
-        excel_tab(),
-        "[['a,b'], ['1,2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r1,2\r",
-        unix(),
-        "[['a', 'b'], ['1', '2']]",
-        '"a","b"\n"1","2"\n',
-    )
-    _check(
-        "a,b\r1,2\r",
-        Dialect(delimiter=";"),
-        "[['a,b'], ['1,2']]",
-        "a,b\r\n1,2\r\n",
-    )
-
-
 def test_matches_python_027() raises:
     _check(
-        "a,b\r1,2\r",
-        Dialect(delimiter="|"),
+        "a\n",
+        Dialect(delimiter="\n"),
+        "[['a']]",
+        "a\r\n",
+    )
+    _check(
+        "a\n",
+        Dialect(escapechar="\r"),
+        "[['a']]",
+        "a\r\n",
+    )
+    _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r\n1,2\r\n",
+        excel_tab(),
         "[['a,b'], ['1,2']]",
         "a,b\r\n1,2\r\n",
     )
     _check(
-        "a,b\r1,2\r",
-        Dialect(skipinitialspace=True),
-        "[['a', 'b'], ['1', '2']]",
         "a,b\r\n1,2\r\n",
+        unix(),
+        "[['a', 'b'], ['1', '2']]",
+        '"a","b"\n"1","2"\n',
     )
     _check(
-        "a,b\r1,2\r",
-        Dialect(quotechar="'"),
-        "[['a', 'b'], ['1', '2']]",
         "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r1,2\r",
-        Dialect(escapechar="\\"),
-        "[['a', 'b'], ['1', '2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r1,2\r",
-        Dialect(doublequote=False),
-        "[['a', 'b'], ['1', '2']]",
-        "a,b\r\n1,2\r\n",
-    )
-    _check(
-        "a,b\r1,2\r",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['a', 'b'], ['1', '2']]",
+        Dialect(delimiter=";"),
+        "[['a,b'], ['1,2']]",
         "a,b\r\n1,2\r\n",
     )
 
 
 def test_matches_python_028() raises:
     _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(delimiter="|"),
+        "[['a,b'], ['1,2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(skipinitialspace=True),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(quotechar="'"),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(escapechar="\\"),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(doublequote=False),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+
+
+def test_matches_python_029() raises:
+    _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[['a', 'b'], ['1', '2']]",
+        '"a","b"\r\n"1","2"\r\n',
+    )
+    _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(lineterminator="\n"),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\n1,2\n",
+    )
+    _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(delimiter="\u20ac"),
+        "[['a,b'], ['1,2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(delimiter="\n"),
+        "[['a,b'], ['1,2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r\n1,2\r\n",
+        Dialect(escapechar="\r"),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+
+
+def test_matches_python_030() raises:
+    _check(
+        "a,b\r1,2\r",
+        Dialect(),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r1,2\r",
+        excel_tab(),
+        "[['a,b'], ['1,2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r1,2\r",
+        unix(),
+        "[['a', 'b'], ['1', '2']]",
+        '"a","b"\n"1","2"\n',
+    )
+    _check(
+        "a,b\r1,2\r",
+        Dialect(delimiter=";"),
+        "[['a,b'], ['1,2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r1,2\r",
+        Dialect(delimiter="|"),
+        "[['a,b'], ['1,2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r1,2\r",
+        Dialect(skipinitialspace=True),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+
+
+def test_matches_python_031() raises:
+    _check(
+        "a,b\r1,2\r",
+        Dialect(quotechar="'"),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r1,2\r",
+        Dialect(escapechar="\\"),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r1,2\r",
+        Dialect(doublequote=False),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r1,2\r",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
         "a,b\r1,2\r",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
         "[['a', 'b'], ['1', '2']]",
@@ -1169,6 +1310,9 @@ def test_matches_python_028() raises:
         "[['a', 'b'], ['1', '2']]",
         '"a","b"\r\n"1","2"\r\n',
     )
+
+
+def test_matches_python_032() raises:
     _check(
         "a,b\r1,2\r",
         Dialect(lineterminator="\n"),
@@ -1182,6 +1326,18 @@ def test_matches_python_028() raises:
         "a,b\r\n1,2\r\n",
     )
     _check(
+        "a,b\r1,2\r",
+        Dialect(delimiter="\n"),
+        "[['a,b'], ['1,2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
+        "a,b\r1,2\r",
+        Dialect(escapechar="\r"),
+        "[['a', 'b'], ['1', '2']]",
+        "a,b\r\n1,2\r\n",
+    )
+    _check(
         "a\r\rb\n",
         Dialect(),
         "[['a'], [], ['b']]",
@@ -1192,167 +1348,179 @@ def test_matches_python_028() raises:
         excel_tab(),
         "[['a'], [], ['b']]",
         "a\r\n\r\nb\r\n",
-    )
-
-
-def test_matches_python_029() raises:
-    _check(
-        "a\r\rb\n",
-        unix(),
-        "[['a'], [], ['b']]",
-        '"a"\n\n"b"\n',
-    )
-    _check(
-        "a\r\rb\n",
-        Dialect(delimiter=";"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\r\rb\n",
-        Dialect(delimiter="|"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\r\rb\n",
-        Dialect(skipinitialspace=True),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\r\rb\n",
-        Dialect(quotechar="'"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\r\rb\n",
-        Dialect(escapechar="\\"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-
-
-def test_matches_python_030() raises:
-    _check(
-        "a\r\rb\n",
-        Dialect(doublequote=False),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\r\rb\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\r\rb\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\r\rb\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[['a'], [], ['b']]",
-        '"a"\r\n\r\n"b"\r\n',
-    )
-    _check(
-        "a\r\rb\n",
-        Dialect(lineterminator="\n"),
-        "[['a'], [], ['b']]",
-        "a\n\nb\n",
-    )
-    _check(
-        "a\r\rb\n",
-        Dialect(delimiter="\u20ac"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-
-
-def test_matches_python_031() raises:
-    _check(
-        "a\n\rb\n",
-        Dialect(),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\n\rb\n",
-        excel_tab(),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\n\rb\n",
-        unix(),
-        "[['a'], [], ['b']]",
-        '"a"\n\n"b"\n',
-    )
-    _check(
-        "a\n\rb\n",
-        Dialect(delimiter=";"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\n\rb\n",
-        Dialect(delimiter="|"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\n\rb\n",
-        Dialect(skipinitialspace=True),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-
-
-def test_matches_python_032() raises:
-    _check(
-        "a\n\rb\n",
-        Dialect(quotechar="'"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\n\rb\n",
-        Dialect(escapechar="\\"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\n\rb\n",
-        Dialect(doublequote=False),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\n\rb\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\n\rb\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['a'], [], ['b']]",
-        "a\r\n\r\nb\r\n",
-    )
-    _check(
-        "a\n\rb\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[['a'], [], ['b']]",
-        '"a"\r\n\r\n"b"\r\n',
     )
 
 
 def test_matches_python_033() raises:
     _check(
+        "a\r\rb\n",
+        unix(),
+        "[['a'], [], ['b']]",
+        '"a"\n\n"b"\n',
+    )
+    _check(
+        "a\r\rb\n",
+        Dialect(delimiter=";"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\r\rb\n",
+        Dialect(delimiter="|"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\r\rb\n",
+        Dialect(skipinitialspace=True),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\r\rb\n",
+        Dialect(quotechar="'"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\r\rb\n",
+        Dialect(escapechar="\\"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+
+
+def test_matches_python_034() raises:
+    _check(
+        "a\r\rb\n",
+        Dialect(doublequote=False),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\r\rb\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\r\rb\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\r\rb\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[['a'], [], ['b']]",
+        '"a"\r\n\r\n"b"\r\n',
+    )
+    _check(
+        "a\r\rb\n",
+        Dialect(lineterminator="\n"),
+        "[['a'], [], ['b']]",
+        "a\n\nb\n",
+    )
+    _check(
+        "a\r\rb\n",
+        Dialect(delimiter="\u20ac"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+
+
+def test_matches_python_035() raises:
+    _check(
+        "a\r\rb\n",
+        Dialect(delimiter="\n"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\r\rb\n",
+        Dialect(escapechar="\r"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\n\rb\n",
+        Dialect(),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\n\rb\n",
+        excel_tab(),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\n\rb\n",
+        unix(),
+        "[['a'], [], ['b']]",
+        '"a"\n\n"b"\n',
+    )
+    _check(
+        "a\n\rb\n",
+        Dialect(delimiter=";"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+
+
+def test_matches_python_036() raises:
+    _check(
+        "a\n\rb\n",
+        Dialect(delimiter="|"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\n\rb\n",
+        Dialect(skipinitialspace=True),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\n\rb\n",
+        Dialect(quotechar="'"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\n\rb\n",
+        Dialect(escapechar="\\"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\n\rb\n",
+        Dialect(doublequote=False),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\n\rb\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+
+
+def test_matches_python_037() raises:
+    _check(
+        "a\n\rb\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\n\rb\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[['a'], [], ['b']]",
+        '"a"\r\n\r\n"b"\r\n',
+    )
+    _check(
         "a\n\rb\n",
         Dialect(lineterminator="\n"),
         "[['a'], [], ['b']]",
@@ -1364,6 +1532,21 @@ def test_matches_python_033() raises:
         "[['a'], [], ['b']]",
         "a\r\n\r\nb\r\n",
     )
+    _check(
+        "a\n\rb\n",
+        Dialect(delimiter="\n"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+    _check(
+        "a\n\rb\n",
+        Dialect(escapechar="\r"),
+        "[['a'], [], ['b']]",
+        "a\r\n\r\nb\r\n",
+    )
+
+
+def test_matches_python_038() raises:
     _check(
         "a\r",
         Dialect(),
@@ -1388,9 +1571,6 @@ def test_matches_python_033() raises:
         "[['a']]",
         "a\r\n",
     )
-
-
-def test_matches_python_034() raises:
     _check(
         "a\r",
         Dialect(delimiter="|"),
@@ -1403,6 +1583,9 @@ def test_matches_python_034() raises:
         "[['a']]",
         "a\r\n",
     )
+
+
+def test_matches_python_039() raises:
     _check(
         "a\r",
         Dialect(quotechar="'"),
@@ -1427,9 +1610,6 @@ def test_matches_python_034() raises:
         "[['a']]",
         "a\r\n",
     )
-
-
-def test_matches_python_035() raises:
     _check(
         "a\r",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -1442,6 +1622,9 @@ def test_matches_python_035() raises:
         "[['a']]",
         '"a"\r\n',
     )
+
+
+def test_matches_python_040() raises:
     _check(
         "a\r",
         Dialect(lineterminator="\n"),
@@ -1451,6 +1634,18 @@ def test_matches_python_035() raises:
     _check(
         "a\r",
         Dialect(delimiter="\u20ac"),
+        "[['a']]",
+        "a\r\n",
+    )
+    _check(
+        "a\r",
+        Dialect(delimiter="\n"),
+        "[['a']]",
+        "a\r\n",
+    )
+    _check(
+        "a\r",
+        Dialect(escapechar="\r"),
         "[['a']]",
         "a\r\n",
     )
@@ -1468,7 +1663,7 @@ def test_matches_python_035() raises:
     )
 
 
-def test_matches_python_036() raises:
+def test_matches_python_041() raises:
     _check(
         "a\n\r\n",
         unix(),
@@ -1507,7 +1702,7 @@ def test_matches_python_036() raises:
     )
 
 
-def test_matches_python_037() raises:
+def test_matches_python_042() raises:
     _check(
         "a\n\r\n",
         Dialect(doublequote=False),
@@ -1546,7 +1741,19 @@ def test_matches_python_037() raises:
     )
 
 
-def test_matches_python_038() raises:
+def test_matches_python_043() raises:
+    _check(
+        "a\n\r\n",
+        Dialect(delimiter="\n"),
+        "[['a'], []]",
+        "a\r\n\r\n",
+    )
+    _check(
+        "a\n\r\n",
+        Dialect(escapechar="\r"),
+        "[['a'], []]",
+        "a\r\n\r\n",
+    )
     _check(
         "\r\n\r\n",
         Dialect(),
@@ -1571,6 +1778,9 @@ def test_matches_python_038() raises:
         "[[], []]",
         "\r\n\r\n",
     )
+
+
+def test_matches_python_044() raises:
     _check(
         "\r\n\r\n",
         Dialect(delimiter="|"),
@@ -1583,9 +1793,6 @@ def test_matches_python_038() raises:
         "[[], []]",
         "\r\n\r\n",
     )
-
-
-def test_matches_python_039() raises:
     _check(
         "\r\n\r\n",
         Dialect(quotechar="'"),
@@ -1610,6 +1817,9 @@ def test_matches_python_039() raises:
         "[[], []]",
         "\r\n\r\n",
     )
+
+
+def test_matches_python_045() raises:
     _check(
         "\r\n\r\n",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -1622,9 +1832,6 @@ def test_matches_python_039() raises:
         "[[], []]",
         "\r\n\r\n",
     )
-
-
-def test_matches_python_040() raises:
     _check(
         "\r\n\r\n",
         Dialect(lineterminator="\n"),
@@ -1640,6 +1847,21 @@ def test_matches_python_040() raises:
     _check(
         "\r\n\r\n",
         Dialect(quoting=QUOTE_NONNUMERIC),
+        "[[], []]",
+        "\r\n\r\n",
+    )
+    _check(
+        "\r\n\r\n",
+        Dialect(delimiter="\n"),
+        "[[], []]",
+        "\r\n\r\n",
+    )
+
+
+def test_matches_python_046() raises:
+    _check(
+        "\r\n\r\n",
+        Dialect(escapechar="\r"),
         "[[], []]",
         "\r\n\r\n",
     )
@@ -1661,9 +1883,6 @@ def test_matches_python_040() raises:
         "[['a', 'b']]",
         '"a","b"\n',
     )
-
-
-def test_matches_python_041() raises:
     _check(
         '"a","b"\n',
         Dialect(delimiter=";"),
@@ -1676,6 +1895,9 @@ def test_matches_python_041() raises:
         "[['a,\"b\"']]",
         '"a,""b"""\r\n',
     )
+
+
+def test_matches_python_047() raises:
     _check(
         '"a","b"\n',
         Dialect(skipinitialspace=True),
@@ -1700,9 +1922,6 @@ def test_matches_python_041() raises:
         "[['a', 'b']]",
         "a,b\r\n",
     )
-
-
-def test_matches_python_042() raises:
     _check(
         '"a","b"\n',
         Dialect(doublequote=False, escapechar="\\"),
@@ -1715,6 +1934,9 @@ def test_matches_python_042() raises:
         "[['\"a\"', '\"b\"']]",
         '\\"a\\",\\"b\\"\r\n',
     )
+
+
+def test_matches_python_048() raises:
     _check(
         '"a","b"\n',
         Dialect(quoting=QUOTE_ALL),
@@ -1739,9 +1961,21 @@ def test_matches_python_042() raises:
         "[['a', 'b']]",
         '"a","b"\r\n',
     )
+    _check(
+        '"a","b"\n',
+        Dialect(delimiter="\n"),
+        "[['a,\"b\"']]",
+        '"a,""b"""\r\n',
+    )
+    _check(
+        '"a","b"\n',
+        Dialect(escapechar="\r"),
+        "[['a', 'b']]",
+        "a,b\r\n",
+    )
 
 
-def test_matches_python_043() raises:
+def test_matches_python_049() raises:
     _check(
         '"a,b",c\n',
         Dialect(),
@@ -1780,7 +2014,7 @@ def test_matches_python_043() raises:
     )
 
 
-def test_matches_python_044() raises:
+def test_matches_python_050() raises:
     _check(
         '"a,b",c\n',
         Dialect(quotechar="'"),
@@ -1819,7 +2053,7 @@ def test_matches_python_044() raises:
     )
 
 
-def test_matches_python_045() raises:
+def test_matches_python_051() raises:
     _check(
         '"a,b",c\n',
         Dialect(lineterminator="\n"),
@@ -1833,6 +2067,18 @@ def test_matches_python_045() raises:
         "a,b,c\r\n",
     )
     _check(
+        '"a,b",c\n',
+        Dialect(delimiter="\n"),
+        "[['a,b,c']]",
+        "a,b,c\r\n",
+    )
+    _check(
+        '"a,b",c\n',
+        Dialect(escapechar="\r"),
+        "[['a,b', 'c']]",
+        '"a,b",c\r\n',
+    )
+    _check(
         '"a\nb",c\n',
         Dialect(),
         "[['a\nb', 'c']]",
@@ -1844,6 +2090,9 @@ def test_matches_python_045() raises:
         "[['a\nb,c']]",
         '"a\nb,c"\r\n',
     )
+
+
+def test_matches_python_052() raises:
     _check(
         '"a\nb",c\n',
         unix(),
@@ -1856,9 +2105,6 @@ def test_matches_python_045() raises:
         "[['a\nb,c']]",
         '"a\nb,c"\r\n',
     )
-
-
-def test_matches_python_046() raises:
     _check(
         '"a\nb",c\n',
         Dialect(delimiter="|"),
@@ -1883,6 +2129,9 @@ def test_matches_python_046() raises:
         "[['a\nb', 'c']]",
         '"a\nb",c\r\n',
     )
+
+
+def test_matches_python_053() raises:
     _check(
         '"a\nb",c\n',
         Dialect(doublequote=False),
@@ -1895,9 +2144,6 @@ def test_matches_python_046() raises:
         "[['a\nb', 'c']]",
         '"a\nb",c\r\n',
     )
-
-
-def test_matches_python_047() raises:
     _check(
         '"a\nb",c\n',
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -1922,6 +2168,21 @@ def test_matches_python_047() raises:
         "[['a\nb,c']]",
         '"a\nb,c"\r\n',
     )
+
+
+def test_matches_python_054() raises:
+    _check(
+        '"a\nb",c\n',
+        Dialect(delimiter="\n"),
+        "[['a\nb,c']]",
+        '"a\nb,c"\r\n',
+    )
+    _check(
+        '"a\nb",c\n',
+        Dialect(escapechar="\r"),
+        "[['a\nb', 'c']]",
+        '"a\nb",c\r\n',
+    )
     _check(
         '"a\rb"\n',
         Dialect(),
@@ -1934,9 +2195,6 @@ def test_matches_python_047() raises:
         "[['a\rb']]",
         '"a\rb"\r\n',
     )
-
-
-def test_matches_python_048() raises:
     _check(
         '"a\rb"\n',
         unix(),
@@ -1949,6 +2207,9 @@ def test_matches_python_048() raises:
         "[['a\rb']]",
         '"a\rb"\r\n',
     )
+
+
+def test_matches_python_055() raises:
     _check(
         '"a\rb"\n',
         Dialect(delimiter="|"),
@@ -1973,9 +2234,6 @@ def test_matches_python_048() raises:
         "[['a\rb']]",
         '"a\rb"\r\n',
     )
-
-
-def test_matches_python_049() raises:
     _check(
         '"a\rb"\n',
         Dialect(doublequote=False),
@@ -1988,6 +2246,9 @@ def test_matches_python_049() raises:
         "[['a\rb']]",
         '"a\rb"\r\n',
     )
+
+
+def test_matches_python_056() raises:
     _check(
         '"a\rb"\n',
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -2012,14 +2273,26 @@ def test_matches_python_049() raises:
         "[['a\rb']]",
         '"a\rb"\r\n',
     )
-
-
-def test_matches_python_050() raises:
     _check(
         '"a\rb"\n',
         Dialect(quoting=QUOTE_NONNUMERIC),
         "[['a\rb']]",
         '"a\rb"\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(delimiter="\n"),
+        "[['a\rb', '']]",
+        '"a\rb"\n\r\n',
+    )
+
+
+def test_matches_python_057() raises:
+    _check(
+        '"a\rb"\n',
+        Dialect(escapechar="\r"),
+        "[['a\nb']]",
+        '"a\nb"\r\n',
     )
     _check(
         '"a\r\nb"\n',
@@ -2053,7 +2326,7 @@ def test_matches_python_050() raises:
     )
 
 
-def test_matches_python_051() raises:
+def test_matches_python_058() raises:
     _check(
         '"a\r\nb"\n',
         Dialect(skipinitialspace=True),
@@ -2092,7 +2365,7 @@ def test_matches_python_051() raises:
     )
 
 
-def test_matches_python_052() raises:
+def test_matches_python_059() raises:
     _check(
         '"a\r\nb"\n',
         Dialect(quoting=QUOTE_ALL),
@@ -2118,6 +2391,21 @@ def test_matches_python_052() raises:
         '"a\r\nb"\r\n',
     )
     _check(
+        '"a\r\nb"\n',
+        Dialect(delimiter="\n"),
+        "[['a\r\nb', '']]",
+        '"a\r\nb"\n\r\n',
+    )
+    _check(
+        '"a\r\nb"\n',
+        Dialect(escapechar="\r"),
+        "[['a\nb']]",
+        '"a\nb"\r\n',
+    )
+
+
+def test_matches_python_060() raises:
+    _check(
         '"a\r\rb"\n',
         Dialect(),
         "[['a\r\rb']]",
@@ -2129,9 +2417,6 @@ def test_matches_python_052() raises:
         "[['a\r\rb']]",
         '"a\r\rb"\r\n',
     )
-
-
-def test_matches_python_053() raises:
     _check(
         '"a\r\rb"\n',
         unix(),
@@ -2156,6 +2441,9 @@ def test_matches_python_053() raises:
         "[['a\r\rb']]",
         '"a\r\rb"\r\n',
     )
+
+
+def test_matches_python_061() raises:
     _check(
         '"a\r\rb"\n',
         Dialect(quotechar="'"),
@@ -2168,9 +2456,6 @@ def test_matches_python_053() raises:
         "[['a\r\rb']]",
         '"a\r\rb"\r\n',
     )
-
-
-def test_matches_python_054() raises:
     _check(
         '"a\r\rb"\n',
         Dialect(doublequote=False),
@@ -2195,6 +2480,9 @@ def test_matches_python_054() raises:
         "[['a\r\rb']]",
         '"a\r\rb"\r\n',
     )
+
+
+def test_matches_python_062() raises:
     _check(
         '"a\r\rb"\n',
         Dialect(lineterminator="\n"),
@@ -2207,9 +2495,6 @@ def test_matches_python_054() raises:
         "[['a\r\rb']]",
         '"a\r\rb"\r\n',
     )
-
-
-def test_matches_python_055() raises:
     _check(
         '"a\r\rb"\n',
         Dialect(quoting=QUOTE_NONNUMERIC),
@@ -2217,11 +2502,26 @@ def test_matches_python_055() raises:
         '"a\r\rb"\r\n',
     )
     _check(
+        '"a\r\rb"\n',
+        Dialect(delimiter="\n"),
+        "[['a\r\rb', '']]",
+        '"a\r\rb"\n\r\n',
+    )
+    _check(
+        '"a\r\rb"\n',
+        Dialect(escapechar="\r"),
+        "[['a\n\nb']]",
+        '"a\n\nb"\r\n',
+    )
+    _check(
         '""\n',
         Dialect(),
         "[['']]",
         '""\r\n',
     )
+
+
+def test_matches_python_063() raises:
     _check(
         '""\n',
         excel_tab(),
@@ -2246,9 +2546,6 @@ def test_matches_python_055() raises:
         "[['']]",
         '""\r\n',
     )
-
-
-def test_matches_python_056() raises:
     _check(
         '""\n',
         Dialect(skipinitialspace=True),
@@ -2261,6 +2558,9 @@ def test_matches_python_056() raises:
         "[['\"\"']]",
         '""\r\n',
     )
+
+
+def test_matches_python_064() raises:
     _check(
         '""\n',
         Dialect(escapechar="\\"),
@@ -2285,9 +2585,6 @@ def test_matches_python_056() raises:
         "[['\"\"']]",
         '\\"\\"\r\n',
     )
-
-
-def test_matches_python_057() raises:
     _check(
         '""\n',
         Dialect(quoting=QUOTE_ALL),
@@ -2300,6 +2597,9 @@ def test_matches_python_057() raises:
         "[['']]",
         '""\n',
     )
+
+
+def test_matches_python_065() raises:
     _check(
         '""\n',
         Dialect(delimiter="\u20ac"),
@@ -2309,6 +2609,18 @@ def test_matches_python_057() raises:
     _check(
         '""\n',
         Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['']]",
+        '""\r\n',
+    )
+    _check(
+        '""\n',
+        Dialect(delimiter="\n"),
+        "[['', '']]",
+        "\n\r\n",
+    )
+    _check(
+        '""\n',
+        Dialect(escapechar="\r"),
         "[['']]",
         '""\r\n',
     )
@@ -2326,7 +2638,7 @@ def test_matches_python_057() raises:
     )
 
 
-def test_matches_python_058() raises:
+def test_matches_python_066() raises:
     _check(
         '"a""b"\n',
         unix(),
@@ -2365,7 +2677,7 @@ def test_matches_python_058() raises:
     )
 
 
-def test_matches_python_059() raises:
+def test_matches_python_067() raises:
     _check(
         '"a""b"\n',
         Dialect(doublequote=False, escapechar="\\"),
@@ -2404,7 +2716,19 @@ def test_matches_python_059() raises:
     )
 
 
-def test_matches_python_060() raises:
+def test_matches_python_068() raises:
+    _check(
+        '"a""b"\n',
+        Dialect(delimiter="\n"),
+        "[['a\"b', '']]",
+        '"a""b"\n\r\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(escapechar="\r"),
+        "[['a\"b']]",
+        '"a""b"\r\n',
+    )
     _check(
         '""""\n',
         Dialect(),
@@ -2429,6 +2753,9 @@ def test_matches_python_060() raises:
         "[['\"']]",
         '""""\r\n',
     )
+
+
+def test_matches_python_069() raises:
     _check(
         '""""\n',
         Dialect(delimiter="|"),
@@ -2441,9 +2768,6 @@ def test_matches_python_060() raises:
         "[['\"']]",
         '""""\r\n',
     )
-
-
-def test_matches_python_061() raises:
     _check(
         '""""\n',
         Dialect(quotechar="'"),
@@ -2468,6 +2792,9 @@ def test_matches_python_061() raises:
         '[[\'""""\']]',
         '\\"\\"\\"\\"\r\n',
     )
+
+
+def test_matches_python_070() raises:
     _check(
         '""""\n',
         Dialect(quoting=QUOTE_ALL),
@@ -2480,9 +2807,6 @@ def test_matches_python_061() raises:
         "[['\"']]",
         '""""\n',
     )
-
-
-def test_matches_python_062() raises:
     _check(
         '""""\n',
         Dialect(delimiter="\u20ac"),
@@ -2495,6 +2819,21 @@ def test_matches_python_062() raises:
         "[['\"']]",
         '""""\r\n',
     )
+    _check(
+        '""""\n',
+        Dialect(delimiter="\n"),
+        "[['\"', '']]",
+        '""""\n\r\n',
+    )
+    _check(
+        '""""\n',
+        Dialect(escapechar="\r"),
+        "[['\"']]",
+        '""""\r\n',
+    )
+
+
+def test_matches_python_071() raises:
     _check(
         '"""a"""\n',
         Dialect(),
@@ -2519,9 +2858,6 @@ def test_matches_python_062() raises:
         "[['\"a\"']]",
         '"""a"""\r\n',
     )
-
-
-def test_matches_python_063() raises:
     _check(
         '"""a"""\n',
         Dialect(delimiter="|"),
@@ -2534,6 +2870,9 @@ def test_matches_python_063() raises:
         "[['\"a\"']]",
         '"""a"""\r\n',
     )
+
+
+def test_matches_python_072() raises:
     _check(
         '"""a"""\n',
         Dialect(quotechar="'"),
@@ -2558,9 +2897,6 @@ def test_matches_python_063() raises:
         '[[\'"""a"""\']]',
         '\\"\\"\\"a\\"\\"\\"\r\n',
     )
-
-
-def test_matches_python_064() raises:
     _check(
         '"""a"""\n',
         Dialect(quoting=QUOTE_ALL),
@@ -2573,6 +2909,9 @@ def test_matches_python_064() raises:
         "[['\"a\"']]",
         '"""a"""\n',
     )
+
+
+def test_matches_python_073() raises:
     _check(
         '"""a"""\n',
         Dialect(delimiter="\u20ac"),
@@ -2582,6 +2921,18 @@ def test_matches_python_064() raises:
     _check(
         '"""a"""\n',
         Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['\"a\"']]",
+        '"""a"""\r\n',
+    )
+    _check(
+        '"""a"""\n',
+        Dialect(delimiter="\n"),
+        "[['\"a\"', '']]",
+        '"""a"""\n\r\n',
+    )
+    _check(
+        '"""a"""\n',
+        Dialect(escapechar="\r"),
         "[['\"a\"']]",
         '"""a"""\r\n',
     )
@@ -2599,7 +2950,7 @@ def test_matches_python_064() raises:
     )
 
 
-def test_matches_python_065() raises:
+def test_matches_python_074() raises:
     _check(
         'a"b,c\n',
         unix(),
@@ -2638,7 +2989,7 @@ def test_matches_python_065() raises:
     )
 
 
-def test_matches_python_066() raises:
+def test_matches_python_075() raises:
     _check(
         'a"b,c\n',
         Dialect(doublequote=False, escapechar="\\"),
@@ -2670,14 +3021,26 @@ def test_matches_python_066() raises:
         '"a""b,c"\r\n',
     )
     _check(
+        'a"b,c\n',
+        Dialect(delimiter="\n"),
+        "[['a\"b,c']]",
+        '"a""b,c"\r\n',
+    )
+
+
+def test_matches_python_076() raises:
+    _check(
+        'a"b,c\n',
+        Dialect(escapechar="\r"),
+        "[['a\"b', 'c']]",
+        '"a""b",c\r\n',
+    )
+    _check(
         'ab"c"d\n',
         Dialect(),
         "[['ab\"c\"d']]",
         '"ab""c""d"\r\n',
     )
-
-
-def test_matches_python_067() raises:
     _check(
         'ab"c"d\n',
         excel_tab(),
@@ -2702,6 +3065,9 @@ def test_matches_python_067() raises:
         "[['ab\"c\"d']]",
         '"ab""c""d"\r\n',
     )
+
+
+def test_matches_python_077() raises:
     _check(
         'ab"c"d\n',
         Dialect(skipinitialspace=True),
@@ -2714,9 +3080,6 @@ def test_matches_python_067() raises:
         "[['ab\"c\"d']]",
         'ab"c"d\r\n',
     )
-
-
-def test_matches_python_068() raises:
     _check(
         'ab"c"d\n',
         Dialect(escapechar="\\"),
@@ -2741,6 +3104,9 @@ def test_matches_python_068() raises:
         "[['ab\"c\"d']]",
         '"ab""c""d"\r\n',
     )
+
+
+def test_matches_python_078() raises:
     _check(
         'ab"c"d\n',
         Dialect(lineterminator="\n"),
@@ -2753,9 +3119,18 @@ def test_matches_python_068() raises:
         "[['ab\"c\"d']]",
         '"ab""c""d"\r\n',
     )
-
-
-def test_matches_python_069() raises:
+    _check(
+        'ab"c"d\n',
+        Dialect(delimiter="\n"),
+        "[['ab\"c\"d']]",
+        '"ab""c""d"\r\n',
+    )
+    _check(
+        'ab"c"d\n',
+        Dialect(escapechar="\r"),
+        "[['ab\"c\"d']]",
+        '"ab""c""d"\r\n',
+    )
     _check(
         '"ab"cd\n',
         Dialect(),
@@ -2768,6 +3143,9 @@ def test_matches_python_069() raises:
         "[['abcd']]",
         "abcd\r\n",
     )
+
+
+def test_matches_python_079() raises:
     _check(
         '"ab"cd\n',
         unix(),
@@ -2792,9 +3170,6 @@ def test_matches_python_069() raises:
         "[['abcd']]",
         "abcd\r\n",
     )
-
-
-def test_matches_python_070() raises:
     _check(
         '"ab"cd\n',
         Dialect(quotechar="'"),
@@ -2807,6 +3182,9 @@ def test_matches_python_070() raises:
         "[['abcd']]",
         "abcd\r\n",
     )
+
+
+def test_matches_python_080() raises:
     _check(
         '"ab"cd\n',
         Dialect(doublequote=False),
@@ -2831,9 +3209,6 @@ def test_matches_python_070() raises:
         "[['abcd']]",
         '"abcd"\r\n',
     )
-
-
-def test_matches_python_071() raises:
     _check(
         '"ab"cd\n',
         Dialect(lineterminator="\n"),
@@ -2846,11 +3221,26 @@ def test_matches_python_071() raises:
         "[['abcd']]",
         "abcd\r\n",
     )
+
+
+def test_matches_python_081() raises:
     _check(
         '"ab"cd\n',
         Dialect(quoting=QUOTE_NONNUMERIC),
         "[['abcd']]",
         '"abcd"\r\n',
+    )
+    _check(
+        '"ab"cd\n',
+        Dialect(delimiter="\n"),
+        "[['abcd']]",
+        "abcd\r\n",
+    )
+    _check(
+        '"ab"cd\n',
+        Dialect(escapechar="\r"),
+        "[['abcd']]",
+        "abcd\r\n",
     )
     _check(
         '"abc\n',
@@ -2872,7 +3262,7 @@ def test_matches_python_071() raises:
     )
 
 
-def test_matches_python_072() raises:
+def test_matches_python_082() raises:
     _check(
         '"abc\n',
         Dialect(delimiter=";"),
@@ -2911,7 +3301,7 @@ def test_matches_python_072() raises:
     )
 
 
-def test_matches_python_073() raises:
+def test_matches_python_083() raises:
     _check(
         '"abc\n',
         Dialect(doublequote=False, escapechar="\\"),
@@ -2950,7 +3340,19 @@ def test_matches_python_073() raises:
     )
 
 
-def test_matches_python_074() raises:
+def test_matches_python_084() raises:
+    _check(
+        '"abc\n',
+        Dialect(delimiter="\n"),
+        "[['abc\n']]",
+        '"abc\n"\r\n',
+    )
+    _check(
+        '"abc\n',
+        Dialect(escapechar="\r"),
+        "[['abc\n']]",
+        '"abc\n"\r\n',
+    )
     _check(
         '"a',
         Dialect(),
@@ -2975,6 +3377,9 @@ def test_matches_python_074() raises:
         "[['a']]",
         "a\r\n",
     )
+
+
+def test_matches_python_085() raises:
     _check(
         '"a',
         Dialect(delimiter="|"),
@@ -2987,9 +3392,6 @@ def test_matches_python_074() raises:
         "[['a']]",
         "a\r\n",
     )
-
-
-def test_matches_python_075() raises:
     _check(
         '"a',
         Dialect(quotechar="'"),
@@ -3014,6 +3416,9 @@ def test_matches_python_075() raises:
         "[['a']]",
         "a\r\n",
     )
+
+
+def test_matches_python_086() raises:
     _check(
         '"a',
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -3026,9 +3431,6 @@ def test_matches_python_075() raises:
         "[['a']]",
         '"a"\r\n',
     )
-
-
-def test_matches_python_076() raises:
     _check(
         '"a',
         Dialect(lineterminator="\n"),
@@ -3048,6 +3450,21 @@ def test_matches_python_076() raises:
         '"a"\r\n',
     )
     _check(
+        '"a',
+        Dialect(delimiter="\n"),
+        "[['a']]",
+        "a\r\n",
+    )
+
+
+def test_matches_python_087() raises:
+    _check(
+        '"a',
+        Dialect(escapechar="\r"),
+        "[['a']]",
+        "a\r\n",
+    )
+    _check(
         '"a"\n"b"\n',
         Dialect(),
         "[['a'], ['b']]",
@@ -3065,9 +3482,6 @@ def test_matches_python_076() raises:
         "[['a'], ['b']]",
         '"a"\n"b"\n',
     )
-
-
-def test_matches_python_077() raises:
     _check(
         '"a"\n"b"\n',
         Dialect(delimiter=";"),
@@ -3080,6 +3494,9 @@ def test_matches_python_077() raises:
         "[['a'], ['b']]",
         "a\r\nb\r\n",
     )
+
+
+def test_matches_python_088() raises:
     _check(
         '"a"\n"b"\n',
         Dialect(skipinitialspace=True),
@@ -3104,9 +3521,6 @@ def test_matches_python_077() raises:
         "[['a'], ['b']]",
         "a\r\nb\r\n",
     )
-
-
-def test_matches_python_078() raises:
     _check(
         '"a"\n"b"\n',
         Dialect(doublequote=False, escapechar="\\"),
@@ -3119,6 +3533,9 @@ def test_matches_python_078() raises:
         "[['\"a\"'], ['\"b\"']]",
         '\\"a\\"\r\n\\"b\\"\r\n',
     )
+
+
+def test_matches_python_089() raises:
     _check(
         '"a"\n"b"\n',
         Dialect(quoting=QUOTE_ALL),
@@ -3143,9 +3560,21 @@ def test_matches_python_078() raises:
         "[['a'], ['b']]",
         '"a"\r\n"b"\r\n',
     )
+    _check(
+        '"a"\n"b"\n',
+        Dialect(delimiter="\n"),
+        "[['a', ''], ['b', '']]",
+        "a\n\r\nb\n\r\n",
+    )
+    _check(
+        '"a"\n"b"\n',
+        Dialect(escapechar="\r"),
+        "[['a'], ['b']]",
+        "a\r\nb\r\n",
+    )
 
 
-def test_matches_python_079() raises:
+def test_matches_python_090() raises:
     _check(
         ',""\n',
         Dialect(),
@@ -3184,7 +3613,7 @@ def test_matches_python_079() raises:
     )
 
 
-def test_matches_python_080() raises:
+def test_matches_python_091() raises:
     _check(
         ',""\n',
         Dialect(quotechar="'"),
@@ -3223,7 +3652,7 @@ def test_matches_python_080() raises:
     )
 
 
-def test_matches_python_081() raises:
+def test_matches_python_092() raises:
     _check(
         ',""\n',
         Dialect(lineterminator="\n"),
@@ -3243,11 +3672,26 @@ def test_matches_python_081() raises:
         '"",""\r\n',
     )
     _check(
+        ',""\n',
+        Dialect(delimiter="\n"),
+        "[[',\"\"']]",
+        '","""""\r\n',
+    )
+    _check(
+        ',""\n',
+        Dialect(escapechar="\r"),
+        "[['', '']]",
+        ",\r\n",
+    )
+    _check(
         '"",\n',
         Dialect(),
         "[['', '']]",
         ",\r\n",
     )
+
+
+def test_matches_python_093() raises:
     _check(
         '"",\n',
         excel_tab(),
@@ -3260,9 +3704,6 @@ def test_matches_python_081() raises:
         "[['', '']]",
         '"",""\n',
     )
-
-
-def test_matches_python_082() raises:
     _check(
         '"",\n',
         Dialect(delimiter=";"),
@@ -3287,6 +3728,9 @@ def test_matches_python_082() raises:
         "[['\"\"', '']]",
         '"",\r\n',
     )
+
+
+def test_matches_python_094() raises:
     _check(
         '"",\n',
         Dialect(escapechar="\\"),
@@ -3299,9 +3743,6 @@ def test_matches_python_082() raises:
         "[['', '']]",
         ",\r\n",
     )
-
-
-def test_matches_python_083() raises:
     _check(
         '"",\n',
         Dialect(doublequote=False, escapechar="\\"),
@@ -3326,6 +3767,9 @@ def test_matches_python_083() raises:
         "[['', '']]",
         ",\n",
     )
+
+
+def test_matches_python_095() raises:
     _check(
         '"",\n',
         Dialect(delimiter="\u20ac"),
@@ -3338,9 +3782,18 @@ def test_matches_python_083() raises:
         "[['', '']]",
         '"",""\r\n',
     )
-
-
-def test_matches_python_084() raises:
+    _check(
+        '"",\n',
+        Dialect(delimiter="\n"),
+        "[[',']]",
+        ",\r\n",
+    )
+    _check(
+        '"",\n',
+        Dialect(escapechar="\r"),
+        "[['', '']]",
+        ",\r\n",
+    )
     _check(
         '" a ",b\n',
         Dialect(),
@@ -3353,6 +3806,9 @@ def test_matches_python_084() raises:
         "[[' a ,b']]",
         " a ,b\r\n",
     )
+
+
+def test_matches_python_096() raises:
     _check(
         '" a ",b\n',
         unix(),
@@ -3377,9 +3833,6 @@ def test_matches_python_084() raises:
         "[[' a ', 'b']]",
         " a ,b\r\n",
     )
-
-
-def test_matches_python_085() raises:
     _check(
         '" a ",b\n',
         Dialect(quotechar="'"),
@@ -3392,6 +3845,9 @@ def test_matches_python_085() raises:
         "[[' a ', 'b']]",
         " a ,b\r\n",
     )
+
+
+def test_matches_python_097() raises:
     _check(
         '" a ",b\n',
         Dialect(doublequote=False),
@@ -3416,9 +3872,6 @@ def test_matches_python_085() raises:
         "[[' a ', 'b']]",
         '" a ","b"\r\n',
     )
-
-
-def test_matches_python_086() raises:
     _check(
         '" a ",b\n',
         Dialect(lineterminator="\n"),
@@ -3429,6 +3882,21 @@ def test_matches_python_086() raises:
         '" a ",b\n',
         Dialect(delimiter="\u20ac"),
         "[[' a ,b']]",
+        " a ,b\r\n",
+    )
+
+
+def test_matches_python_098() raises:
+    _check(
+        '" a ",b\n',
+        Dialect(delimiter="\n"),
+        "[[' a ,b']]",
+        " a ,b\r\n",
+    )
+    _check(
+        '" a ",b\n',
+        Dialect(escapechar="\r"),
+        "[[' a ', 'b']]",
         " a ,b\r\n",
     )
     _check(
@@ -3457,7 +3925,7 @@ def test_matches_python_086() raises:
     )
 
 
-def test_matches_python_087() raises:
+def test_matches_python_099() raises:
     _check(
         "a, b\n",
         Dialect(delimiter="|"),
@@ -3496,7 +3964,7 @@ def test_matches_python_087() raises:
     )
 
 
-def test_matches_python_088() raises:
+def test_matches_python_100() raises:
     _check(
         "a, b\n",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -3522,6 +3990,21 @@ def test_matches_python_088() raises:
         "a, b\r\n",
     )
     _check(
+        "a, b\n",
+        Dialect(delimiter="\n"),
+        "[['a, b']]",
+        "a, b\r\n",
+    )
+    _check(
+        "a, b\n",
+        Dialect(escapechar="\r"),
+        "[['a', ' b']]",
+        "a, b\r\n",
+    )
+
+
+def test_matches_python_101() raises:
+    _check(
         " \n",
         Dialect(),
         "[[' ']]",
@@ -3533,9 +4016,6 @@ def test_matches_python_088() raises:
         "[[' ']]",
         " \r\n",
     )
-
-
-def test_matches_python_089() raises:
     _check(
         " \n",
         unix(),
@@ -3560,6 +4040,9 @@ def test_matches_python_089() raises:
         "[['']]",
         '""\r\n',
     )
+
+
+def test_matches_python_102() raises:
     _check(
         " \n",
         Dialect(quotechar="'"),
@@ -3572,9 +4055,6 @@ def test_matches_python_089() raises:
         "[[' ']]",
         " \r\n",
     )
-
-
-def test_matches_python_090() raises:
     _check(
         " \n",
         Dialect(doublequote=False),
@@ -3599,6 +4079,9 @@ def test_matches_python_090() raises:
         "[[' ']]",
         '" "\r\n',
     )
+
+
+def test_matches_python_103() raises:
     _check(
         " \n",
         Dialect(lineterminator="\n"),
@@ -3611,9 +4094,18 @@ def test_matches_python_090() raises:
         "[[' ']]",
         " \r\n",
     )
-
-
-def test_matches_python_091() raises:
+    _check(
+        " \n",
+        Dialect(delimiter="\n"),
+        "[[' ']]",
+        " \r\n",
+    )
+    _check(
+        " \n",
+        Dialect(escapechar="\r"),
+        "[[' ']]",
+        " \r\n",
+    )
     _check(
         'a, "b"\n',
         Dialect(),
@@ -3626,6 +4118,9 @@ def test_matches_python_091() raises:
         "[['a, \"b\"']]",
         '"a, ""b"""\r\n',
     )
+
+
+def test_matches_python_104() raises:
     _check(
         'a, "b"\n',
         unix(),
@@ -3650,9 +4145,6 @@ def test_matches_python_091() raises:
         "[['a', 'b']]",
         "a,b\r\n",
     )
-
-
-def test_matches_python_092() raises:
     _check(
         'a, "b"\n',
         Dialect(quotechar="'"),
@@ -3665,6 +4157,9 @@ def test_matches_python_092() raises:
         "[['a', ' \"b\"']]",
         'a," ""b"""\r\n',
     )
+
+
+def test_matches_python_105() raises:
     _check(
         'a, "b"\n',
         Dialect(doublequote=False, escapechar="\\"),
@@ -3689,14 +4184,26 @@ def test_matches_python_092() raises:
         "[['a', ' \"b\"']]",
         'a," ""b"""\n',
     )
-
-
-def test_matches_python_093() raises:
     _check(
         'a, "b"\n',
         Dialect(delimiter="\u20ac"),
         "[['a, \"b\"']]",
         '"a, ""b"""\r\n',
+    )
+    _check(
+        'a, "b"\n',
+        Dialect(delimiter="\n"),
+        "[['a, \"b\"']]",
+        '"a, ""b"""\r\n',
+    )
+
+
+def test_matches_python_106() raises:
+    _check(
+        'a, "b"\n',
+        Dialect(escapechar="\r"),
+        "[['a', ' \"b\"']]",
+        'a," ""b"""\r\n',
     )
     _check(
         "  a  ,  b  \n",
@@ -3730,7 +4237,7 @@ def test_matches_python_093() raises:
     )
 
 
-def test_matches_python_094() raises:
+def test_matches_python_107() raises:
     _check(
         "  a  ,  b  \n",
         Dialect(skipinitialspace=True),
@@ -3769,7 +4276,7 @@ def test_matches_python_094() raises:
     )
 
 
-def test_matches_python_095() raises:
+def test_matches_python_108() raises:
     _check(
         "  a  ,  b  \n",
         Dialect(quoting=QUOTE_ALL),
@@ -3789,11 +4296,26 @@ def test_matches_python_095() raises:
         "  a  ,  b  \r\n",
     )
     _check(
+        "  a  ,  b  \n",
+        Dialect(delimiter="\n"),
+        "[['  a  ,  b  ']]",
+        "  a  ,  b  \r\n",
+    )
+    _check(
+        "  a  ,  b  \n",
+        Dialect(escapechar="\r"),
+        "[['  a  ', '  b  ']]",
+        "  a  ,  b  \r\n",
+    )
+    _check(
         "\ta\t,b\n",
         Dialect(),
         "[['\ta\t', 'b']]",
         "\ta\t,b\r\n",
     )
+
+
+def test_matches_python_109() raises:
     _check(
         "\ta\t,b\n",
         excel_tab(),
@@ -3806,9 +4328,6 @@ def test_matches_python_095() raises:
         "[['\ta\t', 'b']]",
         '"\ta\t","b"\n',
     )
-
-
-def test_matches_python_096() raises:
     _check(
         "\ta\t,b\n",
         Dialect(delimiter=";"),
@@ -3833,6 +4352,9 @@ def test_matches_python_096() raises:
         "[['\ta\t', 'b']]",
         "\ta\t,b\r\n",
     )
+
+
+def test_matches_python_110() raises:
     _check(
         "\ta\t,b\n",
         Dialect(escapechar="\\"),
@@ -3845,9 +4367,6 @@ def test_matches_python_096() raises:
         "[['\ta\t', 'b']]",
         "\ta\t,b\r\n",
     )
-
-
-def test_matches_python_097() raises:
     _check(
         "\ta\t,b\n",
         Dialect(doublequote=False, escapechar="\\"),
@@ -3872,10 +4391,25 @@ def test_matches_python_097() raises:
         "[['\ta\t', 'b']]",
         "\ta\t,b\n",
     )
+
+
+def test_matches_python_111() raises:
     _check(
         "\ta\t,b\n",
         Dialect(delimiter="\u20ac"),
         "[['\ta\t,b']]",
+        "\ta\t,b\r\n",
+    )
+    _check(
+        "\ta\t,b\n",
+        Dialect(delimiter="\n"),
+        "[['\ta\t,b']]",
+        "\ta\t,b\r\n",
+    )
+    _check(
+        "\ta\t,b\n",
+        Dialect(escapechar="\r"),
+        "[['\ta\t', 'b']]",
         "\ta\t,b\r\n",
     )
     _check(
@@ -3884,9 +4418,6 @@ def test_matches_python_097() raises:
         "[['a;b']]",
         "a;b\r\n",
     )
-
-
-def test_matches_python_098() raises:
     _check(
         "a;b\n",
         excel_tab(),
@@ -3899,6 +4430,9 @@ def test_matches_python_098() raises:
         "[['a;b']]",
         '"a;b"\n',
     )
+
+
+def test_matches_python_112() raises:
     _check(
         "a;b\n",
         Dialect(delimiter=";"),
@@ -3923,9 +4457,6 @@ def test_matches_python_098() raises:
         "[['a;b']]",
         "a;b\r\n",
     )
-
-
-def test_matches_python_099() raises:
     _check(
         "a;b\n",
         Dialect(escapechar="\\"),
@@ -3938,6 +4469,9 @@ def test_matches_python_099() raises:
         "[['a;b']]",
         "a;b\r\n",
     )
+
+
+def test_matches_python_113() raises:
     _check(
         "a;b\n",
         Dialect(doublequote=False, escapechar="\\"),
@@ -3962,12 +4496,24 @@ def test_matches_python_099() raises:
         "[['a;b']]",
         "a;b\n",
     )
-
-
-def test_matches_python_100() raises:
     _check(
         "a;b\n",
         Dialect(delimiter="\u20ac"),
+        "[['a;b']]",
+        "a;b\r\n",
+    )
+    _check(
+        "a;b\n",
+        Dialect(delimiter="\n"),
+        "[['a;b']]",
+        "a;b\r\n",
+    )
+
+
+def test_matches_python_114() raises:
+    _check(
+        "a;b\n",
+        Dialect(escapechar="\r"),
         "[['a;b']]",
         "a;b\r\n",
     )
@@ -4003,7 +4549,7 @@ def test_matches_python_100() raises:
     )
 
 
-def test_matches_python_101() raises:
+def test_matches_python_115() raises:
     _check(
         "a|b\n",
         Dialect(skipinitialspace=True),
@@ -4042,7 +4588,7 @@ def test_matches_python_101() raises:
     )
 
 
-def test_matches_python_102() raises:
+def test_matches_python_116() raises:
     _check(
         "a|b\n",
         Dialect(quoting=QUOTE_ALL),
@@ -4062,11 +4608,26 @@ def test_matches_python_102() raises:
         "a|b\r\n",
     )
     _check(
+        "a|b\n",
+        Dialect(delimiter="\n"),
+        "[['a|b']]",
+        "a|b\r\n",
+    )
+    _check(
+        "a|b\n",
+        Dialect(escapechar="\r"),
+        "[['a|b']]",
+        "a|b\r\n",
+    )
+    _check(
         "a\tb\n",
         Dialect(),
         "[['a\tb']]",
         "a\tb\r\n",
     )
+
+
+def test_matches_python_117() raises:
     _check(
         "a\tb\n",
         excel_tab(),
@@ -4079,9 +4640,6 @@ def test_matches_python_102() raises:
         "[['a\tb']]",
         '"a\tb"\n',
     )
-
-
-def test_matches_python_103() raises:
     _check(
         "a\tb\n",
         Dialect(delimiter=";"),
@@ -4106,6 +4664,9 @@ def test_matches_python_103() raises:
         "[['a\tb']]",
         "a\tb\r\n",
     )
+
+
+def test_matches_python_118() raises:
     _check(
         "a\tb\n",
         Dialect(escapechar="\\"),
@@ -4118,9 +4679,6 @@ def test_matches_python_103() raises:
         "[['a\tb']]",
         "a\tb\r\n",
     )
-
-
-def test_matches_python_104() raises:
     _check(
         "a\tb\n",
         Dialect(doublequote=False, escapechar="\\"),
@@ -4145,9 +4703,24 @@ def test_matches_python_104() raises:
         "[['a\tb']]",
         "a\tb\n",
     )
+
+
+def test_matches_python_119() raises:
     _check(
         "a\tb\n",
         Dialect(delimiter="\u20ac"),
+        "[['a\tb']]",
+        "a\tb\r\n",
+    )
+    _check(
+        "a\tb\n",
+        Dialect(delimiter="\n"),
+        "[['a\tb']]",
+        "a\tb\r\n",
+    )
+    _check(
+        "a\tb\n",
+        Dialect(escapechar="\r"),
         "[['a\tb']]",
         "a\tb\r\n",
     )
@@ -4157,9 +4730,6 @@ def test_matches_python_104() raises:
         "[['a\\', 'b', 'c']]",
         "a\\,b,c\r\n",
     )
-
-
-def test_matches_python_105() raises:
     _check(
         "a\\,b,c\n",
         excel_tab(),
@@ -4172,6 +4742,9 @@ def test_matches_python_105() raises:
         "[['a\\', 'b', 'c']]",
         '"a\\","b","c"\n',
     )
+
+
+def test_matches_python_120() raises:
     _check(
         "a\\,b,c\n",
         Dialect(delimiter=";"),
@@ -4196,9 +4769,6 @@ def test_matches_python_105() raises:
         "[['a\\', 'b', 'c']]",
         "a\\,b,c\r\n",
     )
-
-
-def test_matches_python_106() raises:
     _check(
         "a\\,b,c\n",
         Dialect(escapechar="\\"),
@@ -4211,6 +4781,9 @@ def test_matches_python_106() raises:
         "[['a\\', 'b', 'c']]",
         "a\\,b,c\r\n",
     )
+
+
+def test_matches_python_121() raises:
     _check(
         "a\\,b,c\n",
         Dialect(doublequote=False, escapechar="\\"),
@@ -4235,13 +4808,25 @@ def test_matches_python_106() raises:
         "[['a\\', 'b', 'c']]",
         "a\\,b,c\n",
     )
-
-
-def test_matches_python_107() raises:
     _check(
         "a\\,b,c\n",
         Dialect(delimiter="\u20ac"),
         "[['a\\,b,c']]",
+        "a\\,b,c\r\n",
+    )
+    _check(
+        "a\\,b,c\n",
+        Dialect(delimiter="\n"),
+        "[['a\\,b,c']]",
+        "a\\,b,c\r\n",
+    )
+
+
+def test_matches_python_122() raises:
+    _check(
+        "a\\,b,c\n",
+        Dialect(escapechar="\r"),
+        "[['a\\', 'b', 'c']]",
         "a\\,b,c\r\n",
     )
     _check(
@@ -4276,7 +4861,7 @@ def test_matches_python_107() raises:
     )
 
 
-def test_matches_python_108() raises:
+def test_matches_python_123() raises:
     _check(
         '"a\\"b",c\n',
         Dialect(skipinitialspace=True),
@@ -4315,7 +4900,7 @@ def test_matches_python_108() raises:
     )
 
 
-def test_matches_python_109() raises:
+def test_matches_python_124() raises:
     _check(
         '"a\\"b",c\n',
         Dialect(lineterminator="\n"),
@@ -4329,6 +4914,18 @@ def test_matches_python_109() raises:
         '"a\\b"",c"\r\n',
     )
     _check(
+        '"a\\"b",c\n',
+        Dialect(delimiter="\n"),
+        "[['a\\b\",c']]",
+        '"a\\b"",c"\r\n',
+    )
+    _check(
+        '"a\\"b",c\n',
+        Dialect(escapechar="\r"),
+        "[['a\\b\"', 'c']]",
+        '"a\\b""",c\r\n',
+    )
+    _check(
         "a\\\nb\n",
         Dialect(),
         "[['a\\'], ['b']]",
@@ -4340,6 +4937,9 @@ def test_matches_python_109() raises:
         "[['a\\'], ['b']]",
         "a\\\r\nb\r\n",
     )
+
+
+def test_matches_python_125() raises:
     _check(
         "a\\\nb\n",
         unix(),
@@ -4352,9 +4952,6 @@ def test_matches_python_109() raises:
         "[['a\\'], ['b']]",
         "a\\\r\nb\r\n",
     )
-
-
-def test_matches_python_110() raises:
     _check(
         "a\\\nb\n",
         Dialect(delimiter="|"),
@@ -4379,6 +4976,9 @@ def test_matches_python_110() raises:
         "[['a\nb']]",
         '"a\nb"\r\n',
     )
+
+
+def test_matches_python_126() raises:
     _check(
         "a\\\nb\n",
         Dialect(doublequote=False),
@@ -4391,9 +4991,6 @@ def test_matches_python_110() raises:
         "[['a\nb']]",
         '"a\nb"\r\n',
     )
-
-
-def test_matches_python_111() raises:
     _check(
         "a\\\nb\n",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -4418,6 +5015,21 @@ def test_matches_python_111() raises:
         "[['a\\'], ['b']]",
         "a\\\r\nb\r\n",
     )
+
+
+def test_matches_python_127() raises:
+    _check(
+        "a\\\nb\n",
+        Dialect(delimiter="\n"),
+        "[['a\\'], ['b']]",
+        "a\\\r\nb\r\n",
+    )
+    _check(
+        "a\\\nb\n",
+        Dialect(escapechar="\r"),
+        "[['a\\'], ['b']]",
+        "a\\\r\nb\r\n",
+    )
     _check(
         "a\\",
         Dialect(),
@@ -4430,9 +5042,6 @@ def test_matches_python_111() raises:
         "[['a\\']]",
         "a\\\r\n",
     )
-
-
-def test_matches_python_112() raises:
     _check(
         "a\\",
         unix(),
@@ -4445,6 +5054,9 @@ def test_matches_python_112() raises:
         "[['a\\']]",
         "a\\\r\n",
     )
+
+
+def test_matches_python_128() raises:
     _check(
         "a\\",
         Dialect(delimiter="|"),
@@ -4469,9 +5081,6 @@ def test_matches_python_112() raises:
         "[['a\n']]",
         '"a\n"\r\n',
     )
-
-
-def test_matches_python_113() raises:
     _check(
         "a\\",
         Dialect(doublequote=False),
@@ -4484,6 +5093,9 @@ def test_matches_python_113() raises:
         "[['a\n']]",
         '"a\n"\r\n',
     )
+
+
+def test_matches_python_129() raises:
     _check(
         "a\\",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -4508,9 +5120,21 @@ def test_matches_python_113() raises:
         "[['a\\']]",
         "a\\\r\n",
     )
+    _check(
+        "a\\",
+        Dialect(delimiter="\n"),
+        "[['a\\']]",
+        "a\\\r\n",
+    )
+    _check(
+        "a\\",
+        Dialect(escapechar="\r"),
+        "[['a\\']]",
+        "a\\\r\n",
+    )
 
 
-def test_matches_python_114() raises:
+def test_matches_python_130() raises:
     _check(
         "a\\\\b\n",
         Dialect(),
@@ -4549,7 +5173,7 @@ def test_matches_python_114() raises:
     )
 
 
-def test_matches_python_115() raises:
+def test_matches_python_131() raises:
     _check(
         "a\\\\b\n",
         Dialect(quotechar="'"),
@@ -4588,7 +5212,7 @@ def test_matches_python_115() raises:
     )
 
 
-def test_matches_python_116() raises:
+def test_matches_python_132() raises:
     _check(
         "a\\\\b\n",
         Dialect(lineterminator="\n"),
@@ -4598,6 +5222,18 @@ def test_matches_python_116() raises:
     _check(
         "a\\\\b\n",
         Dialect(delimiter="\u20ac"),
+        "[['a\\\\b']]",
+        "a\\\\b\r\n",
+    )
+    _check(
+        "a\\\\b\n",
+        Dialect(delimiter="\n"),
+        "[['a\\\\b']]",
+        "a\\\\b\r\n",
+    )
+    _check(
+        "a\\\\b\n",
+        Dialect(escapechar="\r"),
         "[['a\\\\b']]",
         "a\\\\b\r\n",
     )
@@ -4613,6 +5249,9 @@ def test_matches_python_116() raises:
         "[['a€b']]",
         "a€b\r\n",
     )
+
+
+def test_matches_python_133() raises:
     _check(
         "a€b\n",
         excel_tab(),
@@ -4625,9 +5264,6 @@ def test_matches_python_116() raises:
         "[['a€b']]",
         '"a€b"\n',
     )
-
-
-def test_matches_python_117() raises:
     _check(
         "a€b\n",
         Dialect(delimiter=";"),
@@ -4652,6 +5288,9 @@ def test_matches_python_117() raises:
         "[['a€b']]",
         "a€b\r\n",
     )
+
+
+def test_matches_python_134() raises:
     _check(
         "a€b\n",
         Dialect(escapechar="\\"),
@@ -4664,9 +5303,6 @@ def test_matches_python_117() raises:
         "[['a€b']]",
         "a€b\r\n",
     )
-
-
-def test_matches_python_118() raises:
     _check(
         "a€b\n",
         Dialect(doublequote=False, escapechar="\\"),
@@ -4691,10 +5327,25 @@ def test_matches_python_118() raises:
         "[['a€b']]",
         "a€b\n",
     )
+
+
+def test_matches_python_135() raises:
     _check(
         "a€b\n",
         Dialect(delimiter="\u20ac"),
         "[['a', 'b']]",
+        "a€b\r\n",
+    )
+    _check(
+        "a€b\n",
+        Dialect(delimiter="\n"),
+        "[['a€b']]",
+        "a€b\r\n",
+    )
+    _check(
+        "a€b\n",
+        Dialect(escapechar="\r"),
+        "[['a€b']]",
         "a€b\r\n",
     )
     _check(
@@ -4703,9 +5354,6 @@ def test_matches_python_118() raises:
         "[['a€\"b€c\"']]",
         '"a€""b€c"""\r\n',
     )
-
-
-def test_matches_python_119() raises:
     _check(
         'a€"b€c"\n',
         excel_tab(),
@@ -4718,6 +5366,9 @@ def test_matches_python_119() raises:
         "[['a€\"b€c\"']]",
         '"a€""b€c"""\n',
     )
+
+
+def test_matches_python_136() raises:
     _check(
         'a€"b€c"\n',
         Dialect(delimiter=";"),
@@ -4742,9 +5393,6 @@ def test_matches_python_119() raises:
         "[['a€\"b€c\"']]",
         'a€"b€c"\r\n',
     )
-
-
-def test_matches_python_120() raises:
     _check(
         'a€"b€c"\n',
         Dialect(escapechar="\\"),
@@ -4757,6 +5405,9 @@ def test_matches_python_120() raises:
         "[['a€\"b€c\"']]",
         'a€\\"b€c\\"\r\n',
     )
+
+
+def test_matches_python_137() raises:
     _check(
         'a€"b€c"\n',
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -4781,9 +5432,21 @@ def test_matches_python_120() raises:
         "[['a', 'b€c']]",
         'a€"b€c"\r\n',
     )
+    _check(
+        'a€"b€c"\n',
+        Dialect(delimiter="\n"),
+        "[['a€\"b€c\"']]",
+        '"a€""b€c"""\r\n',
+    )
+    _check(
+        'a€"b€c"\n',
+        Dialect(escapechar="\r"),
+        "[['a€\"b€c\"']]",
+        '"a€""b€c"""\r\n',
+    )
 
 
-def test_matches_python_121() raises:
+def test_matches_python_138() raises:
     _check(
         "a\x00b,c\n",
         Dialect(),
@@ -4822,7 +5485,7 @@ def test_matches_python_121() raises:
     )
 
 
-def test_matches_python_122() raises:
+def test_matches_python_139() raises:
     _check(
         "a\x00b,c\n",
         Dialect(quotechar="'"),
@@ -4861,7 +5524,7 @@ def test_matches_python_122() raises:
     )
 
 
-def test_matches_python_123() raises:
+def test_matches_python_140() raises:
     _check(
         "a\x00b,c\n",
         Dialect(lineterminator="\n"),
@@ -4872,6 +5535,18 @@ def test_matches_python_123() raises:
         "a\x00b,c\n",
         Dialect(delimiter="\u20ac"),
         "[['a\x00b,c']]",
+        "a\x00b,c\r\n",
+    )
+    _check(
+        "a\x00b,c\n",
+        Dialect(delimiter="\n"),
+        "[['a\x00b,c']]",
+        "a\x00b,c\r\n",
+    )
+    _check(
+        "a\x00b,c\n",
+        Dialect(escapechar="\r"),
+        "[['a\x00b', 'c']]",
         "a\x00b,c\r\n",
     )
     _check(
@@ -4886,6 +5561,9 @@ def test_matches_python_123() raises:
         "[['a\x01b,c']]",
         "a\x01b,c\r\n",
     )
+
+
+def test_matches_python_141() raises:
     _check(
         "a\x01b,c\n",
         unix(),
@@ -4898,9 +5576,6 @@ def test_matches_python_123() raises:
         "[['a\x01b,c']]",
         "a\x01b,c\r\n",
     )
-
-
-def test_matches_python_124() raises:
     _check(
         "a\x01b,c\n",
         Dialect(delimiter="|"),
@@ -4925,6 +5600,9 @@ def test_matches_python_124() raises:
         "[['a\x01b', 'c']]",
         "a\x01b,c\r\n",
     )
+
+
+def test_matches_python_142() raises:
     _check(
         "a\x01b,c\n",
         Dialect(doublequote=False),
@@ -4937,9 +5615,6 @@ def test_matches_python_124() raises:
         "[['a\x01b', 'c']]",
         "a\x01b,c\r\n",
     )
-
-
-def test_matches_python_125() raises:
     _check(
         "a\x01b,c\n",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -4964,6 +5639,21 @@ def test_matches_python_125() raises:
         "[['a\x01b,c']]",
         "a\x01b,c\r\n",
     )
+
+
+def test_matches_python_143() raises:
+    _check(
+        "a\x01b,c\n",
+        Dialect(delimiter="\n"),
+        "[['a\x01b,c']]",
+        "a\x01b,c\r\n",
+    )
+    _check(
+        "a\x01b,c\n",
+        Dialect(escapechar="\r"),
+        "[['a\x01b', 'c']]",
+        "a\x01b,c\r\n",
+    )
     _check(
         "café,日本語\n",
         Dialect(),
@@ -4976,9 +5666,6 @@ def test_matches_python_125() raises:
         "[['café,日本語']]",
         "café,日本語\r\n",
     )
-
-
-def test_matches_python_126() raises:
     _check(
         "café,日本語\n",
         unix(),
@@ -4991,6 +5678,9 @@ def test_matches_python_126() raises:
         "[['café,日本語']]",
         "café,日本語\r\n",
     )
+
+
+def test_matches_python_144() raises:
     _check(
         "café,日本語\n",
         Dialect(delimiter="|"),
@@ -5015,9 +5705,6 @@ def test_matches_python_126() raises:
         "[['café', '日本語']]",
         "café,日本語\r\n",
     )
-
-
-def test_matches_python_127() raises:
     _check(
         "café,日本語\n",
         Dialect(doublequote=False),
@@ -5030,6 +5717,9 @@ def test_matches_python_127() raises:
         "[['café', '日本語']]",
         "café,日本語\r\n",
     )
+
+
+def test_matches_python_145() raises:
     _check(
         "café,日本語\n",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -5054,9 +5744,21 @@ def test_matches_python_127() raises:
         "[['café,日本語']]",
         "café,日本語\r\n",
     )
+    _check(
+        "café,日本語\n",
+        Dialect(delimiter="\n"),
+        "[['café,日本語']]",
+        "café,日本語\r\n",
+    )
+    _check(
+        "café,日本語\n",
+        Dialect(escapechar="\r"),
+        "[['café', '日本語']]",
+        "café,日本語\r\n",
+    )
 
 
-def test_matches_python_128() raises:
+def test_matches_python_146() raises:
     _check(
         'é"a",b\n',
         Dialect(),
@@ -5095,7 +5797,7 @@ def test_matches_python_128() raises:
     )
 
 
-def test_matches_python_129() raises:
+def test_matches_python_147() raises:
     _check(
         'é"a",b\n',
         Dialect(quotechar="'"),
@@ -5134,7 +5836,7 @@ def test_matches_python_129() raises:
     )
 
 
-def test_matches_python_130() raises:
+def test_matches_python_148() raises:
     _check(
         'é"a",b\n',
         Dialect(delimiter="\u20ac"),
@@ -5142,11 +5844,467 @@ def test_matches_python_130() raises:
         '"é""a"",b"\r\n',
     )
     _check(
+        'é"a",b\n',
+        Dialect(delimiter="\n"),
+        "[['é\"a\",b']]",
+        '"é""a"",b"\r\n',
+    )
+    _check(
+        'é"a",b\n',
+        Dialect(escapechar="\r"),
+        "[['é\"a\"', 'b']]",
+        '"é""a""",b\r\n',
+    )
+    _check(
+        "١,１２\n",
+        Dialect(),
+        "[['١', '１２']]",
+        "١,１２\r\n",
+    )
+    _check(
+        "١,１２\n",
+        excel_tab(),
+        "[['١,１２']]",
+        "١,１２\r\n",
+    )
+    _check(
+        "١,１２\n",
+        unix(),
+        "[['١', '１２']]",
+        '"١","１２"\n',
+    )
+
+
+def test_matches_python_149() raises:
+    _check(
+        "١,１２\n",
+        Dialect(delimiter=";"),
+        "[['١,１２']]",
+        "١,１２\r\n",
+    )
+    _check(
+        "١,１２\n",
+        Dialect(delimiter="|"),
+        "[['١,１２']]",
+        "١,１２\r\n",
+    )
+    _check(
+        "١,１２\n",
+        Dialect(skipinitialspace=True),
+        "[['١', '１２']]",
+        "١,１２\r\n",
+    )
+    _check(
+        "١,１２\n",
+        Dialect(quotechar="'"),
+        "[['١', '１２']]",
+        "١,１２\r\n",
+    )
+    _check(
+        "١,１２\n",
+        Dialect(escapechar="\\"),
+        "[['١', '１２']]",
+        "١,１２\r\n",
+    )
+    _check(
+        "١,１２\n",
+        Dialect(doublequote=False),
+        "[['١', '１２']]",
+        "١,１２\r\n",
+    )
+
+
+def test_matches_python_150() raises:
+    _check(
+        "١,１２\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['١', '１２']]",
+        "١,１２\r\n",
+    )
+    _check(
+        "١,１２\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['١', '１２']]",
+        "١,１２\r\n",
+    )
+    _check(
+        "١,１２\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[['١', '１２']]",
+        '"١","１２"\r\n',
+    )
+    _check(
+        "١,１２\n",
+        Dialect(lineterminator="\n"),
+        "[['١', '１２']]",
+        "١,１２\n",
+    )
+    _check(
+        "١,１２\n",
+        Dialect(delimiter="\u20ac"),
+        "[['١,１２']]",
+        "١,１２\r\n",
+    )
+    _check(
+        "١,１２\n",
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['1.0', '12.0']]",
+        '"1.0","12.0"\r\n',
+    )
+
+
+def test_matches_python_151() raises:
+    _check(
+        "١,１２\n",
+        Dialect(delimiter="\n"),
+        "[['١,１２']]",
+        "١,１２\r\n",
+    )
+    _check(
+        "١,１２\n",
+        Dialect(escapechar="\r"),
+        "[['١', '１２']]",
+        "١,１２\r\n",
+    )
+    _check(
+        "١.٢,۱\n",
+        Dialect(),
+        "[['١.٢', '۱']]",
+        "١.٢,۱\r\n",
+    )
+    _check(
+        "١.٢,۱\n",
+        excel_tab(),
+        "[['١.٢,۱']]",
+        "١.٢,۱\r\n",
+    )
+    _check(
+        "١.٢,۱\n",
+        unix(),
+        "[['١.٢', '۱']]",
+        '"١.٢","۱"\n',
+    )
+    _check(
+        "١.٢,۱\n",
+        Dialect(delimiter=";"),
+        "[['١.٢,۱']]",
+        "١.٢,۱\r\n",
+    )
+
+
+def test_matches_python_152() raises:
+    _check(
+        "١.٢,۱\n",
+        Dialect(delimiter="|"),
+        "[['١.٢,۱']]",
+        "١.٢,۱\r\n",
+    )
+    _check(
+        "١.٢,۱\n",
+        Dialect(skipinitialspace=True),
+        "[['١.٢', '۱']]",
+        "١.٢,۱\r\n",
+    )
+    _check(
+        "١.٢,۱\n",
+        Dialect(quotechar="'"),
+        "[['١.٢', '۱']]",
+        "١.٢,۱\r\n",
+    )
+    _check(
+        "١.٢,۱\n",
+        Dialect(escapechar="\\"),
+        "[['١.٢', '۱']]",
+        "١.٢,۱\r\n",
+    )
+    _check(
+        "١.٢,۱\n",
+        Dialect(doublequote=False),
+        "[['١.٢', '۱']]",
+        "١.٢,۱\r\n",
+    )
+    _check(
+        "١.٢,۱\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['١.٢', '۱']]",
+        "١.٢,۱\r\n",
+    )
+
+
+def test_matches_python_153() raises:
+    _check(
+        "١.٢,۱\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['١.٢', '۱']]",
+        "١.٢,۱\r\n",
+    )
+    _check(
+        "١.٢,۱\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[['١.٢', '۱']]",
+        '"١.٢","۱"\r\n',
+    )
+    _check(
+        "١.٢,۱\n",
+        Dialect(lineterminator="\n"),
+        "[['١.٢', '۱']]",
+        "١.٢,۱\n",
+    )
+    _check(
+        "١.٢,۱\n",
+        Dialect(delimiter="\u20ac"),
+        "[['١.٢,۱']]",
+        "١.٢,۱\r\n",
+    )
+    _check(
+        "١.٢,۱\n",
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['1.2', '1.0']]",
+        '"1.2","1.0"\r\n',
+    )
+    _check(
+        "١.٢,۱\n",
+        Dialect(delimiter="\n"),
+        "[['١.٢,۱']]",
+        "١.٢,۱\r\n",
+    )
+
+
+def test_matches_python_154() raises:
+    _check(
+        "١.٢,۱\n",
+        Dialect(escapechar="\r"),
+        "[['١.٢', '۱']]",
+        "١.٢,۱\r\n",
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(),
+        "[['　１２　', '  1']]",
+        "　１２　,  1\r\n",
+    )
+    _check(
+        "　１２　,  1\n",
+        excel_tab(),
+        "[['　１２　,  1']]",
+        "　１２　,  1\r\n",
+    )
+    _check(
+        "　１２　,  1\n",
+        unix(),
+        "[['　１２　', '  1']]",
+        '"　１２　","  1"\n',
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(delimiter=";"),
+        "[['　１２　,  1']]",
+        "　１２　,  1\r\n",
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(delimiter="|"),
+        "[['　１２　,  1']]",
+        "　１２　,  1\r\n",
+    )
+
+
+def test_matches_python_155() raises:
+    _check(
+        "　１２　,  1\n",
+        Dialect(skipinitialspace=True),
+        "[['　１２　', '  1']]",
+        "　１２　,  1\r\n",
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(quotechar="'"),
+        "[['　１２　', '  1']]",
+        "　１２　,  1\r\n",
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(escapechar="\\"),
+        "[['　１２　', '  1']]",
+        "　１２　,  1\r\n",
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(doublequote=False),
+        "[['　１２　', '  1']]",
+        "　１２　,  1\r\n",
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['　１２　', '  1']]",
+        "　１２　,  1\r\n",
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['　１２　', '  1']]",
+        "　１２　,  1\r\n",
+    )
+
+
+def test_matches_python_156() raises:
+    _check(
+        "　１２　,  1\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[['　１２　', '  1']]",
+        '"　１２　","  1"\r\n',
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(lineterminator="\n"),
+        "[['　１２　', '  1']]",
+        "　１２　,  1\n",
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(delimiter="\u20ac"),
+        "[['　１２　,  1']]",
+        "　１２　,  1\r\n",
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['12.0', '1.0']]",
+        '"12.0","1.0"\r\n',
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(delimiter="\n"),
+        "[['　１２　,  1']]",
+        "　１２　,  1\r\n",
+    )
+    _check(
+        "　１２　,  1\n",
+        Dialect(escapechar="\r"),
+        "[['　１２　', '  1']]",
+        "　１２　,  1\r\n",
+    )
+
+
+def test_matches_python_157() raises:
+    _check(
+        "１_２,1_0\n",
+        Dialect(),
+        "[['１_２', '1_0']]",
+        "１_２,1_0\r\n",
+    )
+    _check(
+        "１_２,1_0\n",
+        excel_tab(),
+        "[['１_２,1_0']]",
+        "１_２,1_0\r\n",
+    )
+    _check(
+        "１_２,1_0\n",
+        unix(),
+        "[['１_２', '1_0']]",
+        '"１_２","1_0"\n',
+    )
+    _check(
+        "１_２,1_0\n",
+        Dialect(delimiter=";"),
+        "[['１_２,1_0']]",
+        "１_２,1_0\r\n",
+    )
+    _check(
+        "１_２,1_0\n",
+        Dialect(delimiter="|"),
+        "[['１_２,1_0']]",
+        "１_２,1_0\r\n",
+    )
+    _check(
+        "１_２,1_0\n",
+        Dialect(skipinitialspace=True),
+        "[['１_２', '1_0']]",
+        "１_２,1_0\r\n",
+    )
+
+
+def test_matches_python_158() raises:
+    _check(
+        "１_２,1_0\n",
+        Dialect(quotechar="'"),
+        "[['１_２', '1_0']]",
+        "１_２,1_0\r\n",
+    )
+    _check(
+        "１_２,1_0\n",
+        Dialect(escapechar="\\"),
+        "[['１_２', '1_0']]",
+        "１_２,1_0\r\n",
+    )
+    _check(
+        "１_２,1_0\n",
+        Dialect(doublequote=False),
+        "[['１_２', '1_0']]",
+        "１_２,1_0\r\n",
+    )
+    _check(
+        "１_２,1_0\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['１_２', '1_0']]",
+        "１_２,1_0\r\n",
+    )
+    _check(
+        "１_２,1_0\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['１_２', '1_0']]",
+        "１_２,1_0\r\n",
+    )
+    _check(
+        "１_２,1_0\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[['１_２', '1_0']]",
+        '"１_２","1_0"\r\n',
+    )
+
+
+def test_matches_python_159() raises:
+    _check(
+        "１_２,1_0\n",
+        Dialect(lineterminator="\n"),
+        "[['１_２', '1_0']]",
+        "１_２,1_0\n",
+    )
+    _check(
+        "１_２,1_0\n",
+        Dialect(delimiter="\u20ac"),
+        "[['１_２,1_0']]",
+        "１_２,1_0\r\n",
+    )
+    _check(
+        "１_２,1_0\n",
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['12.0', '10.0']]",
+        '"12.0","10.0"\r\n',
+    )
+    _check(
+        "１_２,1_0\n",
+        Dialect(delimiter="\n"),
+        "[['１_２,1_0']]",
+        "１_２,1_0\r\n",
+    )
+    _check(
+        "１_２,1_0\n",
+        Dialect(escapechar="\r"),
+        "[['１_２', '1_0']]",
+        "１_２,1_0\r\n",
+    )
+    _check(
         "1,2.5\n-3e2,1_0\n",
         Dialect(),
         "[['1', '2.5'], ['-3e2', '1_0']]",
         "1,2.5\r\n-3e2,1_0\r\n",
     )
+
+
+def test_matches_python_160() raises:
     _check(
         "1,2.5\n-3e2,1_0\n",
         excel_tab(),
@@ -5171,9 +6329,6 @@ def test_matches_python_130() raises:
         "[['1,2.5'], ['-3e2,1_0']]",
         "1,2.5\r\n-3e2,1_0\r\n",
     )
-
-
-def test_matches_python_131() raises:
     _check(
         "1,2.5\n-3e2,1_0\n",
         Dialect(skipinitialspace=True),
@@ -5186,6 +6341,9 @@ def test_matches_python_131() raises:
         "[['1', '2.5'], ['-3e2', '1_0']]",
         "1,2.5\r\n-3e2,1_0\r\n",
     )
+
+
+def test_matches_python_161() raises:
     _check(
         "1,2.5\n-3e2,1_0\n",
         Dialect(escapechar="\\"),
@@ -5210,9 +6368,6 @@ def test_matches_python_131() raises:
         "[['1', '2.5'], ['-3e2', '1_0']]",
         "1,2.5\r\n-3e2,1_0\r\n",
     )
-
-
-def test_matches_python_132() raises:
     _check(
         "1,2.5\n-3e2,1_0\n",
         Dialect(quoting=QUOTE_ALL),
@@ -5225,6 +6380,9 @@ def test_matches_python_132() raises:
         "[['1', '2.5'], ['-3e2', '1_0']]",
         "1,2.5\n-3e2,1_0\n",
     )
+
+
+def test_matches_python_162() raises:
     _check(
         "1,2.5\n-3e2,1_0\n",
         Dialect(delimiter="\u20ac"),
@@ -5236,6 +6394,18 @@ def test_matches_python_132() raises:
         Dialect(quoting=QUOTE_NONNUMERIC),
         "[['1.0', '2.5'], ['-300.0', '10.0']]",
         '"1.0","2.5"\r\n"-300.0","10.0"\r\n',
+    )
+    _check(
+        "1,2.5\n-3e2,1_0\n",
+        Dialect(delimiter="\n"),
+        "[['1,2.5'], ['-3e2,1_0']]",
+        "1,2.5\r\n-3e2,1_0\r\n",
+    )
+    _check(
+        "1,2.5\n-3e2,1_0\n",
+        Dialect(escapechar="\r"),
+        "[['1', '2.5'], ['-3e2', '1_0']]",
+        "1,2.5\r\n-3e2,1_0\r\n",
     )
     _check(
         '1,"a"\n',
@@ -5251,7 +6421,7 @@ def test_matches_python_132() raises:
     )
 
 
-def test_matches_python_133() raises:
+def test_matches_python_163() raises:
     _check(
         '1,"a"\n',
         unix(),
@@ -5290,7 +6460,7 @@ def test_matches_python_133() raises:
     )
 
 
-def test_matches_python_134() raises:
+def test_matches_python_164() raises:
     _check(
         '1,"a"\n',
         Dialect(doublequote=False),
@@ -5329,12 +6499,24 @@ def test_matches_python_134() raises:
     )
 
 
-def test_matches_python_135() raises:
+def test_matches_python_165() raises:
     _check(
         '1,"a"\n',
         Dialect(quoting=QUOTE_NONNUMERIC),
         "[['1.0', 'a']]",
         '"1.0","a"\r\n',
+    )
+    _check(
+        '1,"a"\n',
+        Dialect(delimiter="\n"),
+        "[['1,\"a\"']]",
+        '"1,""a"""\r\n',
+    )
+    _check(
+        '1,"a"\n',
+        Dialect(escapechar="\r"),
+        "[['1', 'a']]",
+        "1,a\r\n",
     )
     _check(
         "0,00,1e400,inf,nan\n",
@@ -5354,6 +6536,9 @@ def test_matches_python_135() raises:
         "[['0', '00', '1e400', 'inf', 'nan']]",
         '"0","00","1e400","inf","nan"\n',
     )
+
+
+def test_matches_python_166() raises:
     _check(
         "0,00,1e400,inf,nan\n",
         Dialect(delimiter=";"),
@@ -5366,9 +6551,6 @@ def test_matches_python_135() raises:
         "[['0,00,1e400,inf,nan']]",
         "0,00,1e400,inf,nan\r\n",
     )
-
-
-def test_matches_python_136() raises:
     _check(
         "0,00,1e400,inf,nan\n",
         Dialect(skipinitialspace=True),
@@ -5393,6 +6575,9 @@ def test_matches_python_136() raises:
         "[['0', '00', '1e400', 'inf', 'nan']]",
         "0,00,1e400,inf,nan\r\n",
     )
+
+
+def test_matches_python_167() raises:
     _check(
         "0,00,1e400,inf,nan\n",
         Dialect(doublequote=False, escapechar="\\"),
@@ -5405,9 +6590,6 @@ def test_matches_python_136() raises:
         "[['0', '00', '1e400', 'inf', 'nan']]",
         "0,00,1e400,inf,nan\r\n",
     )
-
-
-def test_matches_python_137() raises:
     _check(
         "0,00,1e400,inf,nan\n",
         Dialect(quoting=QUOTE_ALL),
@@ -5432,6 +6614,21 @@ def test_matches_python_137() raises:
         "[['0.0', '0.0', 'inf', 'inf', 'nan']]",
         '"0.0","0.0","inf","inf","nan"\r\n',
     )
+
+
+def test_matches_python_168() raises:
+    _check(
+        "0,00,1e400,inf,nan\n",
+        Dialect(delimiter="\n"),
+        "[['0,00,1e400,inf,nan']]",
+        "0,00,1e400,inf,nan\r\n",
+    )
+    _check(
+        "0,00,1e400,inf,nan\n",
+        Dialect(escapechar="\r"),
+        "[['0', '00', '1e400', 'inf', 'nan']]",
+        "0,00,1e400,inf,nan\r\n",
+    )
     _check(
         " 1 ,+2\n",
         Dialect(),
@@ -5444,9 +6641,6 @@ def test_matches_python_137() raises:
         "[[' 1 ,+2']]",
         " 1 ,+2\r\n",
     )
-
-
-def test_matches_python_138() raises:
     _check(
         " 1 ,+2\n",
         unix(),
@@ -5459,6 +6653,9 @@ def test_matches_python_138() raises:
         "[[' 1 ,+2']]",
         " 1 ,+2\r\n",
     )
+
+
+def test_matches_python_169() raises:
     _check(
         " 1 ,+2\n",
         Dialect(delimiter="|"),
@@ -5483,9 +6680,6 @@ def test_matches_python_138() raises:
         "[[' 1 ', '+2']]",
         " 1 ,+2\r\n",
     )
-
-
-def test_matches_python_139() raises:
     _check(
         " 1 ,+2\n",
         Dialect(doublequote=False),
@@ -5498,6 +6692,9 @@ def test_matches_python_139() raises:
         "[[' 1 ', '+2']]",
         " 1 ,+2\r\n",
     )
+
+
+def test_matches_python_170() raises:
     _check(
         " 1 ,+2\n",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
@@ -5522,14 +6719,26 @@ def test_matches_python_139() raises:
         "[[' 1 ,+2']]",
         " 1 ,+2\r\n",
     )
-
-
-def test_matches_python_140() raises:
     _check(
         " 1 ,+2\n",
         Dialect(quoting=QUOTE_NONNUMERIC),
         "[['1.0', '2.0']]",
         '"1.0","2.0"\r\n',
+    )
+    _check(
+        " 1 ,+2\n",
+        Dialect(delimiter="\n"),
+        "[[' 1 ,+2']]",
+        " 1 ,+2\r\n",
+    )
+
+
+def test_matches_python_171() raises:
+    _check(
+        " 1 ,+2\n",
+        Dialect(escapechar="\r"),
+        "[[' 1 ', '+2']]",
+        " 1 ,+2\r\n",
     )
     _check(
         ".5,5.\n",
@@ -5563,7 +6772,7 @@ def test_matches_python_140() raises:
     )
 
 
-def test_matches_python_141() raises:
+def test_matches_python_172() raises:
     _check(
         ".5,5.\n",
         Dialect(skipinitialspace=True),
@@ -5602,7 +6811,7 @@ def test_matches_python_141() raises:
     )
 
 
-def test_matches_python_142() raises:
+def test_matches_python_173() raises:
     _check(
         ".5,5.\n",
         Dialect(quoting=QUOTE_ALL),
@@ -5628,6 +6837,21 @@ def test_matches_python_142() raises:
         '"0.5","5.0"\r\n',
     )
     _check(
+        ".5,5.\n",
+        Dialect(delimiter="\n"),
+        "[['.5,5.']]",
+        ".5,5.\r\n",
+    )
+    _check(
+        ".5,5.\n",
+        Dialect(escapechar="\r"),
+        "[['.5', '5.']]",
+        ".5,5.\r\n",
+    )
+
+
+def test_matches_python_174() raises:
+    _check(
         ',""\n',
         Dialect(),
         "[['', '']]",
@@ -5639,9 +6863,6 @@ def test_matches_python_142() raises:
         "[[',\"\"']]",
         '","""""\r\n',
     )
-
-
-def test_matches_python_143() raises:
     _check(
         ',""\n',
         unix(),
@@ -5666,6 +6887,9 @@ def test_matches_python_143() raises:
         "[['', '']]",
         ",\r\n",
     )
+
+
+def test_matches_python_175() raises:
     _check(
         ',""\n',
         Dialect(quotechar="'"),
@@ -5678,9 +6902,6 @@ def test_matches_python_143() raises:
         "[['', '']]",
         ",\r\n",
     )
-
-
-def test_matches_python_144() raises:
     _check(
         ',""\n',
         Dialect(doublequote=False),
@@ -5705,6 +6926,9 @@ def test_matches_python_144() raises:
         "[['', '']]",
         '"",""\r\n',
     )
+
+
+def test_matches_python_176() raises:
     _check(
         ',""\n',
         Dialect(lineterminator="\n"),
@@ -5717,9 +6941,6 @@ def test_matches_python_144() raises:
         "[[',\"\"']]",
         '","""""\r\n',
     )
-
-
-def test_matches_python_145() raises:
     _check(
         ',""\n',
         Dialect(quoting=QUOTE_NONNUMERIC),
@@ -5727,11 +6948,26 @@ def test_matches_python_145() raises:
         '"",""\r\n',
     )
     _check(
+        ',""\n',
+        Dialect(delimiter="\n"),
+        "[[',\"\"']]",
+        '","""""\r\n',
+    )
+    _check(
+        ',""\n',
+        Dialect(escapechar="\r"),
+        "[['', '']]",
+        ",\r\n",
+    )
+    _check(
         "1,\n",
         Dialect(),
         "[['1', '']]",
         "1,\r\n",
     )
+
+
+def test_matches_python_177() raises:
     _check(
         "1,\n",
         excel_tab(),
@@ -5756,9 +6992,6 @@ def test_matches_python_145() raises:
         "[['1,']]",
         "1,\r\n",
     )
-
-
-def test_matches_python_146() raises:
     _check(
         "1,\n",
         Dialect(skipinitialspace=True),
@@ -5771,6 +7004,9 @@ def test_matches_python_146() raises:
         "[['1', '']]",
         "1,\r\n",
     )
+
+
+def test_matches_python_178() raises:
     _check(
         "1,\n",
         Dialect(escapechar="\\"),
@@ -5795,9 +7031,6 @@ def test_matches_python_146() raises:
         "[['1', '']]",
         "1,\r\n",
     )
-
-
-def test_matches_python_147() raises:
     _check(
         "1,\n",
         Dialect(quoting=QUOTE_ALL),
@@ -5810,6 +7043,9 @@ def test_matches_python_147() raises:
         "[['1', '']]",
         "1,\n",
     )
+
+
+def test_matches_python_179() raises:
     _check(
         "1,\n",
         Dialect(delimiter="\u20ac"),
@@ -5821,6 +7057,18 @@ def test_matches_python_147() raises:
         Dialect(quoting=QUOTE_NONNUMERIC),
         "[['1.0', '']]",
         '"1.0",""\r\n',
+    )
+    _check(
+        "1,\n",
+        Dialect(delimiter="\n"),
+        "[['1,']]",
+        "1,\r\n",
+    )
+    _check(
+        "1,\n",
+        Dialect(escapechar="\r"),
+        "[['1', '']]",
+        "1,\r\n",
     )
     _check(
         'id,name,note\n1,alice,"says ""hi"""\n2,bob,"two\nlines"\n3,carol,\n',
@@ -5848,7 +7096,7 @@ def test_matches_python_147() raises:
     )
 
 
-def test_matches_python_148() raises:
+def test_matches_python_180() raises:
     _check(
         'id,name,note\n1,alice,"says ""hi"""\n2,bob,"two\nlines"\n3,carol,\n',
         unix(),
@@ -5923,7 +7171,7 @@ def test_matches_python_148() raises:
     )
 
 
-def test_matches_python_149() raises:
+def test_matches_python_181() raises:
     _check(
         'id,name,note\n1,alice,"says ""hi"""\n2,bob,"two\nlines"\n3,carol,\n',
         Dialect(doublequote=False, escapechar="\\"),
@@ -5982,14 +7230,38 @@ def test_matches_python_149() raises:
         ),
     )
     _check(
+        'id,name,note\n1,alice,"says ""hi"""\n2,bob,"two\nlines"\n3,carol,\n',
+        Dialect(delimiter="\n"),
+        (
+            '[[\'id,name,note\'], [\'1,alice,"says ""hi"""\'],'
+            " ['2,bob,\"two'], ['lines\"'], ['3,carol,']]"
+        ),
+        (
+            'id,name,note\r\n"1,alice,""says'
+            ' """"hi"""""""\r\n"2,bob,""two"\r\n"lines"""\r\n3,carol,\r\n'
+        ),
+    )
+
+
+def test_matches_python_182() raises:
+    _check(
+        'id,name,note\n1,alice,"says ""hi"""\n2,bob,"two\nlines"\n3,carol,\n',
+        Dialect(escapechar="\r"),
+        (
+            "[['id', 'name', 'note'], ['1', 'alice', 'says \"hi\"'], ['2',"
+            " 'bob', 'two\nlines'], ['3', 'carol', '']]"
+        ),
+        (
+            'id,name,note\r\n1,alice,"says'
+            ' ""hi"""\r\n2,bob,"two\nlines"\r\n3,carol,\r\n'
+        ),
+    )
+    _check(
         "a,b\r\nc,d\n\ne,f\r",
         Dialect(),
         "[['a', 'b'], ['c', 'd'], [], ['e', 'f']]",
         "a,b\r\nc,d\r\n\r\ne,f\r\n",
     )
-
-
-def test_matches_python_150() raises:
     _check(
         "a,b\r\nc,d\n\ne,f\r",
         excel_tab(),
@@ -6014,6 +7286,9 @@ def test_matches_python_150() raises:
         "[['a,b'], ['c,d'], [], ['e,f']]",
         "a,b\r\nc,d\r\n\r\ne,f\r\n",
     )
+
+
+def test_matches_python_183() raises:
     _check(
         "a,b\r\nc,d\n\ne,f\r",
         Dialect(skipinitialspace=True),
@@ -6026,9 +7301,6 @@ def test_matches_python_150() raises:
         "[['a', 'b'], ['c', 'd'], [], ['e', 'f']]",
         "a,b\r\nc,d\r\n\r\ne,f\r\n",
     )
-
-
-def test_matches_python_151() raises:
     _check(
         "a,b\r\nc,d\n\ne,f\r",
         Dialect(escapechar="\\"),
@@ -6053,6 +7325,9 @@ def test_matches_python_151() raises:
         "[['a', 'b'], ['c', 'd'], [], ['e', 'f']]",
         "a,b\r\nc,d\r\n\r\ne,f\r\n",
     )
+
+
+def test_matches_python_184() raises:
     _check(
         "a,b\r\nc,d\n\ne,f\r",
         Dialect(quoting=QUOTE_ALL),
@@ -6065,9 +7340,6 @@ def test_matches_python_151() raises:
         "[['a', 'b'], ['c', 'd'], [], ['e', 'f']]",
         "a,b\nc,d\n\ne,f\n",
     )
-
-
-def test_matches_python_152() raises:
     _check(
         "a,b\r\nc,d\n\ne,f\r",
         Dialect(delimiter="\u20ac"),
@@ -6075,1465 +7347,1030 @@ def test_matches_python_152() raises:
         "a,b\r\nc,d\r\n\r\ne,f\r\n",
     )
     _check(
-        '"a\nb"|,|\\\r',
+        "a,b\r\nc,d\n\ne,f\r",
+        Dialect(delimiter="\n"),
+        "[['a,b'], ['c,d'], [], ['e,f']]",
+        "a,b\r\nc,d\r\n\r\ne,f\r\n",
+    )
+    _check(
+        "a,b\r\nc,d\n\ne,f\r",
+        Dialect(escapechar="\r"),
+        "[['a', 'b'], ['c', 'd'], [], ['e', 'f']]",
+        "a,b\r\nc,d\r\n\r\ne,f\r\n",
+    )
+    _check(
+        '||""|café\r\n',
         Dialect(),
-        "[['a\nb|', '|\\']]",
-        '"a\nb|",|\\\r\n',
-    )
-    _check(
-        '"a\nb"|,|\\\r',
-        excel_tab(),
-        "[['a\nb|,|\\']]",
-        '"a\nb|,|\\"\r\n',
-    )
-    _check(
-        '"a\nb"|,|\\\r',
-        unix(),
-        "[['a\nb|', '|\\']]",
-        '"a\nb|","|\\"\n',
-    )
-    _check(
-        '"a\nb"|,|\\\r',
-        Dialect(delimiter=";"),
-        "[['a\nb|,|\\']]",
-        '"a\nb|,|\\"\r\n',
-    )
-    _check(
-        '"a\nb"|,|\\\r',
-        Dialect(delimiter="|"),
-        "[['a\nb', ',', '\\']]",
-        '"a\nb"|,|\\\r\n',
-    )
-
-
-def test_matches_python_153() raises:
-    _check(
-        '"a\nb"|,|\\\r',
-        Dialect(skipinitialspace=True),
-        "[['a\nb|', '|\\']]",
-        '"a\nb|",|\\\r\n',
-    )
-    _check(
-        '"a\nb"|,|\\\r',
-        Dialect(quotechar="'"),
-        "[['\"a'], ['b\"|', '|\\']]",
-        '"a\r\nb"|,|\\\r\n',
-    )
-    _check(
-        '"a\nb"|,|\\\r',
-        Dialect(escapechar="\\"),
-        "[['a\nb|', '|\r']]",
-        '"a\nb|","|\r"\r\n',
-    )
-    _check(
-        '"a\nb"|,|\\\r',
-        Dialect(doublequote=False),
-        "[['a\nb|', '|\\']]",
-        '"a\nb|",|\\\r\n',
-    )
-    _check(
-        '"a\nb"|,|\\\r',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['a\nb|', '|\r']]",
-        '"a\nb|","|\r"\r\n',
-    )
-    _check(
-        '"a\nb"|,|\\\r',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['\"a'], ['b\"|', '|\r']]",
-        '\\"a\r\nb\\"|,|\\\r\r\n',
-    )
-
-
-def test_matches_python_154() raises:
-    _check(
-        '"a\nb"|,|\\\r',
-        Dialect(quoting=QUOTE_ALL),
-        "[['a\nb|', '|\\']]",
-        '"a\nb|","|\\"\r\n',
-    )
-    _check(
-        '"a\nb"|,|\\\r',
-        Dialect(lineterminator="\n"),
-        "[['a\nb|', '|\\']]",
-        '"a\nb|",|\\\n',
-    )
-    _check(
-        '"a\nb"|,|\\\r',
-        Dialect(delimiter="\u20ac"),
-        "[['a\nb|,|\\']]",
-        '"a\nb|,|\\"\r\n',
-    )
-    _check(
-        "a\\|2.5\r ",
-        Dialect(),
-        "[['a\\|2.5'], [' ']]",
-        "a\\|2.5\r\n \r\n",
-    )
-    _check(
-        "a\\|2.5\r ",
-        excel_tab(),
-        "[['a\\|2.5'], [' ']]",
-        "a\\|2.5\r\n \r\n",
-    )
-    _check(
-        "a\\|2.5\r ",
-        unix(),
-        "[['a\\|2.5'], [' ']]",
-        '"a\\|2.5"\n" "\n',
-    )
-
-
-def test_matches_python_155() raises:
-    _check(
-        "a\\|2.5\r ",
-        Dialect(delimiter=";"),
-        "[['a\\|2.5'], [' ']]",
-        "a\\|2.5\r\n \r\n",
-    )
-    _check(
-        "a\\|2.5\r ",
-        Dialect(delimiter="|"),
-        "[['a\\', '2.5'], [' ']]",
-        "a\\|2.5\r\n \r\n",
-    )
-    _check(
-        "a\\|2.5\r ",
-        Dialect(skipinitialspace=True),
-        "[['a\\|2.5'], ['']]",
-        'a\\|2.5\r\n""\r\n',
-    )
-    _check(
-        "a\\|2.5\r ",
-        Dialect(quotechar="'"),
-        "[['a\\|2.5'], [' ']]",
-        "a\\|2.5\r\n \r\n",
-    )
-    _check(
-        "a\\|2.5\r ",
-        Dialect(escapechar="\\"),
-        "[['a|2.5'], [' ']]",
-        "a|2.5\r\n \r\n",
-    )
-    _check(
-        "a\\|2.5\r ",
-        Dialect(doublequote=False),
-        "[['a\\|2.5'], [' ']]",
-        "a\\|2.5\r\n \r\n",
-    )
-
-
-def test_matches_python_156() raises:
-    _check(
-        "a\\|2.5\r ",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['a|2.5'], [' ']]",
-        "a|2.5\r\n \r\n",
-    )
-    _check(
-        "a\\|2.5\r ",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['a|2.5'], [' ']]",
-        "a|2.5\r\n \r\n",
-    )
-    _check(
-        "a\\|2.5\r ",
-        Dialect(quoting=QUOTE_ALL),
-        "[['a\\|2.5'], [' ']]",
-        '"a\\|2.5"\r\n" "\r\n',
-    )
-    _check(
-        "a\\|2.5\r ",
-        Dialect(lineterminator="\n"),
-        "[['a\\|2.5'], [' ']]",
-        "a\\|2.5\n \n",
-    )
-    _check(
-        "a\\|2.5\r ",
-        Dialect(delimiter="\u20ac"),
-        "[['a\\|2.5'], [' ']]",
-        "a\\|2.5\r\n \r\n",
-    )
-    _check(
-        'café|""|-3e2\r\n',
-        Dialect(),
-        "[['café|\"\"|-3e2']]",
-        '"café|""""|-3e2"\r\n',
-    )
-
-
-def test_matches_python_157() raises:
-    _check(
-        'café|""|-3e2\r\n',
-        excel_tab(),
-        "[['café|\"\"|-3e2']]",
-        '"café|""""|-3e2"\r\n',
-    )
-    _check(
-        'café|""|-3e2\r\n',
-        unix(),
-        "[['café|\"\"|-3e2']]",
-        '"café|""""|-3e2"\n',
-    )
-    _check(
-        'café|""|-3e2\r\n',
-        Dialect(delimiter=";"),
-        "[['café|\"\"|-3e2']]",
-        '"café|""""|-3e2"\r\n',
-    )
-    _check(
-        'café|""|-3e2\r\n',
-        Dialect(delimiter="|"),
-        "[['café', '', '-3e2']]",
-        "café||-3e2\r\n",
-    )
-    _check(
-        'café|""|-3e2\r\n',
-        Dialect(skipinitialspace=True),
-        "[['café|\"\"|-3e2']]",
-        '"café|""""|-3e2"\r\n',
-    )
-    _check(
-        'café|""|-3e2\r\n',
-        Dialect(quotechar="'"),
-        "[['café|\"\"|-3e2']]",
-        'café|""|-3e2\r\n',
-    )
-
-
-def test_matches_python_158() raises:
-    _check(
-        'café|""|-3e2\r\n',
-        Dialect(escapechar="\\"),
-        "[['café|\"\"|-3e2']]",
-        '"café|""""|-3e2"\r\n',
-    )
-    _check(
-        'café|""|-3e2\r\n',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['café|\"\"|-3e2']]",
-        'café|\\"\\"|-3e2\r\n',
-    )
-    _check(
-        'café|""|-3e2\r\n',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['café|\"\"|-3e2']]",
-        'café|\\"\\"|-3e2\r\n',
-    )
-    _check(
-        'café|""|-3e2\r\n',
-        Dialect(quoting=QUOTE_ALL),
-        "[['café|\"\"|-3e2']]",
-        '"café|""""|-3e2"\r\n',
-    )
-    _check(
-        'café|""|-3e2\r\n',
-        Dialect(lineterminator="\n"),
-        "[['café|\"\"|-3e2']]",
-        '"café|""""|-3e2"\n',
-    )
-    _check(
-        'café|""|-3e2\r\n',
-        Dialect(delimiter="\u20ac"),
-        "[['café|\"\"|-3e2']]",
-        '"café|""""|-3e2"\r\n',
-    )
-
-
-def test_matches_python_159() raises:
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        Dialect(),
-        "[['a\\b'], [], ['', 'inf'], ['€', 'b']]",
-        "a\\b\r\n\r\n,inf\r\n€,b\r\n",
-    )
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        excel_tab(),
-        "[['a\\b'], [], [',inf'], ['€,b']]",
-        "a\\b\r\n\r\n,inf\r\n€,b\r\n",
-    )
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        unix(),
-        "[['a\\b'], [], ['', 'inf'], ['€', 'b']]",
-        '"a\\b"\n\n"","inf"\n"€","b"\n',
-    )
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        Dialect(delimiter=";"),
-        "[['a\\b'], [], [',inf'], ['€,b']]",
-        "a\\b\r\n\r\n,inf\r\n€,b\r\n",
-    )
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        Dialect(delimiter="|"),
-        "[['a\\b'], [], [',inf'], ['€,b']]",
-        "a\\b\r\n\r\n,inf\r\n€,b\r\n",
-    )
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        Dialect(skipinitialspace=True),
-        "[['a\\b'], [], ['', 'inf'], ['€', 'b']]",
-        "a\\b\r\n\r\n,inf\r\n€,b\r\n",
-    )
-
-
-def test_matches_python_160() raises:
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        Dialect(quotechar="'"),
-        "[['a\\b'], [], ['\"\"', 'inf'], ['€', 'b']]",
-        'a\\b\r\n\r\n"",inf\r\n€,b\r\n',
-    )
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        Dialect(escapechar="\\"),
-        "[['ab'], [], ['', 'inf'], ['€', 'b']]",
-        "ab\r\n\r\n,inf\r\n€,b\r\n",
-    )
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        Dialect(doublequote=False),
-        "[['a\\b'], [], ['', 'inf'], ['€', 'b']]",
-        "a\\b\r\n\r\n,inf\r\n€,b\r\n",
-    )
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['ab'], [], ['', 'inf'], ['€', 'b']]",
-        "ab\r\n\r\n,inf\r\n€,b\r\n",
-    )
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['ab'], [], ['\"\"', 'inf'], ['€', 'b']]",
-        'ab\r\n\r\n\\"\\",inf\r\n€,b\r\n',
-    )
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        Dialect(quoting=QUOTE_ALL),
-        "[['a\\b'], [], ['', 'inf'], ['€', 'b']]",
-        '"a\\b"\r\n\r\n"","inf"\r\n"€","b"\r\n',
-    )
-
-
-def test_matches_python_161() raises:
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        Dialect(lineterminator="\n"),
-        "[['a\\b'], [], ['', 'inf'], ['€', 'b']]",
-        "a\\b\n\n,inf\n€,b\n",
-    )
-    _check(
-        'a\\b\r\n\r\n"",inf\r€,b\n',
-        Dialect(delimiter="\u20ac"),
-        "[['a\\b'], [], [',inf'], ['', ',b']]",
-        "a\\b\r\n\r\n,inf\r\n€,b\r\n",
-    )
-    _check(
-        "€\n",
-        Dialect(),
-        "[['€']]",
-        "€\r\n",
-    )
-    _check(
-        "€\n",
-        excel_tab(),
-        "[['€']]",
-        "€\r\n",
-    )
-    _check(
-        "€\n",
-        unix(),
-        "[['€']]",
-        '"€"\n',
-    )
-    _check(
-        "€\n",
-        Dialect(delimiter=";"),
-        "[['€']]",
-        "€\r\n",
-    )
-
-
-def test_matches_python_162() raises:
-    _check(
-        "€\n",
-        Dialect(delimiter="|"),
-        "[['€']]",
-        "€\r\n",
-    )
-    _check(
-        "€\n",
-        Dialect(skipinitialspace=True),
-        "[['€']]",
-        "€\r\n",
-    )
-    _check(
-        "€\n",
-        Dialect(quotechar="'"),
-        "[['€']]",
-        "€\r\n",
-    )
-    _check(
-        "€\n",
-        Dialect(escapechar="\\"),
-        "[['€']]",
-        "€\r\n",
-    )
-    _check(
-        "€\n",
-        Dialect(doublequote=False),
-        "[['€']]",
-        "€\r\n",
-    )
-    _check(
-        "€\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['€']]",
-        "€\r\n",
-    )
-
-
-def test_matches_python_163() raises:
-    _check(
-        "€\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['€']]",
-        "€\r\n",
-    )
-    _check(
-        "€\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[['€']]",
-        '"€"\r\n',
-    )
-    _check(
-        "€\n",
-        Dialect(lineterminator="\n"),
-        "[['€']]",
-        "€\n",
-    )
-    _check(
-        "€\n",
-        Dialect(delimiter="\u20ac"),
-        "[['', '']]",
-        "€\r\n",
-    )
-    _check(
-        '\'q\',"a\nb",b;,a\ta\\b\n"a""b";"a,b"\r\n',
-        Dialect(quotechar="'"),
-        "[['q', '\"a'], ['b\"', 'b;', 'a\ta\\b'], ['\"a\"\"b\";\"a', 'b\"']]",
-        'q,"a\r\nb",b;,a\ta\\b\r\n"a""b";"a,b"\r\n',
-    )
-    _check(
-        "\\;-3e2\r-3e2\r",
-        Dialect(),
-        "[['\\;-3e2'], ['-3e2']]",
-        "\\;-3e2\r\n-3e2\r\n",
-    )
-
-
-def test_matches_python_164() raises:
-    _check(
-        "\\;-3e2\r-3e2\r",
-        excel_tab(),
-        "[['\\;-3e2'], ['-3e2']]",
-        "\\;-3e2\r\n-3e2\r\n",
-    )
-    _check(
-        "\\;-3e2\r-3e2\r",
-        unix(),
-        "[['\\;-3e2'], ['-3e2']]",
-        '"\\;-3e2"\n"-3e2"\n',
-    )
-    _check(
-        "\\;-3e2\r-3e2\r",
-        Dialect(delimiter=";"),
-        "[['\\', '-3e2'], ['-3e2']]",
-        "\\;-3e2\r\n-3e2\r\n",
-    )
-    _check(
-        "\\;-3e2\r-3e2\r",
-        Dialect(delimiter="|"),
-        "[['\\;-3e2'], ['-3e2']]",
-        "\\;-3e2\r\n-3e2\r\n",
-    )
-    _check(
-        "\\;-3e2\r-3e2\r",
-        Dialect(skipinitialspace=True),
-        "[['\\;-3e2'], ['-3e2']]",
-        "\\;-3e2\r\n-3e2\r\n",
-    )
-    _check(
-        "\\;-3e2\r-3e2\r",
-        Dialect(quotechar="'"),
-        "[['\\;-3e2'], ['-3e2']]",
-        "\\;-3e2\r\n-3e2\r\n",
-    )
-
-
-def test_matches_python_165() raises:
-    _check(
-        "\\;-3e2\r-3e2\r",
-        Dialect(escapechar="\\"),
-        "[[';-3e2'], ['-3e2']]",
-        ";-3e2\r\n-3e2\r\n",
-    )
-    _check(
-        "\\;-3e2\r-3e2\r",
-        Dialect(doublequote=False),
-        "[['\\;-3e2'], ['-3e2']]",
-        "\\;-3e2\r\n-3e2\r\n",
-    )
-    _check(
-        "\\;-3e2\r-3e2\r",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[[';-3e2'], ['-3e2']]",
-        ";-3e2\r\n-3e2\r\n",
-    )
-    _check(
-        "\\;-3e2\r-3e2\r",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[[';-3e2'], ['-3e2']]",
-        ";-3e2\r\n-3e2\r\n",
-    )
-    _check(
-        "\\;-3e2\r-3e2\r",
-        Dialect(quoting=QUOTE_ALL),
-        "[['\\;-3e2'], ['-3e2']]",
-        '"\\;-3e2"\r\n"-3e2"\r\n',
-    )
-    _check(
-        "\\;-3e2\r-3e2\r",
-        Dialect(lineterminator="\n"),
-        "[['\\;-3e2'], ['-3e2']]",
-        "\\;-3e2\n-3e2\n",
-    )
-
-
-def test_matches_python_166() raises:
-    _check(
-        "\\;-3e2\r-3e2\r",
-        Dialect(delimiter="\u20ac"),
-        "[['\\;-3e2'], ['-3e2']]",
-        "\\;-3e2\r\n-3e2\r\n",
-    )
-    _check(
-        'a\\b,x"y, \r\n',
-        Dialect(),
-        "[['a\\b', 'x\"y', ' ']]",
-        'a\\b,"x""y", \r\n',
-    )
-    _check(
-        'a\\b,x"y, \r\n',
-        excel_tab(),
-        "[['a\\b,x\"y, ']]",
-        '"a\\b,x""y, "\r\n',
-    )
-    _check(
-        'a\\b,x"y, \r\n',
-        unix(),
-        "[['a\\b', 'x\"y', ' ']]",
-        '"a\\b","x""y"," "\n',
-    )
-    _check(
-        'a\\b,x"y, \r\n',
-        Dialect(delimiter=";"),
-        "[['a\\b,x\"y, ']]",
-        '"a\\b,x""y, "\r\n',
-    )
-    _check(
-        'a\\b,x"y, \r\n',
-        Dialect(delimiter="|"),
-        "[['a\\b,x\"y, ']]",
-        '"a\\b,x""y, "\r\n',
-    )
-
-
-def test_matches_python_167() raises:
-    _check(
-        'a\\b,x"y, \r\n',
-        Dialect(skipinitialspace=True),
-        "[['a\\b', 'x\"y', '']]",
-        'a\\b,"x""y",\r\n',
-    )
-    _check(
-        'a\\b,x"y, \r\n',
-        Dialect(quotechar="'"),
-        "[['a\\b', 'x\"y', ' ']]",
-        'a\\b,x"y, \r\n',
-    )
-    _check(
-        'a\\b,x"y, \r\n',
-        Dialect(escapechar="\\"),
-        "[['ab', 'x\"y', ' ']]",
-        'ab,"x""y", \r\n',
-    )
-    _check(
-        'a\\b,x"y, \r\n',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['ab', 'x\"y', ' ']]",
-        'ab,x\\"y, \r\n',
-    )
-    _check(
-        'a\\b,x"y, \r\n',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['ab', 'x\"y', ' ']]",
-        'ab,x\\"y, \r\n',
-    )
-    _check(
-        'a\\b,x"y, \r\n',
-        Dialect(quoting=QUOTE_ALL),
-        "[['a\\b', 'x\"y', ' ']]",
-        '"a\\b","x""y"," "\r\n',
-    )
-
-
-def test_matches_python_168() raises:
-    _check(
-        'a\\b,x"y, \r\n',
-        Dialect(lineterminator="\n"),
-        "[['a\\b', 'x\"y', ' ']]",
-        'a\\b,"x""y", \n',
-    )
-    _check(
-        'a\\b,x"y, \r\n',
-        Dialect(delimiter="\u20ac"),
-        "[['a\\b,x\"y, ']]",
-        '"a\\b,x""y, "\r\n',
-    )
-    _check(
-        "-3e2\r\n",
-        Dialect(),
-        "[['-3e2']]",
-        "-3e2\r\n",
-    )
-    _check(
-        "-3e2\r\n",
-        excel_tab(),
-        "[['-3e2']]",
-        "-3e2\r\n",
-    )
-    _check(
-        "-3e2\r\n",
-        unix(),
-        "[['-3e2']]",
-        '"-3e2"\n',
-    )
-    _check(
-        "-3e2\r\n",
-        Dialect(delimiter=";"),
-        "[['-3e2']]",
-        "-3e2\r\n",
-    )
-
-
-def test_matches_python_169() raises:
-    _check(
-        "-3e2\r\n",
-        Dialect(delimiter="|"),
-        "[['-3e2']]",
-        "-3e2\r\n",
-    )
-    _check(
-        "-3e2\r\n",
-        Dialect(skipinitialspace=True),
-        "[['-3e2']]",
-        "-3e2\r\n",
-    )
-    _check(
-        "-3e2\r\n",
-        Dialect(quotechar="'"),
-        "[['-3e2']]",
-        "-3e2\r\n",
-    )
-    _check(
-        "-3e2\r\n",
-        Dialect(escapechar="\\"),
-        "[['-3e2']]",
-        "-3e2\r\n",
-    )
-    _check(
-        "-3e2\r\n",
-        Dialect(doublequote=False),
-        "[['-3e2']]",
-        "-3e2\r\n",
-    )
-    _check(
-        "-3e2\r\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['-3e2']]",
-        "-3e2\r\n",
-    )
-
-
-def test_matches_python_170() raises:
-    _check(
-        "-3e2\r\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['-3e2']]",
-        "-3e2\r\n",
-    )
-    _check(
-        "-3e2\r\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[['-3e2']]",
-        '"-3e2"\r\n',
-    )
-    _check(
-        "-3e2\r\n",
-        Dialect(lineterminator="\n"),
-        "[['-3e2']]",
-        "-3e2\n",
-    )
-    _check(
-        "-3e2\r\n",
-        Dialect(delimiter="\u20ac"),
-        "[['-3e2']]",
-        "-3e2\r\n",
-    )
-    _check(
-        "-3e2\r\n",
-        Dialect(quoting=QUOTE_NONNUMERIC),
-        "[['-300.0']]",
-        '"-300.0"\r\n',
-    )
-    _check(
-        "\n",
-        Dialect(),
-        "[[]]",
-        "\r\n",
-    )
-
-
-def test_matches_python_171() raises:
-    _check(
-        "\n",
-        excel_tab(),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\n",
-        unix(),
-        "[[]]",
-        "\n",
-    )
-    _check(
-        "\n",
-        Dialect(delimiter=";"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\n",
-        Dialect(delimiter="|"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\n",
-        Dialect(skipinitialspace=True),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\n",
-        Dialect(quotechar="'"),
-        "[[]]",
-        "\r\n",
-    )
-
-
-def test_matches_python_172() raises:
-    _check(
-        "\n",
-        Dialect(escapechar="\\"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\n",
-        Dialect(doublequote=False),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\n",
-        Dialect(lineterminator="\n"),
-        "[[]]",
-        "\n",
-    )
-
-
-def test_matches_python_173() raises:
-    _check(
-        "\n",
-        Dialect(delimiter="\u20ac"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\n",
-        Dialect(quoting=QUOTE_NONNUMERIC),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        '"q"\ncafé\r\n',
-        Dialect(),
-        "[['q'], ['café']]",
-        "q\r\ncafé\r\n",
-    )
-    _check(
-        '"q"\ncafé\r\n',
-        excel_tab(),
-        "[['q'], ['café']]",
-        "q\r\ncafé\r\n",
-    )
-    _check(
-        '"q"\ncafé\r\n',
-        unix(),
-        "[['q'], ['café']]",
-        '"q"\n"café"\n',
-    )
-    _check(
-        '"q"\ncafé\r\n',
-        Dialect(delimiter=";"),
-        "[['q'], ['café']]",
-        "q\r\ncafé\r\n",
-    )
-
-
-def test_matches_python_174() raises:
-    _check(
-        '"q"\ncafé\r\n',
-        Dialect(delimiter="|"),
-        "[['q'], ['café']]",
-        "q\r\ncafé\r\n",
-    )
-    _check(
-        '"q"\ncafé\r\n',
-        Dialect(skipinitialspace=True),
-        "[['q'], ['café']]",
-        "q\r\ncafé\r\n",
-    )
-    _check(
-        '"q"\ncafé\r\n',
-        Dialect(quotechar="'"),
-        "[['\"q\"'], ['café']]",
-        '"q"\r\ncafé\r\n',
-    )
-    _check(
-        '"q"\ncafé\r\n',
-        Dialect(escapechar="\\"),
-        "[['q'], ['café']]",
-        "q\r\ncafé\r\n",
-    )
-    _check(
-        '"q"\ncafé\r\n',
-        Dialect(doublequote=False),
-        "[['q'], ['café']]",
-        "q\r\ncafé\r\n",
-    )
-    _check(
-        '"q"\ncafé\r\n',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['q'], ['café']]",
-        "q\r\ncafé\r\n",
-    )
-
-
-def test_matches_python_175() raises:
-    _check(
-        '"q"\ncafé\r\n',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['\"q\"'], ['café']]",
-        '\\"q\\"\r\ncafé\r\n',
-    )
-    _check(
-        '"q"\ncafé\r\n',
-        Dialect(quoting=QUOTE_ALL),
-        "[['q'], ['café']]",
-        '"q"\r\n"café"\r\n',
-    )
-    _check(
-        '"q"\ncafé\r\n',
-        Dialect(lineterminator="\n"),
-        "[['q'], ['café']]",
-        "q\ncafé\n",
-    )
-    _check(
-        '"q"\ncafé\r\n',
-        Dialect(delimiter="\u20ac"),
-        "[['q'], ['café']]",
-        "q\r\ncafé\r\n",
-    )
-    _check(
-        '\r"\t\\\ta""\r\na',
-        Dialect(),
-        "[[], ['\t\\\ta\"\r\na']]",
-        '\r\n"\t\\\ta""\r\na"\r\n',
-    )
-    _check(
-        '\r"\t\\\ta""\r\na',
-        excel_tab(),
-        "[[], ['\t\\\ta\"\r\na']]",
-        '\r\n"\t\\\ta""\r\na"\r\n',
-    )
-
-
-def test_matches_python_176() raises:
-    _check(
-        '\r"\t\\\ta""\r\na',
-        unix(),
-        "[[], ['\t\\\ta\"\r\na']]",
-        '\n"\t\\\ta""\r\na"\n',
-    )
-    _check(
-        '\r"\t\\\ta""\r\na',
-        Dialect(delimiter=";"),
-        "[[], ['\t\\\ta\"\r\na']]",
-        '\r\n"\t\\\ta""\r\na"\r\n',
-    )
-    _check(
-        '\r"\t\\\ta""\r\na',
-        Dialect(delimiter="|"),
-        "[[], ['\t\\\ta\"\r\na']]",
-        '\r\n"\t\\\ta""\r\na"\r\n',
-    )
-    _check(
-        '\r"\t\\\ta""\r\na',
-        Dialect(skipinitialspace=True),
-        "[[], ['\t\\\ta\"\r\na']]",
-        '\r\n"\t\\\ta""\r\na"\r\n',
-    )
-    _check(
-        '\r"\t\\\ta""\r\na',
-        Dialect(quotechar="'"),
-        "[[], ['\"\t\\\ta\"\"'], ['a']]",
-        '\r\n"\t\\\ta""\r\na\r\n',
-    )
-    _check(
-        '\r"\t\\\ta""\r\na',
-        Dialect(escapechar="\\"),
-        "[[], ['\t\ta\"\r\na']]",
-        '\r\n"\t\ta""\r\na"\r\n',
-    )
-
-
-def test_matches_python_177() raises:
-    _check(
-        '\r"\t\\\ta""\r\na',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[[], ['\t\ta\"'], ['a']]",
-        '\r\n\t\ta\\"\r\na\r\n',
-    )
-    _check(
-        '\r"\t\\\ta""\r\na',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[[], ['\"\t\ta\"\"'], ['a']]",
-        '\r\n\\"\t\ta\\"\\"\r\na\r\n',
-    )
-    _check(
-        '\r"\t\\\ta""\r\na',
-        Dialect(quoting=QUOTE_ALL),
-        "[[], ['\t\\\ta\"\r\na']]",
-        '\r\n"\t\\\ta""\r\na"\r\n',
-    )
-    _check(
-        '\r"\t\\\ta""\r\na',
-        Dialect(lineterminator="\n"),
-        "[[], ['\t\\\ta\"\r\na']]",
-        '\n"\t\\\ta""\r\na"\n',
-    )
-    _check(
-        '\r"\t\\\ta""\r\na',
-        Dialect(delimiter="\u20ac"),
-        "[[], ['\t\\\ta\"\r\na']]",
-        '\r\n"\t\\\ta""\r\na"\r\n',
-    )
-    _check(
-        '\r"\t\\\ta""\r\na',
-        Dialect(quoting=QUOTE_NONNUMERIC),
-        "[[], ['\t\\\ta\"\r\na']]",
-        '\r\n"\t\\\ta""\r\na"\r\n',
-    )
-
-
-def test_matches_python_178() raises:
-    _check(
-        "\r\n",
-        Dialect(),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\r\n",
-        excel_tab(),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\r\n",
-        unix(),
-        "[[]]",
-        "\n",
-    )
-    _check(
-        "\r\n",
-        Dialect(delimiter=";"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\r\n",
-        Dialect(delimiter="|"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\r\n",
-        Dialect(skipinitialspace=True),
-        "[[]]",
-        "\r\n",
-    )
-
-
-def test_matches_python_179() raises:
-    _check(
-        "\r\n",
-        Dialect(quotechar="'"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\r\n",
-        Dialect(escapechar="\\"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\r\n",
-        Dialect(doublequote=False),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\r\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\r\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\r\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[[]]",
-        "\r\n",
-    )
-
-
-def test_matches_python_180() raises:
-    _check(
-        "\r\n",
-        Dialect(lineterminator="\n"),
-        "[[]]",
-        "\n",
-    )
-    _check(
-        "\r\n",
-        Dialect(delimiter="\u20ac"),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        "\r\n",
-        Dialect(quoting=QUOTE_NONNUMERIC),
-        "[[]]",
-        "\r\n",
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(),
-        "[['abcd\t  x  '], []]",
-        "abcd\t  x  \r\n\r\n",
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        excel_tab(),
-        "[['abcd', '  x  '], []]",
-        "abcd\t  x  \r\n\r\n",
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        unix(),
-        "[['abcd\t  x  '], []]",
-        '"abcd\t  x  "\n\n',
-    )
-
-
-def test_matches_python_181() raises:
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(delimiter=";"),
-        "[['abcd\t  x  '], []]",
-        "abcd\t  x  \r\n\r\n",
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(delimiter="|"),
-        "[['abcd\t  x  '], []]",
-        "abcd\t  x  \r\n\r\n",
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(skipinitialspace=True),
-        "[['abcd\t  x  '], []]",
-        "abcd\t  x  \r\n\r\n",
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(quotechar="'"),
-        "[['\"ab\"cd\t  x  '], []]",
-        '"ab"cd\t  x  \r\n\r\n',
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(escapechar="\\"),
-        "[['abcd\t  x  '], []]",
-        "abcd\t  x  \r\n\r\n",
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(doublequote=False),
-        "[['abcd\t  x  '], []]",
-        "abcd\t  x  \r\n\r\n",
-    )
-
-
-def test_matches_python_182() raises:
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['abcd\t  x  '], []]",
-        "abcd\t  x  \r\n\r\n",
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['\"ab\"cd\t  x  '], []]",
-        '\\"ab\\"cd\t  x  \r\n\r\n',
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(quoting=QUOTE_ALL),
-        "[['abcd\t  x  '], []]",
-        '"abcd\t  x  "\r\n\r\n',
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(lineterminator="\n"),
-        "[['abcd\t  x  '], []]",
-        "abcd\t  x  \n\n",
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(delimiter="\u20ac"),
-        "[['abcd\t  x  '], []]",
-        "abcd\t  x  \r\n\r\n",
-    )
-    _check(
-        '"ab"cd\t  x  \r\r',
-        Dialect(quoting=QUOTE_NONNUMERIC),
-        "[['abcd\t  x  '], []]",
-        '"abcd\t  x  "\r\n\r\n',
-    )
-
-
-def test_matches_python_183() raises:
-    _check(
-        "\r\na\\\n",
-        Dialect(),
-        "[[], ['a\\']]",
-        "\r\na\\\r\n",
-    )
-    _check(
-        "\r\na\\\n",
-        excel_tab(),
-        "[[], ['a\\']]",
-        "\r\na\\\r\n",
-    )
-    _check(
-        "\r\na\\\n",
-        unix(),
-        "[[], ['a\\']]",
-        '\n"a\\"\n',
-    )
-    _check(
-        "\r\na\\\n",
-        Dialect(delimiter=";"),
-        "[[], ['a\\']]",
-        "\r\na\\\r\n",
-    )
-    _check(
-        "\r\na\\\n",
-        Dialect(delimiter="|"),
-        "[[], ['a\\']]",
-        "\r\na\\\r\n",
-    )
-    _check(
-        "\r\na\\\n",
-        Dialect(skipinitialspace=True),
-        "[[], ['a\\']]",
-        "\r\na\\\r\n",
-    )
-
-
-def test_matches_python_184() raises:
-    _check(
-        "\r\na\\\n",
-        Dialect(quotechar="'"),
-        "[[], ['a\\']]",
-        "\r\na\\\r\n",
-    )
-    _check(
-        "\r\na\\\n",
-        Dialect(escapechar="\\"),
-        "[[], ['a\n']]",
-        '\r\n"a\n"\r\n',
-    )
-    _check(
-        "\r\na\\\n",
-        Dialect(doublequote=False),
-        "[[], ['a\\']]",
-        "\r\na\\\r\n",
-    )
-    _check(
-        "\r\na\\\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[[], ['a\n']]",
-        '\r\n"a\n"\r\n',
-    )
-    _check(
-        "\r\na\\\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[[], ['a\n']]",
-        "\r\na\\\n\r\n",
-    )
-    _check(
-        "\r\na\\\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[[], ['a\\']]",
-        '\r\n"a\\"\r\n',
+        "[['||\"\"|café']]",
+        '"||""""|café"\r\n',
     )
 
 
 def test_matches_python_185() raises:
     _check(
-        "\r\na\\\n",
-        Dialect(lineterminator="\n"),
-        "[[], ['a\\']]",
-        "\na\\\n",
-    )
-    _check(
-        "\r\na\\\n",
-        Dialect(delimiter="\u20ac"),
-        "[[], ['a\\']]",
-        "\r\na\\\r\n",
-    )
-    _check(
-        '-3e2|日本\nx"y\r',
-        Dialect(),
-        "[['-3e2|日本'], ['x\"y']]",
-        '-3e2|日本\r\n"x""y"\r\n',
-    )
-    _check(
-        '-3e2|日本\nx"y\r',
+        '||""|café\r\n',
         excel_tab(),
-        "[['-3e2|日本'], ['x\"y']]",
-        '-3e2|日本\r\n"x""y"\r\n',
+        "[['||\"\"|café']]",
+        '"||""""|café"\r\n',
     )
     _check(
-        '-3e2|日本\nx"y\r',
+        '||""|café\r\n',
         unix(),
-        "[['-3e2|日本'], ['x\"y']]",
-        '"-3e2|日本"\n"x""y"\n',
+        "[['||\"\"|café']]",
+        '"||""""|café"\n',
     )
     _check(
-        '-3e2|日本\nx"y\r',
+        '||""|café\r\n',
         Dialect(delimiter=";"),
-        "[['-3e2|日本'], ['x\"y']]",
-        '-3e2|日本\r\n"x""y"\r\n',
+        "[['||\"\"|café']]",
+        '"||""""|café"\r\n',
+    )
+    _check(
+        '||""|café\r\n',
+        Dialect(delimiter="|"),
+        "[['', '', '', 'café']]",
+        "|||café\r\n",
+    )
+    _check(
+        '||""|café\r\n',
+        Dialect(skipinitialspace=True),
+        "[['||\"\"|café']]",
+        '"||""""|café"\r\n',
+    )
+    _check(
+        '||""|café\r\n',
+        Dialect(quotechar="'"),
+        "[['||\"\"|café']]",
+        '||""|café\r\n',
     )
 
 
 def test_matches_python_186() raises:
     _check(
-        '-3e2|日本\nx"y\r',
-        Dialect(delimiter="|"),
-        "[['-3e2', '日本'], ['x\"y']]",
-        '-3e2|日本\r\n"x""y"\r\n',
-    )
-    _check(
-        '-3e2|日本\nx"y\r',
-        Dialect(skipinitialspace=True),
-        "[['-3e2|日本'], ['x\"y']]",
-        '-3e2|日本\r\n"x""y"\r\n',
-    )
-    _check(
-        '-3e2|日本\nx"y\r',
-        Dialect(quotechar="'"),
-        "[['-3e2|日本'], ['x\"y']]",
-        '-3e2|日本\r\nx"y\r\n',
-    )
-    _check(
-        '-3e2|日本\nx"y\r',
+        '||""|café\r\n',
         Dialect(escapechar="\\"),
-        "[['-3e2|日本'], ['x\"y']]",
-        '-3e2|日本\r\n"x""y"\r\n',
+        "[['||\"\"|café']]",
+        '"||""""|café"\r\n',
     )
     _check(
-        '-3e2|日本\nx"y\r',
+        '||""|café\r\n',
         Dialect(doublequote=False, escapechar="\\"),
-        "[['-3e2|日本'], ['x\"y']]",
-        '-3e2|日本\r\nx\\"y\r\n',
+        "[['||\"\"|café']]",
+        '||\\"\\"|café\r\n',
     )
     _check(
-        '-3e2|日本\nx"y\r',
+        '||""|café\r\n',
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['-3e2|日本'], ['x\"y']]",
-        '-3e2|日本\r\nx\\"y\r\n',
+        "[['||\"\"|café']]",
+        '||\\"\\"|café\r\n',
+    )
+    _check(
+        '||""|café\r\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['||\"\"|café']]",
+        '"||""""|café"\r\n',
+    )
+    _check(
+        '||""|café\r\n',
+        Dialect(lineterminator="\n"),
+        "[['||\"\"|café']]",
+        '"||""""|café"\n',
+    )
+    _check(
+        '||""|café\r\n',
+        Dialect(delimiter="\u20ac"),
+        "[['||\"\"|café']]",
+        '"||""""|café"\r\n',
     )
 
 
 def test_matches_python_187() raises:
     _check(
-        '-3e2|日本\nx"y\r',
-        Dialect(quoting=QUOTE_ALL),
-        "[['-3e2|日本'], ['x\"y']]",
-        '"-3e2|日本"\r\n"x""y"\r\n',
+        '||""|café\r\n',
+        Dialect(delimiter="\n"),
+        "[['||\"\"|café']]",
+        '"||""""|café"\r\n',
     )
     _check(
-        '-3e2|日本\nx"y\r',
-        Dialect(lineterminator="\n"),
-        "[['-3e2|日本'], ['x\"y']]",
-        '-3e2|日本\n"x""y"\n',
+        '||""|café\r\n',
+        Dialect(escapechar="\r"),
+        "[['||\"\"|café']]",
+        '"||""""|café"\r\n',
     )
     _check(
-        '-3e2|日本\nx"y\r',
-        Dialect(delimiter="\u20ac"),
-        "[['-3e2|日本'], ['x\"y']]",
-        '-3e2|日本\r\n"x""y"\r\n',
-    )
-    _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
         Dialect(),
-        "[[], [' ;a\\'], ['a\nb', 'a\"b', ''], ['b']]",
-        '\r\n ;a\\\r\n"a\nb","a""b",\r\nb\r\n',
+        '[[\'\x00\t"ab"cd\t"a\', \'b"１２\t"a""b"\'], [\'a\rb;"\']]',
+        '"\x00\t""ab""cd\t""a","b""１２\t""a""""b"""\r\n"a\rb;"""\r\n',
     )
     _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
         excel_tab(),
-        "[[], [' ;a\\'], ['a\nb,\"a\"\"b\",'], ['b']]",
-        '\r\n ;a\\\r\n"a\nb,""a""""b"","\r\nb\r\n',
+        "[['\x00', 'abcd', 'a,b１２', 'a\"b'], ['a\rb;\"']]",
+        '\x00\tabcd\ta,b１２\t"a""b"\r\n"a\rb;"""\r\n',
     )
     _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
         unix(),
-        "[[], [' ;a\\'], ['a\nb', 'a\"b', ''], ['b']]",
-        '\n" ;a\\"\n"a\nb","a""b",""\n"b"\n',
+        '[[\'\x00\t"ab"cd\t"a\', \'b"１２\t"a""b"\'], [\'a\rb;"\']]',
+        '"\x00\t""ab""cd\t""a","b""１２\t""a""""b"""\n"a\rb;"""\n',
+    )
+    _check(
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
+        Dialect(delimiter=";"),
+        '[[\'\x00\t"ab"cd\t"a,b"１２\t"a""b"\'], [\'a\rb\', \'\n\']]',
+        '"\x00\t""ab""cd\t""a,b""１２\t""a""""b"""\r\n"a\rb";"\n"\r\n',
     )
 
 
 def test_matches_python_188() raises:
     _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
-        Dialect(delimiter=";"),
-        "[[], [' ', 'a\\'], ['a\nb,\"a\"\"b\",'], ['b']]",
-        '\r\n ;a\\\r\n"a\nb,""a""""b"","\r\nb\r\n',
-    )
-    _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
         Dialect(delimiter="|"),
-        "[[], [' ;a\\'], ['a\nb,\"a\"\"b\",'], ['b']]",
-        '\r\n ;a\\\r\n"a\nb,""a""""b"","\r\nb\r\n',
+        '[[\'\x00\t"ab"cd\t"a,b"１２\t"a""b"\'], [\'a\rb;"\']]',
+        '"\x00\t""ab""cd\t""a,b""１２\t""a""""b"""\r\n"a\rb;"""\r\n',
     )
     _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
         Dialect(skipinitialspace=True),
-        "[[], [';a\\'], ['a\nb', 'a\"b', ''], ['b']]",
-        '\r\n;a\\\r\n"a\nb","a""b",\r\nb\r\n',
+        '[[\'\x00\t"ab"cd\t"a\', \'b"１２\t"a""b"\'], [\'a\rb;"\']]',
+        '"\x00\t""ab""cd\t""a","b""１２\t""a""""b"""\r\n"a\rb;"""\r\n',
     )
     _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
         Dialect(quotechar="'"),
-        "[[], [' ;a\\'], ['\"a'], ['b\"', '\"a\"\"b\"', ''], ['b']]",
-        '\r\n ;a\\\r\n"a\r\nb","a""b",\r\nb\r\n',
+        '[[\'\x00\t"ab"cd\t"a\', \'b"１２\t"a""b"\'], [\'"a\'], [\'b";"\']]',
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\r\n"a\r\nb";"\r\n',
     )
     _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
         Dialect(escapechar="\\"),
-        "[[], [' ;a\r'], ['a\nb', 'a\"b', ''], ['b']]",
-        '\r\n" ;a\r"\r\n"a\nb","a""b",\r\nb\r\n',
+        '[[\'\x00\t"ab"cd\t"a\', \'b"１２\t"a""b"\'], [\'a\rb;"\']]',
+        '"\x00\t""ab""cd\t""a","b""１２\t""a""""b"""\r\n"a\rb;"""\r\n',
     )
     _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
         Dialect(doublequote=False, escapechar="\\"),
-        "[[], [' ;a\r'], ['a\nb', 'a\"b\"', ''], ['b']]",
-        '\r\n" ;a\r"\r\n"a\nb",a\\"b\\",\r\nb\r\n',
+        '[[\'\x00\t"ab"cd\t"a\', \'b"１２\t"a""b"\'], [\'a\rb;"\']]',
+        '\x00\t\\"ab\\"cd\t\\"a,b\\"１２\t\\"a\\"\\"b\\"\r\n"a\rb;\\""\r\n',
+    )
+    _check(
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        '[[\'\x00\t"ab"cd\t"a\', \'b"１２\t"a""b"\'], [\'"a\'], [\'b";"\']]',
+        '\x00\t\\"ab\\"cd\t\\"a,b\\"１２\t\\"a\\"\\"b\\"\r\n\\"a\r\nb\\";\\"\r\n',
     )
 
 
 def test_matches_python_189() raises:
     _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[[], [' ;a\r'], ['\"a'], ['b\"', '\"a\"\"b\"', ''], ['b']]",
-        '\r\n ;a\\\r\r\n\\"a\r\nb\\",\\"a\\"\\"b\\",\r\nb\r\n',
-    )
-    _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
         Dialect(quoting=QUOTE_ALL),
-        "[[], [' ;a\\'], ['a\nb', 'a\"b', ''], ['b']]",
-        '\r\n" ;a\\"\r\n"a\nb","a""b",""\r\n"b"\r\n',
+        '[[\'\x00\t"ab"cd\t"a\', \'b"１２\t"a""b"\'], [\'a\rb;"\']]',
+        '"\x00\t""ab""cd\t""a","b""１２\t""a""""b"""\r\n"a\rb;"""\r\n',
     )
     _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
         Dialect(lineterminator="\n"),
-        "[[], [' ;a\\'], ['a\nb', 'a\"b', ''], ['b']]",
-        '\n ;a\\\n"a\nb","a""b",\nb\n',
+        '[[\'\x00\t"ab"cd\t"a\', \'b"１２\t"a""b"\'], [\'a\rb;"\']]',
+        '"\x00\t""ab""cd\t""a","b""１２\t""a""""b"""\n"a\rb;"""\n',
     )
     _check(
-        '\r\n ;a\\\r\n"a\nb","a""b",\nb\r\n',
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
         Dialect(delimiter="\u20ac"),
-        "[[], [' ;a\\'], ['a\nb,\"a\"\"b\",'], ['b']]",
-        '\r\n ;a\\\r\n"a\nb,""a""""b"","\r\nb\r\n',
+        '[[\'\x00\t"ab"cd\t"a,b"１２\t"a""b"\'], [\'a\rb;"\']]',
+        '"\x00\t""ab""cd\t""a,b""１２\t""a""""b"""\r\n"a\rb;"""\r\n',
+    )
+    _check(
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
+        Dialect(delimiter="\n"),
+        '[[\'\x00\t"ab"cd\t"a,b"１２\t"a""b"\'], [\'a\rb;"\']]',
+        '"\x00\t""ab""cd\t""a,b""１２\t""a""""b"""\r\n"a\rb;"""\r\n',
+    )
+    _check(
+        '\x00\t"ab"cd\t"a,b"１２\t"a""b"\n"a\rb";"\n',
+        Dialect(escapechar="\r"),
+        '[[\'\x00\t"ab"cd\t"a\', \'b"１２\t"a""b"\'], [\'a\nb;"\']]',
+        '"\x00\t""ab""cd\t""a","b""１２\t""a""""b"""\r\n"a\nb;"""\r\n',
+    )
+    _check(
+        "b,€\n",
+        Dialect(),
+        "[['b', '€']]",
+        "b,€\r\n",
+    )
+
+
+def test_matches_python_190() raises:
+    _check(
+        "b,€\n",
+        excel_tab(),
+        "[['b,€']]",
+        "b,€\r\n",
+    )
+    _check(
+        "b,€\n",
+        unix(),
+        "[['b', '€']]",
+        '"b","€"\n',
+    )
+    _check(
+        "b,€\n",
+        Dialect(delimiter=";"),
+        "[['b,€']]",
+        "b,€\r\n",
+    )
+    _check(
+        "b,€\n",
+        Dialect(delimiter="|"),
+        "[['b,€']]",
+        "b,€\r\n",
+    )
+    _check(
+        "b,€\n",
+        Dialect(skipinitialspace=True),
+        "[['b', '€']]",
+        "b,€\r\n",
+    )
+    _check(
+        "b,€\n",
+        Dialect(quotechar="'"),
+        "[['b', '€']]",
+        "b,€\r\n",
+    )
+
+
+def test_matches_python_191() raises:
+    _check(
+        "b,€\n",
+        Dialect(escapechar="\\"),
+        "[['b', '€']]",
+        "b,€\r\n",
+    )
+    _check(
+        "b,€\n",
+        Dialect(doublequote=False),
+        "[['b', '€']]",
+        "b,€\r\n",
+    )
+    _check(
+        "b,€\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['b', '€']]",
+        "b,€\r\n",
+    )
+    _check(
+        "b,€\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['b', '€']]",
+        "b,€\r\n",
+    )
+    _check(
+        "b,€\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[['b', '€']]",
+        '"b","€"\r\n',
+    )
+    _check(
+        "b,€\n",
+        Dialect(lineterminator="\n"),
+        "[['b', '€']]",
+        "b,€\n",
+    )
+
+
+def test_matches_python_192() raises:
+    _check(
+        "b,€\n",
+        Dialect(delimiter="\u20ac"),
+        "[['b,', '']]",
+        "b,€\r\n",
+    )
+    _check(
+        "b,€\n",
+        Dialect(delimiter="\n"),
+        "[['b,€']]",
+        "b,€\r\n",
+    )
+    _check(
+        "b,€\n",
+        Dialect(escapechar="\r"),
+        "[['b', '€']]",
+        "b,€\r\n",
+    )
+    _check(
+        "café\n",
+        Dialect(),
+        "[['café']]",
+        "café\r\n",
+    )
+    _check(
+        "café\n",
+        excel_tab(),
+        "[['café']]",
+        "café\r\n",
+    )
+    _check(
+        "café\n",
+        unix(),
+        "[['café']]",
+        '"café"\n',
+    )
+
+
+def test_matches_python_193() raises:
+    _check(
+        "café\n",
+        Dialect(delimiter=";"),
+        "[['café']]",
+        "café\r\n",
+    )
+    _check(
+        "café\n",
+        Dialect(delimiter="|"),
+        "[['café']]",
+        "café\r\n",
+    )
+    _check(
+        "café\n",
+        Dialect(skipinitialspace=True),
+        "[['café']]",
+        "café\r\n",
+    )
+    _check(
+        "café\n",
+        Dialect(quotechar="'"),
+        "[['café']]",
+        "café\r\n",
+    )
+    _check(
+        "café\n",
+        Dialect(escapechar="\\"),
+        "[['café']]",
+        "café\r\n",
+    )
+    _check(
+        "café\n",
+        Dialect(doublequote=False),
+        "[['café']]",
+        "café\r\n",
+    )
+
+
+def test_matches_python_194() raises:
+    _check(
+        "café\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['café']]",
+        "café\r\n",
+    )
+    _check(
+        "café\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['café']]",
+        "café\r\n",
+    )
+    _check(
+        "café\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[['café']]",
+        '"café"\r\n',
+    )
+    _check(
+        "café\n",
+        Dialect(lineterminator="\n"),
+        "[['café']]",
+        "café\n",
+    )
+    _check(
+        "café\n",
+        Dialect(delimiter="\u20ac"),
+        "[['café']]",
+        "café\r\n",
+    )
+    _check(
+        "café\n",
+        Dialect(delimiter="\n"),
+        "[['café']]",
+        "café\r\n",
+    )
+
+
+def test_matches_python_195() raises:
+    _check(
+        "café\n",
+        Dialect(escapechar="\r"),
+        "[['café']]",
+        "café\r\n",
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(),
+        "[[';\"ab\"cd'], ['\t|日本']]",
+        '";""ab""cd"\r\n\t|日本\r\n',
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        excel_tab(),
+        "[[';\"ab\"cd'], ['', '|日本']]",
+        '";""ab""cd"\r\n\t|日本\r\n',
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        unix(),
+        "[[';\"ab\"cd'], ['\t|日本']]",
+        '";""ab""cd"\n"\t|日本"\n',
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(delimiter=";"),
+        "[['', 'abcd'], ['\t|日本']]",
+        ";abcd\r\n\t|日本\r\n",
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(delimiter="|"),
+        "[[';\"ab\"cd'], ['\t', '日本']]",
+        '";""ab""cd"\r\n\t|日本\r\n',
+    )
+
+
+def test_matches_python_196() raises:
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(skipinitialspace=True),
+        "[[';\"ab\"cd'], ['\t|日本']]",
+        '";""ab""cd"\r\n\t|日本\r\n',
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(quotechar="'"),
+        "[['\"\";\"ab\"cd'], ['\t|日本']]",
+        '"";"ab"cd\r\n\t|日本\r\n',
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(escapechar="\\"),
+        "[[';\"ab\"cd'], ['\t|日本']]",
+        '";""ab""cd"\r\n\t|日本\r\n',
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[[';\"ab\"cd'], ['\t|日本']]",
+        ';\\"ab\\"cd\r\n\t|日本\r\n',
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\"\";\"ab\"cd'], ['\t|日本']]",
+        '\\"\\";\\"ab\\"cd\r\n\t|日本\r\n',
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(quoting=QUOTE_ALL),
+        "[[';\"ab\"cd'], ['\t|日本']]",
+        '";""ab""cd"\r\n"\t|日本"\r\n',
+    )
+
+
+def test_matches_python_197() raises:
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(lineterminator="\n"),
+        "[[';\"ab\"cd'], ['\t|日本']]",
+        '";""ab""cd"\n\t|日本\n',
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(delimiter="\u20ac"),
+        "[[';\"ab\"cd'], ['\t|日本']]",
+        '";""ab""cd"\r\n\t|日本\r\n',
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(delimiter="\n"),
+        "[[';\"ab\"cd'], ['\t|日本']]",
+        '";""ab""cd"\r\n\t|日本\r\n',
+    )
+    _check(
+        '"";"ab"cd\r\n\t|日本',
+        Dialect(escapechar="\r"),
+        "[[';\"ab\"cd'], ['\t|日本']]",
+        '";""ab""cd"\r\n\t|日本\r\n',
+    )
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(),
+        "[['a,b', ''], ['a b;x\"y'], [], ['\t']]",
+        '"a,b",\r\n"a b;x""y"\r\n\r\n\t\r\n',
+    )
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        excel_tab(),
+        "[['a,b,'], ['a b;x\"y'], [], ['', '']]",
+        'a,b,\r\n"a b;x""y"\r\n\r\n\t\r\n',
+    )
+
+
+def test_matches_python_198() raises:
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        unix(),
+        "[['a,b', ''], ['a b;x\"y'], [], ['\t']]",
+        '"a,b",""\n"a b;x""y"\n\n"\t"\n',
+    )
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(delimiter=";"),
+        "[['a,b,'], ['a b', 'x\"y'], [], ['\t']]",
+        'a,b,\r\na b;"x""y"\r\n\r\n\t\r\n',
+    )
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(delimiter="|"),
+        "[['a,b,'], ['a b;x\"y'], [], ['\t']]",
+        'a,b,\r\n"a b;x""y"\r\n\r\n\t\r\n',
+    )
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(skipinitialspace=True),
+        "[['a,b', ''], ['a b;x\"y'], [], ['\t']]",
+        '"a,b",\r\n"a b;x""y"\r\n\r\n\t\r\n',
+    )
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(quotechar="'"),
+        "[['\"a', 'b\"', ''], ['a b;x\"y'], [], ['\t']]",
+        '"a,b",\r\na b;x"y\r\n\r\n\t\r\n',
+    )
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(escapechar="\\"),
+        "[['a,b', ''], ['a b;x\"y'], [], ['\t']]",
+        '"a,b",\r\n"a b;x""y"\r\n\r\n\t\r\n',
+    )
+
+
+def test_matches_python_199() raises:
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a,b', ''], ['a b;x\"y'], [], ['\t']]",
+        '"a,b",\r\na b;x\\"y\r\n\r\n\t\r\n',
+    )
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\"a', 'b\"', ''], ['a b;x\"y'], [], ['\t']]",
+        '\\"a,b\\",\r\na b;x\\"y\r\n\r\n\t\r\n',
+    )
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['a,b', ''], ['a b;x\"y'], [], ['\t']]",
+        '"a,b",""\r\n"a b;x""y"\r\n\r\n"\t"\r\n',
+    )
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(lineterminator="\n"),
+        "[['a,b', ''], ['a b;x\"y'], [], ['\t']]",
+        '"a,b",\n"a b;x""y"\n\n\t\n',
+    )
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(delimiter="\u20ac"),
+        "[['a,b,'], ['a b;x\"y'], [], ['\t']]",
+        'a,b,\r\n"a b;x""y"\r\n\r\n\t\r\n',
+    )
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(delimiter="\n"),
+        "[['a,b,'], ['a b;x\"y'], [], ['\t']]",
+        'a,b,\r\n"a b;x""y"\r\n\r\n\t\r\n',
+    )
+
+
+def test_matches_python_200() raises:
+    _check(
+        '"a,b",\r\na b;x"y\n\n\t\n',
+        Dialect(escapechar="\r"),
+        "[['a,b', ''], ['a b;x\"y'], [], ['\t']]",
+        '"a,b",\r\n"a b;x""y"\r\n\r\n\t\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(),
+        "[['a\rb']]",
+        '"a\rb"\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        excel_tab(),
+        "[['a\rb']]",
+        '"a\rb"\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        unix(),
+        "[['a\rb']]",
+        '"a\rb"\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(delimiter=";"),
+        "[['a\rb']]",
+        '"a\rb"\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(delimiter="|"),
+        "[['a\rb']]",
+        '"a\rb"\r\n',
+    )
+
+
+def test_matches_python_201() raises:
+    _check(
+        '"a\rb"\n',
+        Dialect(skipinitialspace=True),
+        "[['a\rb']]",
+        '"a\rb"\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(quotechar="'"),
+        "[['\"a'], ['b\"']]",
+        '"a\r\nb"\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(escapechar="\\"),
+        "[['a\rb']]",
+        '"a\rb"\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(doublequote=False),
+        "[['a\rb']]",
+        '"a\rb"\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a\rb']]",
+        '"a\rb"\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\"a'], ['b\"']]",
+        '\\"a\r\nb\\"\r\n',
+    )
+
+
+def test_matches_python_202() raises:
+    _check(
+        '"a\rb"\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['a\rb']]",
+        '"a\rb"\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(lineterminator="\n"),
+        "[['a\rb']]",
+        '"a\rb"\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(delimiter="\u20ac"),
+        "[['a\rb']]",
+        '"a\rb"\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['a\rb']]",
+        '"a\rb"\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(delimiter="\n"),
+        "[['a\rb', '']]",
+        '"a\rb"\n\r\n',
+    )
+    _check(
+        '"a\rb"\n',
+        Dialect(escapechar="\r"),
+        "[['a\nb']]",
+        '"a\nb"\r\n',
+    )
+
+
+def test_matches_python_203() raises:
+    _check(
+        '"a""b"\tx"y',
+        Dialect(),
+        "[['a\"b\tx\"y']]",
+        '"a""b\tx""y"\r\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        excel_tab(),
+        "[['a\"b', 'x\"y']]",
+        '"a""b"\t"x""y"\r\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        unix(),
+        "[['a\"b\tx\"y']]",
+        '"a""b\tx""y"\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        Dialect(delimiter=";"),
+        "[['a\"b\tx\"y']]",
+        '"a""b\tx""y"\r\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        Dialect(delimiter="|"),
+        "[['a\"b\tx\"y']]",
+        '"a""b\tx""y"\r\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        Dialect(skipinitialspace=True),
+        "[['a\"b\tx\"y']]",
+        '"a""b\tx""y"\r\n',
+    )
+
+
+def test_matches_python_204() raises:
+    _check(
+        '"a""b"\tx"y',
+        Dialect(quotechar="'"),
+        '[[\'"a""b"\tx"y\']]',
+        '"a""b"\tx"y\r\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        Dialect(escapechar="\\"),
+        "[['a\"b\tx\"y']]",
+        '"a""b\tx""y"\r\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        Dialect(doublequote=False, escapechar="\\"),
+        '[[\'a"b"\tx"y\']]',
+        'a\\"b\\"\tx\\"y\r\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        '[[\'"a""b"\tx"y\']]',
+        '\\"a\\"\\"b\\"\tx\\"y\r\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        Dialect(quoting=QUOTE_ALL),
+        "[['a\"b\tx\"y']]",
+        '"a""b\tx""y"\r\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        Dialect(lineterminator="\n"),
+        "[['a\"b\tx\"y']]",
+        '"a""b\tx""y"\n',
+    )
+
+
+def test_matches_python_205() raises:
+    _check(
+        '"a""b"\tx"y',
+        Dialect(delimiter="\u20ac"),
+        "[['a\"b\tx\"y']]",
+        '"a""b\tx""y"\r\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['a\"b\tx\"y']]",
+        '"a""b\tx""y"\r\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        Dialect(delimiter="\n"),
+        "[['a\"b\tx\"y']]",
+        '"a""b\tx""y"\r\n',
+    )
+    _check(
+        '"a""b"\tx"y',
+        Dialect(escapechar="\r"),
+        "[['a\"b\tx\"y']]",
+        '"a""b\tx""y"\r\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(),
+        "[['a\nb;', ';日本']]",
+        '"a\nb;",;日本\r\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        excel_tab(),
+        "[['a\nb;,;日本']]",
+        '"a\nb;,;日本"\r\n',
+    )
+
+
+def test_matches_python_206() raises:
+    _check(
+        '"a\nb";,;日本\n',
+        unix(),
+        "[['a\nb;', ';日本']]",
+        '"a\nb;",";日本"\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(delimiter=";"),
+        "[['a\nb', ',', '日本']]",
+        '"a\nb";,;日本\r\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(delimiter="|"),
+        "[['a\nb;,;日本']]",
+        '"a\nb;,;日本"\r\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(skipinitialspace=True),
+        "[['a\nb;', ';日本']]",
+        '"a\nb;",;日本\r\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(quotechar="'"),
+        "[['\"a'], ['b\";', ';日本']]",
+        '"a\r\nb";,;日本\r\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(escapechar="\\"),
+        "[['a\nb;', ';日本']]",
+        '"a\nb;",;日本\r\n',
+    )
+
+
+def test_matches_python_207() raises:
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(doublequote=False),
+        "[['a\nb;', ';日本']]",
+        '"a\nb;",;日本\r\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a\nb;', ';日本']]",
+        '"a\nb;",;日本\r\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\"a'], ['b\";', ';日本']]",
+        '\\"a\r\nb\\";,;日本\r\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['a\nb;', ';日本']]",
+        '"a\nb;",";日本"\r\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(lineterminator="\n"),
+        "[['a\nb;', ';日本']]",
+        '"a\nb;",;日本\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(delimiter="\u20ac"),
+        "[['a\nb;,;日本']]",
+        '"a\nb;,;日本"\r\n',
+    )
+
+
+def test_matches_python_208() raises:
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(delimiter="\n"),
+        "[['a\nb;,;日本']]",
+        '"a\nb;,;日本"\r\n',
+    )
+    _check(
+        '"a\nb";,;日本\n',
+        Dialect(escapechar="\r"),
+        "[['a\nb;', ';日本']]",
+        '"a\nb;",;日本\r\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(),
+        "[['inf\tx\"y'], [], ['abcd|1']]",
+        '"inf\tx""y"\r\n\r\nabcd|1\r\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        excel_tab(),
+        "[['inf', 'x\"y'], [], ['abcd|1']]",
+        'inf\t"x""y"\r\n\r\nabcd|1\r\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        unix(),
+        "[['inf\tx\"y'], [], ['abcd|1']]",
+        '"inf\tx""y"\n\n"abcd|1"\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(delimiter=";"),
+        "[['inf\tx\"y'], [], ['abcd|1']]",
+        '"inf\tx""y"\r\n\r\nabcd|1\r\n',
+    )
+
+
+def test_matches_python_209() raises:
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(delimiter="|"),
+        "[['inf\tx\"y'], [], ['abcd', '1']]",
+        '"inf\tx""y"\r\n\r\nabcd|1\r\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(skipinitialspace=True),
+        "[['inf\tx\"y'], [], ['abcd|1']]",
+        '"inf\tx""y"\r\n\r\nabcd|1\r\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(quotechar="'"),
+        "[['inf\tx\"y'], [], ['\"ab\"cd|1']]",
+        'inf\tx"y\r\n\r\n"ab"cd|1\r\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(escapechar="\\"),
+        "[['inf\tx\"y'], [], ['abcd|1']]",
+        '"inf\tx""y"\r\n\r\nabcd|1\r\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['inf\tx\"y'], [], ['abcd|1']]",
+        'inf\tx\\"y\r\n\r\nabcd|1\r\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['inf\tx\"y'], [], ['\"ab\"cd|1']]",
+        'inf\tx\\"y\r\n\r\n\\"ab\\"cd|1\r\n',
+    )
+
+
+def test_matches_python_210() raises:
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(quoting=QUOTE_ALL),
+        "[['inf\tx\"y'], [], ['abcd|1']]",
+        '"inf\tx""y"\r\n\r\n"abcd|1"\r\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(lineterminator="\n"),
+        "[['inf\tx\"y'], [], ['abcd|1']]",
+        '"inf\tx""y"\n\nabcd|1\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(delimiter="\u20ac"),
+        "[['inf\tx\"y'], [], ['abcd|1']]",
+        '"inf\tx""y"\r\n\r\nabcd|1\r\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(delimiter="\n"),
+        "[['inf\tx\"y'], [], ['abcd|1']]",
+        '"inf\tx""y"\r\n\r\nabcd|1\r\n',
+    )
+    _check(
+        'inf\tx"y\r\r\n"ab"cd|1',
+        Dialect(escapechar="\r"),
+        "[['inf\tx\"y'], [], ['abcd|1']]",
+        '"inf\tx""y"\r\n\r\nabcd|1\r\n',
     )
     _check(
         "\r",
@@ -7541,15 +8378,15 @@ def test_matches_python_189() raises:
         "[[]]",
         "\r\n",
     )
+
+
+def test_matches_python_211() raises:
     _check(
         "\r",
         excel_tab(),
         "[[]]",
         "\r\n",
     )
-
-
-def test_matches_python_190() raises:
     _check(
         "\r",
         unix(),
@@ -7580,15 +8417,15 @@ def test_matches_python_190() raises:
         "[[]]",
         "\r\n",
     )
+
+
+def test_matches_python_212() raises:
     _check(
         "\r",
         Dialect(escapechar="\\"),
         "[[]]",
         "\r\n",
     )
-
-
-def test_matches_python_191() raises:
     _check(
         "\r",
         Dialect(doublequote=False),
@@ -7619,15 +8456,15 @@ def test_matches_python_191() raises:
         "[[]]",
         "\n",
     )
+
+
+def test_matches_python_213() raises:
     _check(
         "\r",
         Dialect(delimiter="\u20ac"),
         "[[]]",
         "\r\n",
     )
-
-
-def test_matches_python_192() raises:
     _check(
         "\r",
         Dialect(quoting=QUOTE_NONNUMERIC),
@@ -7635,457 +8472,3535 @@ def test_matches_python_192() raises:
         "\r\n",
     )
     _check(
-        ";,2.5\r",
+        "\r",
+        Dialect(delimiter="\n"),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\r",
+        Dialect(escapechar="\r"),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
         Dialect(),
-        "[[';', '2.5']]",
-        ";,2.5\r\n",
+        "[['2.5', 'a\rb\"a\rb;١;a'], [], [';|\"a'], ['b\"']]",
+        '2.5,"a\rb""a\rb;١;a"\r\n\r\n";|""a"\r\n"b"""\r\n',
     )
     _check(
-        ";,2.5\r",
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
         excel_tab(),
-        "[[';,2.5']]",
-        ";,2.5\r\n",
+        "[['2.5,\"a'], ['b\"\"a'], ['b\";١;a'], [], [';|\"a'], ['b\"']]",
+        '"2.5,""a"\r\n"b""""a"\r\n"b"";١;a"\r\n\r\n";|""a"\r\n"b"""\r\n',
     )
+
+
+def test_matches_python_214() raises:
     _check(
-        ";,2.5\r",
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
         unix(),
-        "[[';', '2.5']]",
-        '";","2.5"\n',
+        "[['2.5', 'a\rb\"a\rb;١;a'], [], [';|\"a'], ['b\"']]",
+        '"2.5","a\rb""a\rb;١;a"\n\n";|""a"\n"b"""\n',
     )
     _check(
-        ";,2.5\r",
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
         Dialect(delimiter=";"),
-        "[['', ',2.5']]",
-        ";,2.5\r\n",
+        (
+            "[['2.5,\"a'], ['b\"\"a'], ['b\"', '١', 'a'], [], ['', '|\"a'],"
+            " ['b\"']]"
+        ),
+        '"2.5,""a"\r\n"b""""a"\r\n"b""";١;a\r\n\r\n;"|""a"\r\n"b"""\r\n',
     )
     _check(
-        ";,2.5\r",
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
         Dialect(delimiter="|"),
-        "[[';,2.5']]",
-        ";,2.5\r\n",
+        "[['2.5,\"a'], ['b\"\"a'], ['b\";١;a'], [], [';', 'a\nb']]",
+        '"2.5,""a"\r\n"b""""a"\r\n"b"";١;a"\r\n\r\n;|"a\nb"\r\n',
     )
-
-
-def test_matches_python_193() raises:
     _check(
-        ";,2.5\r",
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
         Dialect(skipinitialspace=True),
-        "[[';', '2.5']]",
-        ";,2.5\r\n",
+        "[['2.5', 'a\rb\"a\rb;١;a'], [], [';|\"a'], ['b\"']]",
+        '2.5,"a\rb""a\rb;١;a"\r\n\r\n";|""a"\r\n"b"""\r\n',
     )
     _check(
-        ";,2.5\r",
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
         Dialect(quotechar="'"),
-        "[[';', '2.5']]",
-        ";,2.5\r\n",
+        "[['2.5', '\"a'], ['b\"\"a'], ['b\";١;a'], [], [';|\"a'], ['b\"']]",
+        '2.5,"a\r\nb""a\r\nb";١;a\r\n\r\n;|"a\r\nb"\r\n',
     )
     _check(
-        ";,2.5\r",
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
         Dialect(escapechar="\\"),
-        "[[';', '2.5']]",
-        ";,2.5\r\n",
+        "[['2.5', 'a\rb\"a\rb;١;a'], [], [';|\"a'], ['b\"']]",
+        '2.5,"a\rb""a\rb;١;a"\r\n\r\n";|""a"\r\n"b"""\r\n',
+    )
+
+
+def test_matches_python_215() raises:
+    _check(
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['2.5', 'a\rb\"a'], ['b\";١;a'], [], [';|\"a'], ['b\"']]",
+        '2.5,"a\rb\\"a"\r\nb\\";١;a\r\n\r\n;|\\"a\r\nb\\"\r\n',
     )
     _check(
-        ";,2.5\r",
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['2.5', '\"a'], ['b\"\"a'], ['b\";١;a'], [], [';|\"a'], ['b\"']]",
+        '2.5,\\"a\r\nb\\"\\"a\r\nb\\";١;a\r\n\r\n;|\\"a\r\nb\\"\r\n',
+    )
+    _check(
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
+        Dialect(quoting=QUOTE_ALL),
+        "[['2.5', 'a\rb\"a\rb;١;a'], [], [';|\"a'], ['b\"']]",
+        '"2.5","a\rb""a\rb;١;a"\r\n\r\n";|""a"\r\n"b"""\r\n',
+    )
+    _check(
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
+        Dialect(lineterminator="\n"),
+        "[['2.5', 'a\rb\"a\rb;١;a'], [], [';|\"a'], ['b\"']]",
+        '2.5,"a\rb""a\rb;١;a"\n\n";|""a"\n"b"""\n',
+    )
+    _check(
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
+        Dialect(delimiter="\u20ac"),
+        "[['2.5,\"a'], ['b\"\"a'], ['b\";١;a'], [], [';|\"a'], ['b\"']]",
+        '"2.5,""a"\r\n"b""""a"\r\n"b"";١;a"\r\n\r\n";|""a"\r\n"b"""\r\n',
+    )
+    _check(
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
+        Dialect(delimiter="\n"),
+        "[['2.5,\"a'], ['b\"\"a'], ['b\";١;a'], [], [';|\"a'], ['b\"']]",
+        '"2.5,""a"\r\n"b""""a"\r\n"b"";١;a"\r\n\r\n";|""a"\r\n"b"""\r\n',
+    )
+
+
+def test_matches_python_216() raises:
+    _check(
+        '2.5,"a\rb""a\rb";١;a\n\r;|"a\nb"',
+        Dialect(escapechar="\r"),
+        "[['2.5', 'a\nb\"a\nb;١;a'], [], [';|\"a'], ['b\"']]",
+        '2.5,"a\nb""a\nb;١;a"\r\n\r\n";|""a"\r\n"b"""\r\n',
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(),
+        "[['€\t\"a', 'b\"']]",
+        '"€\t""a","b"""\r\n',
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        excel_tab(),
+        "[['€', 'a,b']]",
+        "€\ta,b\r\n",
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        unix(),
+        "[['€\t\"a', 'b\"']]",
+        '"€\t""a","b"""\n',
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(delimiter=";"),
+        "[['€\t\"a,b\"']]",
+        '"€\t""a,b"""\r\n',
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(delimiter="|"),
+        "[['€\t\"a,b\"']]",
+        '"€\t""a,b"""\r\n',
+    )
+
+
+def test_matches_python_217() raises:
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(skipinitialspace=True),
+        "[['€\t\"a', 'b\"']]",
+        '"€\t""a","b"""\r\n',
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(quotechar="'"),
+        "[['€\t\"a', 'b\"']]",
+        '€\t"a,b"\r\n',
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(escapechar="\\"),
+        "[['€\t\"a', 'b\"']]",
+        '"€\t""a","b"""\r\n',
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['€\t\"a', 'b\"']]",
+        '€\t\\"a,b\\"\r\n',
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['€\t\"a', 'b\"']]",
+        '€\t\\"a,b\\"\r\n',
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['€\t\"a', 'b\"']]",
+        '"€\t""a","b"""\r\n',
+    )
+
+
+def test_matches_python_218() raises:
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(lineterminator="\n"),
+        "[['€\t\"a', 'b\"']]",
+        '"€\t""a","b"""\n',
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(delimiter="\u20ac"),
+        "[['', '\t\"a,b\"']]",
+        '€"\t""a,b"""\r\n',
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(delimiter="\n"),
+        "[['€\t\"a,b\"']]",
+        '"€\t""a,b"""\r\n',
+    )
+    _check(
+        '€\t"a,b"\r\n',
+        Dialect(escapechar="\r"),
+        "[['€\t\"a', 'b\"']]",
+        '"€\t""a","b"""\r\n',
+    )
+    _check(
+        '\\,"q"\r"a\rb"\n \n',
+        Dialect(),
+        "[['\\', 'q'], ['a\rb'], [' ']]",
+        '\\,q\r\n"a\rb"\r\n \r\n',
+    )
+    _check(
+        '\\,"q"\r"a\rb"\n \n',
+        excel_tab(),
+        "[['\\,\"q\"'], ['a\rb'], [' ']]",
+        '"\\,""q"""\r\n"a\rb"\r\n \r\n',
+    )
+
+
+def test_matches_python_219() raises:
+    _check(
+        '\\,"q"\r"a\rb"\n \n',
+        unix(),
+        "[['\\', 'q'], ['a\rb'], [' ']]",
+        '"\\","q"\n"a\rb"\n" "\n',
+    )
+    _check(
+        '\\,"q"\r"a\rb"\n \n',
+        Dialect(delimiter=";"),
+        "[['\\,\"q\"'], ['a\rb'], [' ']]",
+        '"\\,""q"""\r\n"a\rb"\r\n \r\n',
+    )
+    _check(
+        '\\,"q"\r"a\rb"\n \n',
+        Dialect(delimiter="|"),
+        "[['\\,\"q\"'], ['a\rb'], [' ']]",
+        '"\\,""q"""\r\n"a\rb"\r\n \r\n',
+    )
+    _check(
+        '\\,"q"\r"a\rb"\n \n',
+        Dialect(skipinitialspace=True),
+        "[['\\', 'q'], ['a\rb'], ['']]",
+        '\\,q\r\n"a\rb"\r\n""\r\n',
+    )
+    _check(
+        '\\,"q"\r"a\rb"\n \n',
+        Dialect(quotechar="'"),
+        "[['\\', '\"q\"'], ['\"a'], ['b\"'], [' ']]",
+        '\\,"q"\r\n"a\r\nb"\r\n \r\n',
+    )
+    _check(
+        '\\,"q"\r"a\rb"\n \n',
+        Dialect(escapechar="\\"),
+        "[[',\"q\"'], ['a\rb'], [' ']]",
+        '",""q"""\r\n"a\rb"\r\n \r\n',
+    )
+
+
+def test_matches_python_220() raises:
+    _check(
+        '\\,"q"\r"a\rb"\n \n',
         Dialect(doublequote=False),
-        "[[';', '2.5']]",
-        ";,2.5\r\n",
+        "[['\\', 'q'], ['a\rb'], [' ']]",
+        '\\,q\r\n"a\rb"\r\n \r\n',
     )
     _check(
-        ";,2.5\r",
+        '\\,"q"\r"a\rb"\n \n',
         Dialect(doublequote=False, escapechar="\\"),
-        "[[';', '2.5']]",
-        ";,2.5\r\n",
+        "[[',\"q\"'], ['a\rb'], [' ']]",
+        '",\\"q\\""\r\n"a\rb"\r\n \r\n',
     )
     _check(
-        ";,2.5\r",
+        '\\,"q"\r"a\rb"\n \n',
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[[';', '2.5']]",
-        ";,2.5\r\n",
+        "[[',\"q\"'], ['\"a'], ['b\"'], [' ']]",
+        '\\,\\"q\\"\r\n\\"a\r\nb\\"\r\n \r\n',
     )
-
-
-def test_matches_python_194() raises:
     _check(
-        ";,2.5\r",
+        '\\,"q"\r"a\rb"\n \n',
         Dialect(quoting=QUOTE_ALL),
-        "[[';', '2.5']]",
-        '";","2.5"\r\n',
+        "[['\\', 'q'], ['a\rb'], [' ']]",
+        '"\\","q"\r\n"a\rb"\r\n" "\r\n',
     )
     _check(
-        ";,2.5\r",
+        '\\,"q"\r"a\rb"\n \n',
         Dialect(lineterminator="\n"),
-        "[[';', '2.5']]",
-        ";,2.5\n",
+        "[['\\', 'q'], ['a\rb'], [' ']]",
+        '\\,q\n"a\rb"\n \n',
     )
     _check(
-        ";,2.5\r",
+        '\\,"q"\r"a\rb"\n \n',
         Dialect(delimiter="\u20ac"),
-        "[[';,2.5']]",
-        ";,2.5\r\n",
+        "[['\\,\"q\"'], ['a\rb'], [' ']]",
+        '"\\,""q"""\r\n"a\rb"\r\n \r\n',
+    )
+
+
+def test_matches_python_221() raises:
+    _check(
+        '\\,"q"\r"a\rb"\n \n',
+        Dialect(delimiter="\n"),
+        "[['\\,\"q\"'], ['a\rb', ''], [' ']]",
+        '"\\,""q"""\r\n"a\rb"\n\r\n \r\n',
     )
     _check(
-        "€;inf;a\r\n",
+        '\\,"q"\r"a\rb"\n \n',
+        Dialect(escapechar="\r"),
+        "[['\\', 'q'], ['a\nb'], [' ']]",
+        '\\,q\r\n"a\nb"\r\n \r\n',
+    )
+    _check(
+        "\na\r\n",
         Dialect(),
-        "[['€;inf;a']]",
-        "€;inf;a\r\n",
+        "[[], ['a']]",
+        "\r\na\r\n",
     )
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         excel_tab(),
-        "[['€;inf;a']]",
-        "€;inf;a\r\n",
+        "[[], ['a']]",
+        "\r\na\r\n",
     )
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         unix(),
-        "[['€;inf;a']]",
-        '"€;inf;a"\n',
+        "[[], ['a']]",
+        '\n"a"\n',
     )
-
-
-def test_matches_python_195() raises:
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         Dialect(delimiter=";"),
-        "[['€', 'inf', 'a']]",
-        "€;inf;a\r\n",
+        "[[], ['a']]",
+        "\r\na\r\n",
     )
+
+
+def test_matches_python_222() raises:
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         Dialect(delimiter="|"),
-        "[['€;inf;a']]",
-        "€;inf;a\r\n",
+        "[[], ['a']]",
+        "\r\na\r\n",
     )
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         Dialect(skipinitialspace=True),
-        "[['€;inf;a']]",
-        "€;inf;a\r\n",
+        "[[], ['a']]",
+        "\r\na\r\n",
     )
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         Dialect(quotechar="'"),
-        "[['€;inf;a']]",
-        "€;inf;a\r\n",
+        "[[], ['a']]",
+        "\r\na\r\n",
     )
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         Dialect(escapechar="\\"),
-        "[['€;inf;a']]",
-        "€;inf;a\r\n",
+        "[[], ['a']]",
+        "\r\na\r\n",
     )
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         Dialect(doublequote=False),
-        "[['€;inf;a']]",
-        "€;inf;a\r\n",
+        "[[], ['a']]",
+        "\r\na\r\n",
     )
-
-
-def test_matches_python_196() raises:
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         Dialect(doublequote=False, escapechar="\\"),
-        "[['€;inf;a']]",
-        "€;inf;a\r\n",
+        "[[], ['a']]",
+        "\r\na\r\n",
     )
+
+
+def test_matches_python_223() raises:
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['€;inf;a']]",
-        "€;inf;a\r\n",
+        "[[], ['a']]",
+        "\r\na\r\n",
     )
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         Dialect(quoting=QUOTE_ALL),
-        "[['€;inf;a']]",
-        '"€;inf;a"\r\n',
+        "[[], ['a']]",
+        '\r\n"a"\r\n',
     )
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         Dialect(lineterminator="\n"),
-        "[['€;inf;a']]",
-        "€;inf;a\n",
+        "[[], ['a']]",
+        "\na\n",
     )
     _check(
-        "€;inf;a\r\n",
+        "\na\r\n",
         Dialect(delimiter="\u20ac"),
-        "[['', ';inf;a']]",
-        "€;inf;a\r\n",
+        "[[], ['a']]",
+        "\r\na\r\n",
     )
     _check(
-        "\r\n\r\\,;,'q'\r",
-        Dialect(quotechar="'"),
-        "[[], [], ['\\', ';', 'q']]",
-        "\r\n\r\n\\,;,q\r\n",
+        "\na\r\n",
+        Dialect(delimiter="\n"),
+        "[[], ['a']]",
+        "\r\na\r\n",
+    )
+    _check(
+        "\na\r\n",
+        Dialect(escapechar="\r"),
+        "[[], ['a']]",
+        "\r\na\r\n",
     )
 
 
-def test_matches_python_197() raises:
+def test_matches_python_224() raises:
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         Dialect(),
-        "[['', ''], ['a\\;日本;a b'], ['a\\b;2.5']]",
-        ",\r\na\\;日本;a b\r\na\\b;2.5\r\n",
+        "[['|'], [], ['-3e2', ',,\n€\n']]",
+        '|\r\n\r\n-3e2,",,\n€\n"\r\n',
     )
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         excel_tab(),
-        "[[',\"\"'], ['a\\;日本;a b'], ['a\\b;2.5']]",
-        '","""""\r\na\\;日本;a b\r\na\\b;2.5\r\n',
+        "[['|'], [], ['-3e2,\",,'], ['€']]",
+        '|\r\n\r\n"-3e2,"",,"\r\n€\r\n',
     )
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         unix(),
-        "[['', ''], ['a\\;日本;a b'], ['a\\b;2.5']]",
-        '"",""\n"a\\;日本;a b"\n"a\\b;2.5"\n',
+        "[['|'], [], ['-3e2', ',,\n€\n']]",
+        '"|"\n\n"-3e2",",,\n€\n"\n',
     )
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         Dialect(delimiter=";"),
-        "[[',\"\"'], ['a\\', '日本', 'a b'], ['a\\b', '2.5']]",
-        '","""""\r\na\\;日本;a b\r\na\\b;2.5\r\n',
+        "[['|'], [], ['-3e2,\",,'], ['€']]",
+        '|\r\n\r\n"-3e2,"",,"\r\n€\r\n',
     )
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         Dialect(delimiter="|"),
-        "[[',\"\"'], ['a\\;日本;a b'], ['a\\b;2.5']]",
-        '","""""\r\na\\;日本;a b\r\na\\b;2.5\r\n',
+        "[['', ''], [], ['-3e2,\",,'], ['€']]",
+        '|\r\n\r\n"-3e2,"",,"\r\n€\r\n',
     )
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         Dialect(skipinitialspace=True),
-        "[['', ''], ['a\\;日本;a b'], ['a\\b;2.5']]",
-        ",\r\na\\;日本;a b\r\na\\b;2.5\r\n",
+        "[['|'], [], ['-3e2', ',,\n€\n']]",
+        '|\r\n\r\n-3e2,",,\n€\n"\r\n',
     )
 
 
-def test_matches_python_198() raises:
+def test_matches_python_225() raises:
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         Dialect(quotechar="'"),
-        "[['', '\"\"'], ['a\\;日本;a b'], ['a\\b;2.5']]",
-        ',""\r\na\\;日本;a b\r\na\\b;2.5\r\n',
+        "[['|'], [], ['-3e2', '\"', '', ''], ['€']]",
+        '|\r\n\r\n-3e2,",,\r\n€\r\n',
     )
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         Dialect(escapechar="\\"),
-        "[['', ''], ['a;日本;a b'], ['ab;2.5']]",
-        ",\r\na;日本;a b\r\nab;2.5\r\n",
+        "[['|'], [], ['-3e2', ',,\n€\n']]",
+        '|\r\n\r\n-3e2,",,\n€\n"\r\n',
     )
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         Dialect(doublequote=False),
-        "[['', ''], ['a\\;日本;a b'], ['a\\b;2.5']]",
-        ",\r\na\\;日本;a b\r\na\\b;2.5\r\n",
+        "[['|'], [], ['-3e2', ',,\n€\n']]",
+        '|\r\n\r\n-3e2,",,\n€\n"\r\n',
     )
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         Dialect(doublequote=False, escapechar="\\"),
-        "[['', ''], ['a;日本;a b'], ['ab;2.5']]",
-        ",\r\na;日本;a b\r\nab;2.5\r\n",
+        "[['|'], [], ['-3e2', ',,\n€\n']]",
+        '|\r\n\r\n-3e2,",,\n€\n"\r\n',
     )
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['', '\"\"'], ['a;日本;a b'], ['ab;2.5']]",
-        ',\\"\\"\r\na;日本;a b\r\nab;2.5\r\n',
+        "[['|'], [], ['-3e2', '\"', '', ''], ['€']]",
+        '|\r\n\r\n-3e2,\\",,\r\n€\r\n',
     )
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         Dialect(quoting=QUOTE_ALL),
-        "[['', ''], ['a\\;日本;a b'], ['a\\b;2.5']]",
-        '"",""\r\n"a\\;日本;a b"\r\n"a\\b;2.5"\r\n',
+        "[['|'], [], ['-3e2', ',,\n€\n']]",
+        '"|"\r\n\r\n"-3e2",",,\n€\n"\r\n',
     )
 
 
-def test_matches_python_199() raises:
+def test_matches_python_226() raises:
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         Dialect(lineterminator="\n"),
-        "[['', ''], ['a\\;日本;a b'], ['a\\b;2.5']]",
-        ",\na\\;日本;a b\na\\b;2.5\n",
+        "[['|'], [], ['-3e2', ',,\n€\n']]",
+        '|\n\n-3e2,",,\n€\n"\n',
     )
     _check(
-        ',""\na\\;日本;a b\r\na\\b;2.5\r',
+        '|\r\r-3e2,",,\n€\n',
         Dialect(delimiter="\u20ac"),
-        "[[',\"\"'], ['a\\;日本;a b'], ['a\\b;2.5']]",
-        '","""""\r\na\\;日本;a b\r\na\\b;2.5\r\n',
+        "[['|'], [], ['-3e2,\",,'], ['', '']]",
+        '|\r\n\r\n"-3e2,"",,"\r\n€\r\n',
     )
     _check(
-        "a\r\n",
+        '|\r\r-3e2,",,\n€\n',
+        Dialect(delimiter="\n"),
+        "[['|'], [], ['-3e2,\",,'], ['€']]",
+        '|\r\n\r\n"-3e2,"",,"\r\n€\r\n',
+    )
+    _check(
+        '|\r\r-3e2,",,\n€\n',
+        Dialect(escapechar="\r"),
+        "[['|'], [], ['-3e2', ',,\n€\n']]",
+        '|\r\n\r\n-3e2,",,\n€\n"\r\n',
+    )
+    _check(
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
         Dialect(),
-        "[['a']]",
-        "a\r\n",
+        "[['a\nb;\t;-3e2\"q\"', '\\'], ['a\\b']]",
+        '"a\nb;\t;-3e2""q""",\\\r\na\\b\r\n',
     )
     _check(
-        "a\r\n",
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
         excel_tab(),
-        "[['a']]",
-        "a\r\n",
+        "[['a\nb;', ';-3e2\"q\",\\'], ['a\\b']]",
+        '"a\nb;"\t";-3e2""q"",\\"\r\na\\b\r\n',
     )
+
+
+def test_matches_python_227() raises:
     _check(
-        "a\r\n",
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
         unix(),
-        "[['a']]",
-        '"a"\n',
+        "[['a\nb;\t;-3e2\"q\"', '\\'], ['a\\b']]",
+        '"a\nb;\t;-3e2""q""","\\"\n"a\\b"\n',
     )
     _check(
-        "a\r\n",
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
         Dialect(delimiter=";"),
-        "[['a']]",
-        "a\r\n",
+        "[['a\nb', '\t', '-3e2\"q\",\\'], ['a\\b']]",
+        '"a\nb";\t;"-3e2""q"",\\"\r\na\\b\r\n',
     )
-
-
-def test_matches_python_200() raises:
     _check(
-        "a\r\n",
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
         Dialect(delimiter="|"),
-        "[['a']]",
-        "a\r\n",
+        "[['a\nb;\t;-3e2\"q\",\\'], ['a\\b']]",
+        '"a\nb;\t;-3e2""q"",\\"\r\na\\b\r\n',
     )
     _check(
-        "a\r\n",
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
         Dialect(skipinitialspace=True),
-        "[['a']]",
-        "a\r\n",
+        "[['a\nb;\t;-3e2\"q\"', '\\'], ['a\\b']]",
+        '"a\nb;\t;-3e2""q""",\\\r\na\\b\r\n',
     )
     _check(
-        "a\r\n",
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
         Dialect(quotechar="'"),
-        "[['a']]",
-        "a\r\n",
+        "[['\"a'], ['b\";\t;-3e2\"q\"', '\\'], ['a\\b']]",
+        '"a\r\nb";\t;-3e2"q",\\\r\na\\b\r\n',
     )
     _check(
-        "a\r\n",
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
         Dialect(escapechar="\\"),
-        "[['a']]",
-        "a\r\n",
+        "[['a\nb;\t;-3e2\"q\"', '\r'], ['ab']]",
+        '"a\nb;\t;-3e2""q""","\r"\r\nab\r\n',
+    )
+
+
+def test_matches_python_228() raises:
+    _check(
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a\nb;\t;-3e2\"q\"', '\r'], ['ab']]",
+        '"a\nb;\t;-3e2\\"q\\"","\r"\r\nab\r\n',
     )
     _check(
-        "a\r\n",
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\"a'], ['b\";\t;-3e2\"q\"', '\r'], ['ab']]",
+        '\\"a\r\nb\\";\t;-3e2\\"q\\",\\\r\r\nab\r\n',
+    )
+    _check(
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['a\nb;\t;-3e2\"q\"', '\\'], ['a\\b']]",
+        '"a\nb;\t;-3e2""q""","\\"\r\n"a\\b"\r\n',
+    )
+    _check(
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
+        Dialect(lineterminator="\n"),
+        "[['a\nb;\t;-3e2\"q\"', '\\'], ['a\\b']]",
+        '"a\nb;\t;-3e2""q""",\\\na\\b\n',
+    )
+    _check(
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
+        Dialect(delimiter="\u20ac"),
+        "[['a\nb;\t;-3e2\"q\",\\'], ['a\\b']]",
+        '"a\nb;\t;-3e2""q"",\\"\r\na\\b\r\n',
+    )
+    _check(
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
+        Dialect(delimiter="\n"),
+        "[['a\nb;\t;-3e2\"q\",\\'], ['a\\b']]",
+        '"a\nb;\t;-3e2""q"",\\"\r\na\\b\r\n',
+    )
+
+
+def test_matches_python_229() raises:
+    _check(
+        '"a\nb";\t;-3e2"q",\\\r\na\\b\n',
+        Dialect(escapechar="\r"),
+        "[['a\nb;\t;-3e2\"q\"', '\\'], ['a\\b']]",
+        '"a\nb;\t;-3e2""q""",\\\r\na\\b\r\n',
+    )
+    _check(
+        "\r\x00\r\n",
+        Dialect(),
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
+    )
+    _check(
+        "\r\x00\r\n",
+        excel_tab(),
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
+    )
+    _check(
+        "\r\x00\r\n",
+        unix(),
+        "[[], ['\x00']]",
+        '\n"\x00"\n',
+    )
+    _check(
+        "\r\x00\r\n",
+        Dialect(delimiter=";"),
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
+    )
+    _check(
+        "\r\x00\r\n",
+        Dialect(delimiter="|"),
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
+    )
+
+
+def test_matches_python_230() raises:
+    _check(
+        "\r\x00\r\n",
+        Dialect(skipinitialspace=True),
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
+    )
+    _check(
+        "\r\x00\r\n",
+        Dialect(quotechar="'"),
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
+    )
+    _check(
+        "\r\x00\r\n",
+        Dialect(escapechar="\\"),
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
+    )
+    _check(
+        "\r\x00\r\n",
         Dialect(doublequote=False),
-        "[['a']]",
-        "a\r\n",
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
     )
     _check(
-        "a\r\n",
+        "\r\x00\r\n",
         Dialect(doublequote=False, escapechar="\\"),
-        "[['a']]",
-        "a\r\n",
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
     )
-
-
-def test_matches_python_201() raises:
     _check(
-        "a\r\n",
+        "\r\x00\r\n",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['a']]",
-        "a\r\n",
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
     )
+
+
+def test_matches_python_231() raises:
     _check(
-        "a\r\n",
+        "\r\x00\r\n",
         Dialect(quoting=QUOTE_ALL),
-        "[['a']]",
-        '"a"\r\n',
+        "[[], ['\x00']]",
+        '\r\n"\x00"\r\n',
     )
     _check(
-        "a\r\n",
+        "\r\x00\r\n",
         Dialect(lineterminator="\n"),
-        "[['a']]",
-        "a\n",
+        "[[], ['\x00']]",
+        "\n\x00\n",
     )
     _check(
-        "a\r\n",
+        "\r\x00\r\n",
         Dialect(delimiter="\u20ac"),
-        "[['a']]",
-        "a\r\n",
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
     )
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\x00\r\n",
+        Dialect(delimiter="\n"),
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
+    )
+    _check(
+        "\r\x00\r\n",
+        Dialect(escapechar="\r"),
+        "[[], ['\x00']]",
+        "\r\n\x00\r\n",
+    )
+    _check(
+        "\r\r\n",
         Dialect(),
-        '[[\'\\\t"a""b"\ta\']]',
-        '"\\\t""a""""b""\ta"\r\n',
+        "[[], []]",
+        "\r\n\r\n",
     )
+
+
+def test_matches_python_232() raises:
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\r\n",
         excel_tab(),
-        "[['\\', 'a\"b', 'a']]",
-        '\\\t"a""b"\ta\r\n',
+        "[[], []]",
+        "\r\n\r\n",
     )
-
-
-def test_matches_python_202() raises:
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\r\n",
         unix(),
-        '[[\'\\\t"a""b"\ta\']]',
-        '"\\\t""a""""b""\ta"\n',
+        "[[], []]",
+        "\n\n",
     )
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\r\n",
         Dialect(delimiter=";"),
-        '[[\'\\\t"a""b"\ta\']]',
-        '"\\\t""a""""b""\ta"\r\n',
+        "[[], []]",
+        "\r\n\r\n",
     )
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\r\n",
         Dialect(delimiter="|"),
-        '[[\'\\\t"a""b"\ta\']]',
-        '"\\\t""a""""b""\ta"\r\n',
+        "[[], []]",
+        "\r\n\r\n",
     )
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\r\n",
         Dialect(skipinitialspace=True),
-        '[[\'\\\t"a""b"\ta\']]',
-        '"\\\t""a""""b""\ta"\r\n',
+        "[[], []]",
+        "\r\n\r\n",
     )
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\r\n",
         Dialect(quotechar="'"),
-        '[[\'\\\t"a""b"\ta\']]',
-        '\\\t"a""b"\ta\r\n',
+        "[[], []]",
+        "\r\n\r\n",
     )
+
+
+def test_matches_python_233() raises:
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\r\n",
         Dialect(escapechar="\\"),
-        '[[\'\t"a""b"\ta\']]',
-        '"\t""a""""b""\ta"\r\n',
+        "[[], []]",
+        "\r\n\r\n",
     )
-
-
-def test_matches_python_203() raises:
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\r\n",
+        Dialect(doublequote=False),
+        "[[], []]",
+        "\r\n\r\n",
+    )
+    _check(
+        "\r\r\n",
         Dialect(doublequote=False, escapechar="\\"),
-        '[[\'\t"a""b"\ta\']]',
-        '\t\\"a\\"\\"b\\"\ta\r\n',
+        "[[], []]",
+        "\r\n\r\n",
     )
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\r\n",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        '[[\'\t"a""b"\ta\']]',
-        '\t\\"a\\"\\"b\\"\ta\r\n',
+        "[[], []]",
+        "\r\n\r\n",
     )
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\r\n",
         Dialect(quoting=QUOTE_ALL),
-        '[[\'\\\t"a""b"\ta\']]',
-        '"\\\t""a""""b""\ta"\r\n',
+        "[[], []]",
+        "\r\n\r\n",
     )
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\r\n",
         Dialect(lineterminator="\n"),
-        '[[\'\\\t"a""b"\ta\']]',
-        '"\\\t""a""""b""\ta"\n',
+        "[[], []]",
+        "\n\n",
+    )
+
+
+def test_matches_python_234() raises:
+    _check(
+        "\r\r\n",
+        Dialect(delimiter="\u20ac"),
+        "[[], []]",
+        "\r\n\r\n",
     )
     _check(
-        '\\\t"a""b"\ta\n',
+        "\r\r\n",
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[[], []]",
+        "\r\n\r\n",
+    )
+    _check(
+        "\r\r\n",
+        Dialect(delimiter="\n"),
+        "[[], []]",
+        "\r\n\r\n",
+    )
+    _check(
+        "\r\r\n",
+        Dialect(escapechar="\r"),
+        "[[], []]",
+        "\r\n\r\n",
+    )
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        Dialect(),
+        "[['a\"b'], [], ['  x  \t\"a'], ['b\"'], ['\\', 'a', '\x00']]",
+        '"a""b"\r\n\r\n"  x  \t""a"\r\n"b"""\r\n\\,a,\x00\r\n',
+    )
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        excel_tab(),
+        "[['a\"b'], [], ['  x  ', 'a\rb'], ['\\,a,\x00']]",
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00\r\n',
+    )
+
+
+def test_matches_python_235() raises:
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        unix(),
+        "[['a\"b'], [], ['  x  \t\"a'], ['b\"'], ['\\', 'a', '\x00']]",
+        '"a""b"\n\n"  x  \t""a"\n"b"""\n"\\","a","\x00"\n',
+    )
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        Dialect(delimiter=";"),
+        "[['a\"b'], [], ['  x  \t\"a'], ['b\"'], ['\\,a,\x00']]",
+        '"a""b"\r\n\r\n"  x  \t""a"\r\n"b"""\r\n\\,a,\x00\r\n',
+    )
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        Dialect(delimiter="|"),
+        "[['a\"b'], [], ['  x  \t\"a'], ['b\"'], ['\\,a,\x00']]",
+        '"a""b"\r\n\r\n"  x  \t""a"\r\n"b"""\r\n\\,a,\x00\r\n',
+    )
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        Dialect(skipinitialspace=True),
+        "[['a\"b'], [], ['x  \t\"a'], ['b\"'], ['\\', 'a', '\x00']]",
+        '"a""b"\r\n\r\n"x  \t""a"\r\n"b"""\r\n\\,a,\x00\r\n',
+    )
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        Dialect(quotechar="'"),
+        "[['\"a\"\"b\"'], [], ['  x  \t\"a'], ['b\"'], ['\\', 'a', '\x00']]",
+        '"a""b"\r\n\r\n  x  \t"a\r\nb"\r\n\\,a,\x00\r\n',
+    )
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        Dialect(escapechar="\\"),
+        "[['a\"b'], [], ['  x  \t\"a'], ['b\"'], [',a', '\x00']]",
+        '"a""b"\r\n\r\n"  x  \t""a"\r\n"b"""\r\n",a",\x00\r\n',
+    )
+
+
+def test_matches_python_236() raises:
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a\"b\"'], [], ['  x  \t\"a'], ['b\"'], [',a', '\x00']]",
+        'a\\"b\\"\r\n\r\n  x  \t\\"a\r\nb\\"\r\n",a",\x00\r\n',
+    )
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\"a\"\"b\"'], [], ['  x  \t\"a'], ['b\"'], [',a', '\x00']]",
+        '\\"a\\"\\"b\\"\r\n\r\n  x  \t\\"a\r\nb\\"\r\n\\,a,\x00\r\n',
+    )
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        Dialect(quoting=QUOTE_ALL),
+        "[['a\"b'], [], ['  x  \t\"a'], ['b\"'], ['\\', 'a', '\x00']]",
+        '"a""b"\r\n\r\n"  x  \t""a"\r\n"b"""\r\n"\\","a","\x00"\r\n',
+    )
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        Dialect(lineterminator="\n"),
+        "[['a\"b'], [], ['  x  \t\"a'], ['b\"'], ['\\', 'a', '\x00']]",
+        '"a""b"\n\n"  x  \t""a"\n"b"""\n\\,a,\x00\n',
+    )
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
         Dialect(delimiter="\u20ac"),
-        '[[\'\\\t"a""b"\ta\']]',
-        '"\\\t""a""""b""\ta"\r\n',
+        "[['a\"b'], [], ['  x  \t\"a'], ['b\"'], ['\\,a,\x00']]",
+        '"a""b"\r\n\r\n"  x  \t""a"\r\n"b"""\r\n\\,a,\x00\r\n',
+    )
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        Dialect(delimiter="\n"),
+        "[['a\"b'], [], ['  x  \t\"a'], ['b\"'], ['\\,a,\x00']]",
+        '"a""b"\r\n\r\n"  x  \t""a"\r\n"b"""\r\n\\,a,\x00\r\n',
+    )
+
+
+def test_matches_python_237() raises:
+    _check(
+        '"a""b"\r\n\r\n  x  \t"a\rb"\r\n\\,a,\x00',
+        Dialect(escapechar="\r"),
+        "[['a\"b'], [], ['  x  \t\"a'], ['b\"'], ['\\', 'a', '\x00']]",
+        '"a""b"\r\n\r\n"  x  \t""a"\r\n"b"""\r\n\\,a,\x00\r\n',
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(),
+        '[[\'|;"ab"cd;""\']]',
+        '"|;""ab""cd;"""""\r\n',
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        excel_tab(),
+        '[[\'|;"ab"cd;""\']]',
+        '"|;""ab""cd;"""""\r\n',
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        unix(),
+        '[[\'|;"ab"cd;""\']]',
+        '"|;""ab""cd;"""""\n',
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(delimiter=";"),
+        "[['|', 'abcd', '']]",
+        "|;abcd;\r\n",
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(delimiter="|"),
+        "[['', ';\"ab\"cd;\"\"']]",
+        '|";""ab""cd;"""""\r\n',
+    )
+
+
+def test_matches_python_238() raises:
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(skipinitialspace=True),
+        '[[\'|;"ab"cd;""\']]',
+        '"|;""ab""cd;"""""\r\n',
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(quotechar="'"),
+        '[[\'|;"ab"cd;""\']]',
+        '|;"ab"cd;""\r\n',
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(escapechar="\\"),
+        '[[\'|;"ab"cd;""\']]',
+        '"|;""ab""cd;"""""\r\n',
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        '[[\'|;"ab"cd;""\']]',
+        '|;\\"ab\\"cd;\\"\\"\r\n',
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        '[[\'|;"ab"cd;""\']]',
+        '|;\\"ab\\"cd;\\"\\"\r\n',
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(quoting=QUOTE_ALL),
+        '[[\'|;"ab"cd;""\']]',
+        '"|;""ab""cd;"""""\r\n',
+    )
+
+
+def test_matches_python_239() raises:
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(lineterminator="\n"),
+        '[[\'|;"ab"cd;""\']]',
+        '"|;""ab""cd;"""""\n',
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(delimiter="\u20ac"),
+        '[[\'|;"ab"cd;""\']]',
+        '"|;""ab""cd;"""""\r\n',
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(delimiter="\n"),
+        '[[\'|;"ab"cd;""\']]',
+        '"|;""ab""cd;"""""\r\n',
+    )
+    _check(
+        '|;"ab"cd;""\r\n',
+        Dialect(escapechar="\r"),
+        '[[\'|;"ab"cd;""\']]',
+        '"|;""ab""cd;"""""\r\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(),
+        "[['a\"b']]",
+        '"a""b"\r\n',
+    )
+    _check(
+        '"a""b"\n',
+        excel_tab(),
+        "[['a\"b']]",
+        '"a""b"\r\n',
+    )
+
+
+def test_matches_python_240() raises:
+    _check(
+        '"a""b"\n',
+        unix(),
+        "[['a\"b']]",
+        '"a""b"\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(delimiter=";"),
+        "[['a\"b']]",
+        '"a""b"\r\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(delimiter="|"),
+        "[['a\"b']]",
+        '"a""b"\r\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(skipinitialspace=True),
+        "[['a\"b']]",
+        '"a""b"\r\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(quotechar="'"),
+        '[[\'"a""b"\']]',
+        '"a""b"\r\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(escapechar="\\"),
+        "[['a\"b']]",
+        '"a""b"\r\n',
+    )
+
+
+def test_matches_python_241() raises:
+    _check(
+        '"a""b"\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a\"b\"']]",
+        'a\\"b\\"\r\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        '[[\'"a""b"\']]',
+        '\\"a\\"\\"b\\"\r\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['a\"b']]",
+        '"a""b"\r\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(lineterminator="\n"),
+        "[['a\"b']]",
+        '"a""b"\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(delimiter="\u20ac"),
+        "[['a\"b']]",
+        '"a""b"\r\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['a\"b']]",
+        '"a""b"\r\n',
+    )
+
+
+def test_matches_python_242() raises:
+    _check(
+        '"a""b"\n',
+        Dialect(delimiter="\n"),
+        "[['a\"b', '']]",
+        '"a""b"\n\r\n',
+    )
+    _check(
+        '"a""b"\n',
+        Dialect(escapechar="\r"),
+        "[['a\"b']]",
+        '"a""b"\r\n',
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(),
+        "[['a\\; '], [], ['a']]",
+        "a\\; \r\n\r\na\r\n",
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        excel_tab(),
+        "[['a\\; '], [], ['a']]",
+        "a\\; \r\n\r\na\r\n",
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        unix(),
+        "[['a\\; '], [], ['a']]",
+        '"a\\; "\n\n"a"\n',
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(delimiter=";"),
+        "[['a\\', ' '], [], ['a']]",
+        "a\\; \r\n\r\na\r\n",
+    )
+
+
+def test_matches_python_243() raises:
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(delimiter="|"),
+        "[['a\\; '], [], ['a']]",
+        "a\\; \r\n\r\na\r\n",
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(skipinitialspace=True),
+        "[['a\\; '], [], ['a']]",
+        "a\\; \r\n\r\na\r\n",
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(quotechar="'"),
+        "[['a\\; '], [], ['a']]",
+        "a\\; \r\n\r\na\r\n",
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(escapechar="\\"),
+        "[['a; '], [], ['a']]",
+        "a; \r\n\r\na\r\n",
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(doublequote=False),
+        "[['a\\; '], [], ['a']]",
+        "a\\; \r\n\r\na\r\n",
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a; '], [], ['a']]",
+        "a; \r\n\r\na\r\n",
+    )
+
+
+def test_matches_python_244() raises:
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['a; '], [], ['a']]",
+        "a; \r\n\r\na\r\n",
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[['a\\; '], [], ['a']]",
+        '"a\\; "\r\n\r\n"a"\r\n',
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(lineterminator="\n"),
+        "[['a\\; '], [], ['a']]",
+        "a\\; \n\na\n",
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(delimiter="\u20ac"),
+        "[['a\\; '], [], ['a']]",
+        "a\\; \r\n\r\na\r\n",
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(delimiter="\n"),
+        "[['a\\; '], [], ['a']]",
+        "a\\; \r\n\r\na\r\n",
+    )
+    _check(
+        "a\\; \r\r\na\n",
+        Dialect(escapechar="\r"),
+        "[['a\\; '], [], ['a']]",
+        "a\\; \r\n\r\na\r\n",
+    )
+
+
+def test_matches_python_245() raises:
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(),
+        "[['a\\b'], ['q'], []]",
+        "a\\b\r\nq\r\n\r\n",
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        excel_tab(),
+        "[['a\\b'], ['q'], []]",
+        "a\\b\r\nq\r\n\r\n",
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        unix(),
+        "[['a\\b'], ['q'], []]",
+        '"a\\b"\n"q"\n\n',
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(delimiter=";"),
+        "[['a\\b'], ['q'], []]",
+        "a\\b\r\nq\r\n\r\n",
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(delimiter="|"),
+        "[['a\\b'], ['q'], []]",
+        "a\\b\r\nq\r\n\r\n",
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(skipinitialspace=True),
+        "[['a\\b'], ['q'], []]",
+        "a\\b\r\nq\r\n\r\n",
+    )
+
+
+def test_matches_python_246() raises:
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(quotechar="'"),
+        "[['a\\b'], ['\"q\"'], []]",
+        'a\\b\r\n"q"\r\n\r\n',
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(escapechar="\\"),
+        "[['ab'], ['q'], []]",
+        "ab\r\nq\r\n\r\n",
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(doublequote=False),
+        "[['a\\b'], ['q'], []]",
+        "a\\b\r\nq\r\n\r\n",
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['ab'], ['q'], []]",
+        "ab\r\nq\r\n\r\n",
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['ab'], ['\"q\"'], []]",
+        'ab\r\n\\"q\\"\r\n\r\n',
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['a\\b'], ['q'], []]",
+        '"a\\b"\r\n"q"\r\n\r\n',
+    )
+
+
+def test_matches_python_247() raises:
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(lineterminator="\n"),
+        "[['a\\b'], ['q'], []]",
+        "a\\b\nq\n\n",
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(delimiter="\u20ac"),
+        "[['a\\b'], ['q'], []]",
+        "a\\b\r\nq\r\n\r\n",
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(delimiter="\n"),
+        "[['a\\b'], ['q'], []]",
+        "a\\b\r\nq\r\n\r\n",
+    )
+    _check(
+        'a\\b\r\n"q"\r\r\n',
+        Dialect(escapechar="\r"),
+        "[['a\\b'], ['q'], []]",
+        "a\\b\r\nq\r\n\r\n",
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(),
+        "[['-3e2\t\x00\\\r\na\t  x  \n']]",
+        '"-3e2\t\x00\\\r\na\t  x  \n"\r\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        excel_tab(),
+        "[['-3e2\t\x00\\\r\na\t  x  \n']]",
+        '"-3e2\t\x00\\\r\na\t  x  \n"\r\n',
+    )
+
+
+def test_matches_python_248() raises:
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        unix(),
+        "[['-3e2\t\x00\\\r\na\t  x  \n']]",
+        '"-3e2\t\x00\\\r\na\t  x  \n"\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(delimiter=";"),
+        "[['-3e2\t\x00\\\r\na\t  x  \n']]",
+        '"-3e2\t\x00\\\r\na\t  x  \n"\r\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(delimiter="|"),
+        "[['-3e2\t\x00\\\r\na\t  x  \n']]",
+        '"-3e2\t\x00\\\r\na\t  x  \n"\r\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(skipinitialspace=True),
+        "[['-3e2\t\x00\\\r\na\t  x  \n']]",
+        '"-3e2\t\x00\\\r\na\t  x  \n"\r\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(quotechar="'"),
+        "[['\"-3e2\t\x00\\'], ['a\t  x  ']]",
+        '"-3e2\t\x00\\\r\na\t  x  \r\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(escapechar="\\"),
+        "[['-3e2\t\x00\r\na\t  x  \n']]",
+        '"-3e2\t\x00\r\na\t  x  \n"\r\n',
+    )
+
+
+def test_matches_python_249() raises:
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(doublequote=False),
+        "[['-3e2\t\x00\\\r\na\t  x  \n']]",
+        '"-3e2\t\x00\\\r\na\t  x  \n"\r\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['-3e2\t\x00\r\na\t  x  \n']]",
+        '"-3e2\t\x00\r\na\t  x  \n"\r\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\"-3e2\t\x00\r'], ['a\t  x  ']]",
+        '\\"-3e2\t\x00\\\r\r\na\t  x  \r\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['-3e2\t\x00\\\r\na\t  x  \n']]",
+        '"-3e2\t\x00\\\r\na\t  x  \n"\r\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(lineterminator="\n"),
+        "[['-3e2\t\x00\\\r\na\t  x  \n']]",
+        '"-3e2\t\x00\\\r\na\t  x  \n"\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(delimiter="\u20ac"),
+        "[['-3e2\t\x00\\\r\na\t  x  \n']]",
+        '"-3e2\t\x00\\\r\na\t  x  \n"\r\n',
+    )
+
+
+def test_matches_python_250() raises:
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['-3e2\t\x00\\\r\na\t  x  \n']]",
+        '"-3e2\t\x00\\\r\na\t  x  \n"\r\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(delimiter="\n"),
+        "[['-3e2\t\x00\\\r\na\t  x  \n']]",
+        '"-3e2\t\x00\\\r\na\t  x  \n"\r\n',
+    )
+    _check(
+        '"-3e2\t\x00\\\r\na\t  x  \n',
+        Dialect(escapechar="\r"),
+        "[['-3e2\t\x00\\\na\t  x  \n']]",
+        '"-3e2\t\x00\\\na\t  x  \n"\r\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        '"café\t""a""""b""\t2.5"\r\n\r\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        excel_tab(),
+        "[['café', 'a\"b', '2.5'], []]",
+        'café\t"a""b"\t2.5\r\n\r\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        unix(),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        '"café\t""a""""b""\t2.5"\n\n',
+    )
+
+
+def test_matches_python_251() raises:
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(delimiter=";"),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        '"café\t""a""""b""\t2.5"\r\n\r\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(delimiter="|"),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        '"café\t""a""""b""\t2.5"\r\n\r\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(skipinitialspace=True),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        '"café\t""a""""b""\t2.5"\r\n\r\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(quotechar="'"),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        'café\t"a""b"\t2.5\r\n\r\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(escapechar="\\"),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        '"café\t""a""""b""\t2.5"\r\n\r\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(doublequote=False, escapechar="\\"),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        'café\t\\"a\\"\\"b\\"\t2.5\r\n\r\n',
+    )
+
+
+def test_matches_python_252() raises:
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        'café\t\\"a\\"\\"b\\"\t2.5\r\n\r\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(quoting=QUOTE_ALL),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        '"café\t""a""""b""\t2.5"\r\n\r\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(lineterminator="\n"),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        '"café\t""a""""b""\t2.5"\n\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(delimiter="\u20ac"),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        '"café\t""a""""b""\t2.5"\r\n\r\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(delimiter="\n"),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        '"café\t""a""""b""\t2.5"\r\n\r\n',
+    )
+    _check(
+        'café\t"a""b"\t2.5\r\n\r',
+        Dialect(escapechar="\r"),
+        '[[\'café\t"a""b"\t2.5\'], []]',
+        '"café\t""a""""b""\t2.5"\r\n\r\n',
+    )
+
+
+def test_matches_python_253() raises:
+    _check(
+        '"\t \n',
+        Dialect(),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+    _check(
+        '"\t \n',
+        excel_tab(),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+    _check(
+        '"\t \n',
+        unix(),
+        "[['\t \n']]",
+        '"\t \n"\n',
+    )
+    _check(
+        '"\t \n',
+        Dialect(delimiter=";"),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+    _check(
+        '"\t \n',
+        Dialect(delimiter="|"),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+    _check(
+        '"\t \n',
+        Dialect(skipinitialspace=True),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+
+
+def test_matches_python_254() raises:
+    _check(
+        '"\t \n',
+        Dialect(quotechar="'"),
+        "[['\"\t ']]",
+        '"\t \r\n',
+    )
+    _check(
+        '"\t \n',
+        Dialect(escapechar="\\"),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+    _check(
+        '"\t \n',
+        Dialect(doublequote=False),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+    _check(
+        '"\t \n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+    _check(
+        '"\t \n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\"\t ']]",
+        '\\"\t \r\n',
+    )
+    _check(
+        '"\t \n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+
+
+def test_matches_python_255() raises:
+    _check(
+        '"\t \n',
+        Dialect(lineterminator="\n"),
+        "[['\t \n']]",
+        '"\t \n"\n',
+    )
+    _check(
+        '"\t \n',
+        Dialect(delimiter="\u20ac"),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+    _check(
+        '"\t \n',
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+    _check(
+        '"\t \n',
+        Dialect(delimiter="\n"),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+    _check(
+        '"\t \n',
+        Dialect(escapechar="\r"),
+        "[['\t \n']]",
+        '"\t \n"\r\n',
+    )
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(),
+        "[['  x  |\"q\"| '], ['abcd'], ['a\\']]",
+        '"  x  |""q""| "\r\nabcd\r\na\\\r\n',
+    )
+
+
+def test_matches_python_256() raises:
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        excel_tab(),
+        "[['  x  |\"q\"| '], ['abcd'], ['a\\']]",
+        '"  x  |""q""| "\r\nabcd\r\na\\\r\n',
+    )
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        unix(),
+        "[['  x  |\"q\"| '], ['abcd'], ['a\\']]",
+        '"  x  |""q""| "\n"abcd"\n"a\\"\n',
+    )
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(delimiter=";"),
+        "[['  x  |\"q\"| '], ['abcd'], ['a\\']]",
+        '"  x  |""q""| "\r\nabcd\r\na\\\r\n',
+    )
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(delimiter="|"),
+        "[['  x  ', 'q', ' '], ['abcd'], ['a\\']]",
+        "  x  |q| \r\nabcd\r\na\\\r\n",
+    )
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(skipinitialspace=True),
+        "[['x  |\"q\"| '], ['abcd'], ['a\\']]",
+        '"x  |""q""| "\r\nabcd\r\na\\\r\n',
+    )
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(quotechar="'"),
+        "[['  x  |\"q\"| '], ['\"ab\"cd'], ['a\\']]",
+        '  x  |"q"| \r\n"ab"cd\r\na\\\r\n',
+    )
+
+
+def test_matches_python_257() raises:
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(escapechar="\\"),
+        "[['  x  |\"q\"| '], ['abcd'], ['a\r']]",
+        '"  x  |""q""| "\r\nabcd\r\n"a\r"\r\n',
+    )
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['  x  |\"q\"| '], ['abcd'], ['a\r']]",
+        '  x  |\\"q\\"| \r\nabcd\r\n"a\r"\r\n',
+    )
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['  x  |\"q\"| '], ['\"ab\"cd'], ['a\r']]",
+        '  x  |\\"q\\"| \r\n\\"ab\\"cd\r\na\\\r\r\n',
+    )
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(quoting=QUOTE_ALL),
+        "[['  x  |\"q\"| '], ['abcd'], ['a\\']]",
+        '"  x  |""q""| "\r\n"abcd"\r\n"a\\"\r\n',
+    )
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(lineterminator="\n"),
+        "[['  x  |\"q\"| '], ['abcd'], ['a\\']]",
+        '"  x  |""q""| "\nabcd\na\\\n',
+    )
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(delimiter="\u20ac"),
+        "[['  x  |\"q\"| '], ['abcd'], ['a\\']]",
+        '"  x  |""q""| "\r\nabcd\r\na\\\r\n',
+    )
+
+
+def test_matches_python_258() raises:
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(delimiter="\n"),
+        "[['  x  |\"q\"| '], ['abcd'], ['a\\']]",
+        '"  x  |""q""| "\r\nabcd\r\na\\\r\n',
+    )
+    _check(
+        '  x  |"q"| \n"ab"cd\ra\\\r',
+        Dialect(escapechar="\r"),
+        "[['  x  |\"q\"| '], ['abcd'], ['a\\']]",
+        '"  x  |""q""| "\r\nabcd\r\na\\\r\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(),
+        "[[], ['a\"b ', 'inf', 'b']]",
+        '\r\n"a""b ",inf,b\r\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        excel_tab(),
+        "[[], ['a\"b ,inf,b']]",
+        '\r\n"a""b ,inf,b"\r\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        unix(),
+        "[[], ['a\"b ', 'inf', 'b']]",
+        '\n"a""b ","inf","b"\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(delimiter=";"),
+        "[[], ['a\"b ,inf,b']]",
+        '\r\n"a""b ,inf,b"\r\n',
+    )
+
+
+def test_matches_python_259() raises:
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(delimiter="|"),
+        "[[], ['a\"b ,inf,b']]",
+        '\r\n"a""b ,inf,b"\r\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(skipinitialspace=True),
+        "[[], ['a\"b ', 'inf', 'b']]",
+        '\r\n"a""b ",inf,b\r\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(quotechar="'"),
+        "[[], ['\"a\"\"b\" ', 'inf', 'b']]",
+        '\r\n"a""b" ,inf,b\r\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(escapechar="\\"),
+        "[[], ['a\"b ', 'inf', 'b']]",
+        '\r\n"a""b ",inf,b\r\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[[], ['a\"b\" ', 'inf', 'b']]",
+        '\r\na\\"b\\" ,inf,b\r\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[[], ['\"a\"\"b\" ', 'inf', 'b']]",
+        '\r\n\\"a\\"\\"b\\" ,inf,b\r\n',
+    )
+
+
+def test_matches_python_260() raises:
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(quoting=QUOTE_ALL),
+        "[[], ['a\"b ', 'inf', 'b']]",
+        '\r\n"a""b ","inf","b"\r\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(lineterminator="\n"),
+        "[[], ['a\"b ', 'inf', 'b']]",
+        '\n"a""b ",inf,b\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(delimiter="\u20ac"),
+        "[[], ['a\"b ,inf,b']]",
+        '\r\n"a""b ,inf,b"\r\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(delimiter="\n"),
+        "[[], ['a\"b ,inf,b']]",
+        '\r\n"a""b ,inf,b"\r\n',
+    )
+    _check(
+        '\r\n"a""b" ,inf,b\r',
+        Dialect(escapechar="\r"),
+        "[[], ['a\"b ', 'inf', 'b']]",
+        '\r\n"a""b ",inf,b\r\n',
+    )
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(),
+        "[['a,b', 'a\\b', 'a\\b'], ['inf;\"a\"\"b\"'], ['\n']]",
+        '"a,b",a\\b,a\\b\r\n"inf;""a""""b"""\r\n"\n"\r\n',
+    )
+
+
+def test_matches_python_261() raises:
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        excel_tab(),
+        "[['a,b,a\\b,a\\b'], ['inf;\"a\"\"b\"'], ['\n']]",
+        'a,b,a\\b,a\\b\r\n"inf;""a""""b"""\r\n"\n"\r\n',
+    )
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        unix(),
+        "[['a,b', 'a\\b', 'a\\b'], ['inf;\"a\"\"b\"'], ['\n']]",
+        '"a,b","a\\b","a\\b"\n"inf;""a""""b"""\n"\n"\n',
+    )
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(delimiter=";"),
+        "[['a,b,a\\b,a\\b'], ['inf', 'a\"b'], ['\n']]",
+        'a,b,a\\b,a\\b\r\ninf;"a""b"\r\n"\n"\r\n',
+    )
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(delimiter="|"),
+        "[['a,b,a\\b,a\\b'], ['inf;\"a\"\"b\"'], ['\n']]",
+        'a,b,a\\b,a\\b\r\n"inf;""a""""b"""\r\n"\n"\r\n',
+    )
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(skipinitialspace=True),
+        "[['a,b', 'a\\b', 'a\\b'], ['inf;\"a\"\"b\"'], ['\n']]",
+        '"a,b",a\\b,a\\b\r\n"inf;""a""""b"""\r\n"\n"\r\n',
+    )
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(quotechar="'"),
+        "[['\"a', 'b\"', 'a\\b', 'a\\b'], ['inf;\"a\"\"b\"'], ['\"']]",
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\r\n',
+    )
+
+
+def test_matches_python_262() raises:
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(escapechar="\\"),
+        "[['a,b', 'ab', 'ab'], ['inf;\"a\"\"b\"'], ['\n']]",
+        '"a,b",ab,ab\r\n"inf;""a""""b"""\r\n"\n"\r\n',
+    )
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a,b', 'ab', 'ab'], ['inf;\"a\"\"b\"'], ['\n']]",
+        '"a,b",ab,ab\r\ninf;\\"a\\"\\"b\\"\r\n"\n"\r\n',
+    )
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\"a', 'b\"', 'ab', 'ab'], ['inf;\"a\"\"b\"'], ['\"']]",
+        '\\"a,b\\",ab,ab\r\ninf;\\"a\\"\\"b\\"\r\n\\"\r\n',
+    )
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['a,b', 'a\\b', 'a\\b'], ['inf;\"a\"\"b\"'], ['\n']]",
+        '"a,b","a\\b","a\\b"\r\n"inf;""a""""b"""\r\n"\n"\r\n',
+    )
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(lineterminator="\n"),
+        "[['a,b', 'a\\b', 'a\\b'], ['inf;\"a\"\"b\"'], ['\n']]",
+        '"a,b",a\\b,a\\b\n"inf;""a""""b"""\n"\n"\n',
+    )
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(delimiter="\u20ac"),
+        "[['a,b,a\\b,a\\b'], ['inf;\"a\"\"b\"'], ['\n']]",
+        'a,b,a\\b,a\\b\r\n"inf;""a""""b"""\r\n"\n"\r\n',
+    )
+
+
+def test_matches_python_263() raises:
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(delimiter="\n"),
+        "[['a,b,a\\b,a\\b'], ['inf;\"a\"\"b\"'], ['\n']]",
+        'a,b,a\\b,a\\b\r\n"inf;""a""""b"""\r\n"\n"\r\n',
+    )
+    _check(
+        '"a,b",a\\b,a\\b\r\ninf;"a""b"\r\n"\n',
+        Dialect(escapechar="\r"),
+        "[['a,b', 'a\\b', 'a\\b'], ['inf;\"a\"\"b\"'], ['\n']]",
+        '"a,b",a\\b,a\\b\r\n"inf;""a""""b"""\r\n"\n"\r\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(),
+        "[[], ['abcd| '], [' '], [' ', 'x\"y', 'a\"b']]",
+        '\r\nabcd| \r\n \r\n ,"x""y","a""b"\r\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        excel_tab(),
+        "[[], ['abcd| '], [' '], [' ,x\"y,\"a\"\"b\"']]",
+        '\r\nabcd| \r\n \r\n" ,x""y,""a""""b"""\r\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        unix(),
+        "[[], ['abcd| '], [' '], [' ', 'x\"y', 'a\"b']]",
+        '\n"abcd| "\n" "\n" ","x""y","a""b"\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(delimiter=";"),
+        "[[], ['abcd| '], [' '], [' ,x\"y,\"a\"\"b\"']]",
+        '\r\nabcd| \r\n \r\n" ,x""y,""a""""b"""\r\n',
+    )
+
+
+def test_matches_python_264() raises:
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(delimiter="|"),
+        "[[], ['abcd', ' '], [' '], [' ,x\"y,\"a\"\"b\"']]",
+        '\r\nabcd| \r\n \r\n" ,x""y,""a""""b"""\r\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(skipinitialspace=True),
+        "[[], ['abcd| '], [''], ['', 'x\"y', 'a\"b']]",
+        '\r\nabcd| \r\n""\r\n,"x""y","a""b"\r\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(quotechar="'"),
+        "[[], ['\"ab\"cd| '], [' '], [' ', 'x\"y', '\"a\"\"b\"']]",
+        '\r\n"ab"cd| \r\n \r\n ,x"y,"a""b"\r\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(escapechar="\\"),
+        "[[], ['abcd| '], [' '], [' ', 'x\"y', 'a\"b']]",
+        '\r\nabcd| \r\n \r\n ,"x""y","a""b"\r\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[[], ['abcd| '], [' '], [' ', 'x\"y', 'a\"b\"']]",
+        '\r\nabcd| \r\n \r\n ,x\\"y,a\\"b\\"\r\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[[], ['\"ab\"cd| '], [' '], [' ', 'x\"y', '\"a\"\"b\"']]",
+        '\r\n\\"ab\\"cd| \r\n \r\n ,x\\"y,\\"a\\"\\"b\\"\r\n',
+    )
+
+
+def test_matches_python_265() raises:
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(quoting=QUOTE_ALL),
+        "[[], ['abcd| '], [' '], [' ', 'x\"y', 'a\"b']]",
+        '\r\n"abcd| "\r\n" "\r\n" ","x""y","a""b"\r\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(lineterminator="\n"),
+        "[[], ['abcd| '], [' '], [' ', 'x\"y', 'a\"b']]",
+        '\nabcd| \n \n ,"x""y","a""b"\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(delimiter="\u20ac"),
+        "[[], ['abcd| '], [' '], [' ,x\"y,\"a\"\"b\"']]",
+        '\r\nabcd| \r\n \r\n" ,x""y,""a""""b"""\r\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(delimiter="\n"),
+        "[[], ['abcd| '], [' '], [' ,x\"y,\"a\"\"b\"']]",
+        '\r\nabcd| \r\n \r\n" ,x""y,""a""""b"""\r\n',
+    )
+    _check(
+        '\r\n"ab"cd| \r \n ,x"y,"a""b"\r',
+        Dialect(escapechar="\r"),
+        "[[], ['abcd| '], [' '], [' ', 'x\"y', 'a\"b']]",
+        '\r\nabcd| \r\n \r\n ,"x""y","a""b"\r\n',
+    )
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(),
+        "[['b', 'a\nb', '日本'], [' ;١'], ['a\\\t\"\ta\\b']]",
+        'b,"a\nb",日本\r\n ;١\r\n"a\\\t""\ta\\b"\r\n',
+    )
+
+
+def test_matches_python_266() raises:
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        excel_tab(),
+        "[['b,\"a'], ['b\",日本'], [' ;١'], ['a\\', '\ta\\b\r\n']]",
+        '"b,""a"\r\n"b"",日本"\r\n ;١\r\na\\\t"\ta\\b\r\n"\r\n',
+    )
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        unix(),
+        "[['b', 'a\nb', '日本'], [' ;١'], ['a\\\t\"\ta\\b']]",
+        '"b","a\nb","日本"\n" ;١"\n"a\\\t""\ta\\b"\n',
+    )
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(delimiter=";"),
+        "[['b,\"a'], ['b\",日本'], [' ', '١'], ['a\\\t\"\ta\\b']]",
+        '"b,""a"\r\n"b"",日本"\r\n ;١\r\n"a\\\t""\ta\\b"\r\n',
+    )
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(delimiter="|"),
+        "[['b,\"a'], ['b\",日本'], [' ;١'], ['a\\\t\"\ta\\b']]",
+        '"b,""a"\r\n"b"",日本"\r\n ;١\r\n"a\\\t""\ta\\b"\r\n',
+    )
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(skipinitialspace=True),
+        "[['b', 'a\nb', '日本'], [';١'], ['a\\\t\"\ta\\b']]",
+        'b,"a\nb",日本\r\n;١\r\n"a\\\t""\ta\\b"\r\n',
+    )
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(quotechar="'"),
+        "[['b', '\"a'], ['b\"', '日本'], [' ;١'], ['a\\\t\"\ta\\b']]",
+        'b,"a\r\nb",日本\r\n ;١\r\na\\\t"\ta\\b\r\n',
+    )
+
+
+def test_matches_python_267() raises:
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(escapechar="\\"),
+        "[['b', 'a\nb', '日本'], [' ;١'], ['a\t\"\tab']]",
+        'b,"a\nb",日本\r\n ;١\r\n"a\t""\tab"\r\n',
+    )
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['b', 'a\nb', '日本'], [' ;١'], ['a\t\"\tab']]",
+        'b,"a\nb",日本\r\n ;١\r\na\t\\"\tab\r\n',
+    )
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['b', '\"a'], ['b\"', '日本'], [' ;١'], ['a\t\"\tab']]",
+        'b,\\"a\r\nb\\",日本\r\n ;١\r\na\t\\"\tab\r\n',
+    )
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['b', 'a\nb', '日本'], [' ;١'], ['a\\\t\"\ta\\b']]",
+        '"b","a\nb","日本"\r\n" ;١"\r\n"a\\\t""\ta\\b"\r\n',
+    )
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(lineterminator="\n"),
+        "[['b', 'a\nb', '日本'], [' ;١'], ['a\\\t\"\ta\\b']]",
+        'b,"a\nb",日本\n ;١\n"a\\\t""\ta\\b"\n',
+    )
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(delimiter="\u20ac"),
+        "[['b,\"a'], ['b\",日本'], [' ;١'], ['a\\\t\"\ta\\b']]",
+        '"b,""a"\r\n"b"",日本"\r\n ;١\r\n"a\\\t""\ta\\b"\r\n',
+    )
+
+
+def test_matches_python_268() raises:
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(delimiter="\n"),
+        "[['b,\"a'], ['b\",日本'], [' ;١'], ['a\\\t\"\ta\\b']]",
+        '"b,""a"\r\n"b"",日本"\r\n ;١\r\n"a\\\t""\ta\\b"\r\n',
+    )
+    _check(
+        'b,"a\nb",日本\n ;١\r\na\\\t"\ta\\b\r\n',
+        Dialect(escapechar="\r"),
+        "[['b', 'a\nb', '日本'], [' ;١'], ['a\\\t\"\ta\\b']]",
+        'b,"a\nb",日本\r\n ;١\r\n"a\\\t""\ta\\b"\r\n',
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(),
+        "[['a\\', 'inf', ';'], ['a b']]",
+        "a\\,inf,;\r\na b\r\n",
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        excel_tab(),
+        "[['a\\,inf,;'], ['a b']]",
+        "a\\,inf,;\r\na b\r\n",
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        unix(),
+        "[['a\\', 'inf', ';'], ['a b']]",
+        '"a\\","inf",";"\n"a b"\n',
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(delimiter=";"),
+        "[['a\\,inf,', ''], ['a b']]",
+        "a\\,inf,;\r\na b\r\n",
+    )
+
+
+def test_matches_python_269() raises:
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(delimiter="|"),
+        "[['a\\,inf,;'], ['a b']]",
+        "a\\,inf,;\r\na b\r\n",
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(skipinitialspace=True),
+        "[['a\\', 'inf', ';'], ['a b']]",
+        "a\\,inf,;\r\na b\r\n",
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(quotechar="'"),
+        "[['a\\', 'inf', ';'], ['a b']]",
+        "a\\,inf,;\r\na b\r\n",
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(escapechar="\\"),
+        "[['a,inf', ';'], ['a b']]",
+        '"a,inf",;\r\na b\r\n',
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(doublequote=False),
+        "[['a\\', 'inf', ';'], ['a b']]",
+        "a\\,inf,;\r\na b\r\n",
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a,inf', ';'], ['a b']]",
+        '"a,inf",;\r\na b\r\n',
+    )
+
+
+def test_matches_python_270() raises:
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['a,inf', ';'], ['a b']]",
+        "a\\,inf,;\r\na b\r\n",
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(quoting=QUOTE_ALL),
+        "[['a\\', 'inf', ';'], ['a b']]",
+        '"a\\","inf",";"\r\n"a b"\r\n',
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(lineterminator="\n"),
+        "[['a\\', 'inf', ';'], ['a b']]",
+        "a\\,inf,;\na b\n",
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(delimiter="\u20ac"),
+        "[['a\\,inf,;'], ['a b']]",
+        "a\\,inf,;\r\na b\r\n",
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(delimiter="\n"),
+        "[['a\\,inf,;'], ['a b']]",
+        "a\\,inf,;\r\na b\r\n",
+    )
+    _check(
+        "a\\,inf,;\ra b\r",
+        Dialect(escapechar="\r"),
+        "[['a\\', 'inf', ';'], ['a b']]",
+        "a\\,inf,;\r\na b\r\n",
+    )
+
+
+def test_matches_python_271() raises:
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\r\n",
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        excel_tab(),
+        "[['a', '-3e2', '', '']]",
+        "a\t-3e2\t\t\r\n",
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        unix(),
+        "[['a\t-3e2\t\t']]",
+        '"a\t-3e2\t\t"\n',
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(delimiter=";"),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\r\n",
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(delimiter="|"),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\r\n",
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(skipinitialspace=True),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\r\n",
+    )
+
+
+def test_matches_python_272() raises:
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(quotechar="'"),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\r\n",
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(escapechar="\\"),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\r\n",
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(doublequote=False),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\r\n",
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\r\n",
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\r\n",
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[['a\t-3e2\t\t']]",
+        '"a\t-3e2\t\t"\r\n',
+    )
+
+
+def test_matches_python_273() raises:
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(lineterminator="\n"),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\n",
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(delimiter="\u20ac"),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\r\n",
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(delimiter="\n"),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\r\n",
+    )
+    _check(
+        "a\t-3e2\t\t\n",
+        Dialect(escapechar="\r"),
+        "[['a\t-3e2\t\t']]",
+        "a\t-3e2\t\t\r\n",
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(),
+        "[['-3e2|a\\|inf'], [';'], ['b']]",
+        "-3e2|a\\|inf\r\n;\r\nb\r\n",
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        excel_tab(),
+        "[['-3e2|a\\|inf'], [';'], ['b']]",
+        "-3e2|a\\|inf\r\n;\r\nb\r\n",
+    )
+
+
+def test_matches_python_274() raises:
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        unix(),
+        "[['-3e2|a\\|inf'], [';'], ['b']]",
+        '"-3e2|a\\|inf"\n";"\n"b"\n',
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(delimiter=";"),
+        "[['-3e2|a\\|inf'], ['', ''], ['b']]",
+        "-3e2|a\\|inf\r\n;\r\nb\r\n",
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(delimiter="|"),
+        "[['-3e2', 'a\\', 'inf'], [';'], ['b']]",
+        "-3e2|a\\|inf\r\n;\r\nb\r\n",
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(skipinitialspace=True),
+        "[['-3e2|a\\|inf'], [';'], ['b']]",
+        "-3e2|a\\|inf\r\n;\r\nb\r\n",
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(quotechar="'"),
+        "[['-3e2|a\\|inf'], [';'], ['b']]",
+        "-3e2|a\\|inf\r\n;\r\nb\r\n",
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(escapechar="\\"),
+        "[['-3e2|a|inf'], [';'], ['b']]",
+        "-3e2|a|inf\r\n;\r\nb\r\n",
+    )
+
+
+def test_matches_python_275() raises:
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(doublequote=False),
+        "[['-3e2|a\\|inf'], [';'], ['b']]",
+        "-3e2|a\\|inf\r\n;\r\nb\r\n",
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['-3e2|a|inf'], [';'], ['b']]",
+        "-3e2|a|inf\r\n;\r\nb\r\n",
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['-3e2|a|inf'], [';'], ['b']]",
+        "-3e2|a|inf\r\n;\r\nb\r\n",
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[['-3e2|a\\|inf'], [';'], ['b']]",
+        '"-3e2|a\\|inf"\r\n";"\r\n"b"\r\n',
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(lineterminator="\n"),
+        "[['-3e2|a\\|inf'], [';'], ['b']]",
+        "-3e2|a\\|inf\n;\nb\n",
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(delimiter="\u20ac"),
+        "[['-3e2|a\\|inf'], [';'], ['b']]",
+        "-3e2|a\\|inf\r\n;\r\nb\r\n",
+    )
+
+
+def test_matches_python_276() raises:
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(delimiter="\n"),
+        "[['-3e2|a\\|inf'], [';'], ['b']]",
+        "-3e2|a\\|inf\r\n;\r\nb\r\n",
+    )
+    _check(
+        "-3e2|a\\|inf\n;\nb\n",
+        Dialect(escapechar="\r"),
+        "[['-3e2|a\\|inf'], [';'], ['b']]",
+        "-3e2|a\\|inf\r\n;\r\nb\r\n",
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(),
+        "[['abcd'], ['2.5;café']]",
+        "abcd\r\n2.5;café\r\n",
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        excel_tab(),
+        "[['abcd'], ['2.5;café']]",
+        "abcd\r\n2.5;café\r\n",
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        unix(),
+        "[['abcd'], ['2.5;café']]",
+        '"abcd"\n"2.5;café"\n',
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(delimiter=";"),
+        "[['abcd'], ['2.5', 'café']]",
+        "abcd\r\n2.5;café\r\n",
+    )
+
+
+def test_matches_python_277() raises:
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(delimiter="|"),
+        "[['abcd'], ['2.5;café']]",
+        "abcd\r\n2.5;café\r\n",
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(skipinitialspace=True),
+        "[['abcd'], ['2.5;café']]",
+        "abcd\r\n2.5;café\r\n",
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(quotechar="'"),
+        "[['\"ab\"cd'], ['2.5;café']]",
+        '"ab"cd\r\n2.5;café\r\n',
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(escapechar="\\"),
+        "[['abcd'], ['2.5;café']]",
+        "abcd\r\n2.5;café\r\n",
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(doublequote=False),
+        "[['abcd'], ['2.5;café']]",
+        "abcd\r\n2.5;café\r\n",
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['abcd'], ['2.5;café']]",
+        "abcd\r\n2.5;café\r\n",
+    )
+
+
+def test_matches_python_278() raises:
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\"ab\"cd'], ['2.5;café']]",
+        '\\"ab\\"cd\r\n2.5;café\r\n',
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(quoting=QUOTE_ALL),
+        "[['abcd'], ['2.5;café']]",
+        '"abcd"\r\n"2.5;café"\r\n',
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(lineterminator="\n"),
+        "[['abcd'], ['2.5;café']]",
+        "abcd\n2.5;café\n",
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(delimiter="\u20ac"),
+        "[['abcd'], ['2.5;café']]",
+        "abcd\r\n2.5;café\r\n",
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(delimiter="\n"),
+        "[['abcd'], ['2.5;café']]",
+        "abcd\r\n2.5;café\r\n",
+    )
+    _check(
+        '"ab"cd\r\n2.5;café\r',
+        Dialect(escapechar="\r"),
+        "[['abcd'], ['2.5;café']]",
+        "abcd\r\n2.5;café\r\n",
+    )
+
+
+def test_matches_python_279() raises:
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(),
+        "[['a\rb\ta\\']]",
+        '"a\rb\ta\\"\r\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        excel_tab(),
+        "[['a\rb', 'a\\']]",
+        '"a\rb"\ta\\\r\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        unix(),
+        "[['a\rb\ta\\']]",
+        '"a\rb\ta\\"\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(delimiter=";"),
+        "[['a\rb\ta\\']]",
+        '"a\rb\ta\\"\r\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(delimiter="|"),
+        "[['a\rb\ta\\']]",
+        '"a\rb\ta\\"\r\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(skipinitialspace=True),
+        "[['a\rb\ta\\']]",
+        '"a\rb\ta\\"\r\n',
+    )
+
+
+def test_matches_python_280() raises:
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(quotechar="'"),
+        "[['\"a'], ['b\"\ta\\']]",
+        '"a\r\nb"\ta\\\r\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(escapechar="\\"),
+        "[['a\rb\ta\n']]",
+        '"a\rb\ta\n"\r\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(doublequote=False),
+        "[['a\rb\ta\\']]",
+        '"a\rb\ta\\"\r\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a\rb\ta\n']]",
+        '"a\rb\ta\n"\r\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\"a'], ['b\"\ta\n']]",
+        '\\"a\r\nb\\"\ta\\\n\r\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['a\rb\ta\\']]",
+        '"a\rb\ta\\"\r\n',
+    )
+
+
+def test_matches_python_281() raises:
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(lineterminator="\n"),
+        "[['a\rb\ta\\']]",
+        '"a\rb\ta\\"\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(delimiter="\u20ac"),
+        "[['a\rb\ta\\']]",
+        '"a\rb\ta\\"\r\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['a\rb\ta\\']]",
+        '"a\rb\ta\\"\r\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(delimiter="\n"),
+        "[['a\rb\ta\\']]",
+        '"a\rb\ta\\"\r\n',
+    )
+    _check(
+        '"a\rb"\ta\\\n',
+        Dialect(escapechar="\r"),
+        "[['a\nb\ta\\']]",
+        '"a\nb\ta\\"\r\n',
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(),
+        "[['١;-3e2\x00', '', '']]",
+        "١;-3e2\x00,,\r\n",
+    )
+
+
+def test_matches_python_282() raises:
+    _check(
+        "١;-3e2\x00,,\r",
+        excel_tab(),
+        "[['١;-3e2\x00,,']]",
+        "١;-3e2\x00,,\r\n",
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        unix(),
+        "[['١;-3e2\x00', '', '']]",
+        '"١;-3e2\x00","",""\n',
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(delimiter=";"),
+        "[['١', '-3e2\x00,,']]",
+        "١;-3e2\x00,,\r\n",
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(delimiter="|"),
+        "[['١;-3e2\x00,,']]",
+        "١;-3e2\x00,,\r\n",
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(skipinitialspace=True),
+        "[['١;-3e2\x00', '', '']]",
+        "١;-3e2\x00,,\r\n",
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(quotechar="'"),
+        "[['١;-3e2\x00', '', '']]",
+        "١;-3e2\x00,,\r\n",
+    )
+
+
+def test_matches_python_283() raises:
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(escapechar="\\"),
+        "[['١;-3e2\x00', '', '']]",
+        "١;-3e2\x00,,\r\n",
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(doublequote=False),
+        "[['١;-3e2\x00', '', '']]",
+        "١;-3e2\x00,,\r\n",
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['١;-3e2\x00', '', '']]",
+        "١;-3e2\x00,,\r\n",
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['١;-3e2\x00', '', '']]",
+        "١;-3e2\x00,,\r\n",
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(quoting=QUOTE_ALL),
+        "[['١;-3e2\x00', '', '']]",
+        '"١;-3e2\x00","",""\r\n',
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(lineterminator="\n"),
+        "[['١;-3e2\x00', '', '']]",
+        "١;-3e2\x00,,\n",
+    )
+
+
+def test_matches_python_284() raises:
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(delimiter="\u20ac"),
+        "[['١;-3e2\x00,,']]",
+        "١;-3e2\x00,,\r\n",
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(delimiter="\n"),
+        "[['١;-3e2\x00,,']]",
+        "١;-3e2\x00,,\r\n",
+    )
+    _check(
+        "١;-3e2\x00,,\r",
+        Dialect(escapechar="\r"),
+        "[['١;-3e2\x00', '', '']]",
+        "١;-3e2\x00,,\r\n",
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(),
+        "[['a', 'abcd', 'a\nb'], [' ', '\x00'], ['  x  ;a']]",
+        'a,abcd,"a\nb"\r\n ,\x00\r\n  x  ;a\r\n',
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        excel_tab(),
+        "[['a,\"ab\"cd,\"a'], ['b\"'], [' ,\x00'], ['  x  ;a']]",
+        '"a,""ab""cd,""a"\r\n"b"""\r\n ,\x00\r\n  x  ;a\r\n',
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        unix(),
+        "[['a', 'abcd', 'a\nb'], [' ', '\x00'], ['  x  ;a']]",
+        '"a","abcd","a\nb"\n" ","\x00"\n"  x  ;a"\n',
+    )
+
+
+def test_matches_python_285() raises:
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(delimiter=";"),
+        "[['a,\"ab\"cd,\"a'], ['b\"'], [' ,\x00'], ['  x  ', 'a']]",
+        '"a,""ab""cd,""a"\r\n"b"""\r\n ,\x00\r\n  x  ;a\r\n',
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(delimiter="|"),
+        "[['a,\"ab\"cd,\"a'], ['b\"'], [' ,\x00'], ['  x  ;a']]",
+        '"a,""ab""cd,""a"\r\n"b"""\r\n ,\x00\r\n  x  ;a\r\n',
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(skipinitialspace=True),
+        "[['a', 'abcd', 'a\nb'], ['', '\x00'], ['x  ;a']]",
+        'a,abcd,"a\nb"\r\n,\x00\r\nx  ;a\r\n',
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(quotechar="'"),
+        "[['a', '\"ab\"cd', '\"a'], ['b\"'], [' ', '\x00'], ['  x  ;a']]",
+        'a,"ab"cd,"a\r\nb"\r\n ,\x00\r\n  x  ;a\r\n',
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(escapechar="\\"),
+        "[['a', 'abcd', 'a\nb'], [' ', '\x00'], ['  x  ;a']]",
+        'a,abcd,"a\nb"\r\n ,\x00\r\n  x  ;a\r\n',
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(doublequote=False),
+        "[['a', 'abcd', 'a\nb'], [' ', '\x00'], ['  x  ;a']]",
+        'a,abcd,"a\nb"\r\n ,\x00\r\n  x  ;a\r\n',
+    )
+
+
+def test_matches_python_286() raises:
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a', 'abcd', 'a\nb'], [' ', '\x00'], ['  x  ;a']]",
+        'a,abcd,"a\nb"\r\n ,\x00\r\n  x  ;a\r\n',
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['a', '\"ab\"cd', '\"a'], ['b\"'], [' ', '\x00'], ['  x  ;a']]",
+        'a,\\"ab\\"cd,\\"a\r\nb\\"\r\n ,\x00\r\n  x  ;a\r\n',
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(quoting=QUOTE_ALL),
+        "[['a', 'abcd', 'a\nb'], [' ', '\x00'], ['  x  ;a']]",
+        '"a","abcd","a\nb"\r\n" ","\x00"\r\n"  x  ;a"\r\n',
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(lineterminator="\n"),
+        "[['a', 'abcd', 'a\nb'], [' ', '\x00'], ['  x  ;a']]",
+        'a,abcd,"a\nb"\n ,\x00\n  x  ;a\n',
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(delimiter="\u20ac"),
+        "[['a,\"ab\"cd,\"a'], ['b\"'], [' ,\x00'], ['  x  ;a']]",
+        '"a,""ab""cd,""a"\r\n"b"""\r\n ,\x00\r\n  x  ;a\r\n',
+    )
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(delimiter="\n"),
+        "[['a,\"ab\"cd,\"a'], ['b\"'], [' ,\x00'], ['  x  ;a']]",
+        '"a,""ab""cd,""a"\r\n"b"""\r\n ,\x00\r\n  x  ;a\r\n',
+    )
+
+
+def test_matches_python_287() raises:
+    _check(
+        'a,"ab"cd,"a\nb"\n ,\x00\r  x  ;a',
+        Dialect(escapechar="\r"),
+        "[['a', 'abcd', 'a\nb'], [' ', '\x00'], ['  x  ;a']]",
+        'a,abcd,"a\nb"\r\n ,\x00\r\n  x  ;a\r\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(),
+        "[[], ['x\"y'], ['a,b']]",
+        '\r\n"x""y"\r\n"a,b"\r\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        excel_tab(),
+        "[[], ['x\"y'], ['a,b']]",
+        '\r\n"x""y"\r\na,b\r\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        unix(),
+        "[[], ['x\"y'], ['a,b']]",
+        '\n"x""y"\n"a,b"\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(delimiter=";"),
+        "[[], ['x\"y'], ['a,b']]",
+        '\r\n"x""y"\r\na,b\r\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(delimiter="|"),
+        "[[], ['x\"y'], ['a,b']]",
+        '\r\n"x""y"\r\na,b\r\n',
+    )
+
+
+def test_matches_python_288() raises:
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(skipinitialspace=True),
+        "[[], ['x\"y'], ['a,b']]",
+        '\r\n"x""y"\r\n"a,b"\r\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(quotechar="'"),
+        "[[], ['x\"y'], ['\"a', 'b\"']]",
+        '\r\nx"y\r\n"a,b"\r\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(escapechar="\\"),
+        "[[], ['x\"y'], ['a,b']]",
+        '\r\n"x""y"\r\n"a,b"\r\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[[], ['x\"y'], ['a,b']]",
+        '\r\nx\\"y\r\n"a,b"\r\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[[], ['x\"y'], ['\"a', 'b\"']]",
+        '\r\nx\\"y\r\n\\"a,b\\"\r\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[[], ['x\"y'], ['a,b']]",
+        '\r\n"x""y"\r\n"a,b"\r\n',
+    )
+
+
+def test_matches_python_289() raises:
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(lineterminator="\n"),
+        "[[], ['x\"y'], ['a,b']]",
+        '\n"x""y"\n"a,b"\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(delimiter="\u20ac"),
+        "[[], ['x\"y'], ['a,b']]",
+        '\r\n"x""y"\r\na,b\r\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(delimiter="\n"),
+        "[[], ['x\"y'], ['a,b', '']]",
+        '\r\n"x""y"\r\na,b\n\r\n',
+    )
+    _check(
+        '\r\nx"y\r\n"a,b"\n',
+        Dialect(escapechar="\r"),
+        "[[], ['x\"y'], ['a,b']]",
+        '\r\n"x""y"\r\n"a,b"\r\n',
+    )
+    _check(
+        "\n",
+        Dialect(),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\n",
+        excel_tab(),
+        "[[]]",
+        "\r\n",
+    )
+
+
+def test_matches_python_290() raises:
+    _check(
+        "\n",
+        unix(),
+        "[[]]",
+        "\n",
+    )
+    _check(
+        "\n",
+        Dialect(delimiter=";"),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\n",
+        Dialect(delimiter="|"),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\n",
+        Dialect(skipinitialspace=True),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\n",
+        Dialect(quotechar="'"),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\n",
+        Dialect(escapechar="\\"),
+        "[[]]",
+        "\r\n",
+    )
+
+
+def test_matches_python_291() raises:
+    _check(
+        "\n",
+        Dialect(doublequote=False),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\n",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\n",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\n",
+        Dialect(quoting=QUOTE_ALL),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\n",
+        Dialect(lineterminator="\n"),
+        "[[]]",
+        "\n",
+    )
+    _check(
+        "\n",
+        Dialect(delimiter="\u20ac"),
+        "[[]]",
+        "\r\n",
+    )
+
+
+def test_matches_python_292() raises:
+    _check(
+        "\n",
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\n",
+        Dialect(delimiter="\n"),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "\n",
+        Dialect(escapechar="\r"),
+        "[[]]",
+        "\r\n",
+    )
+    _check(
+        "١\r",
+        Dialect(),
+        "[['١']]",
+        "١\r\n",
+    )
+    _check(
+        "١\r",
+        excel_tab(),
+        "[['١']]",
+        "١\r\n",
+    )
+    _check(
+        "١\r",
+        unix(),
+        "[['١']]",
+        '"١"\n',
+    )
+
+
+def test_matches_python_293() raises:
+    _check(
+        "١\r",
+        Dialect(delimiter=";"),
+        "[['١']]",
+        "١\r\n",
+    )
+    _check(
+        "١\r",
+        Dialect(delimiter="|"),
+        "[['١']]",
+        "١\r\n",
+    )
+    _check(
+        "١\r",
+        Dialect(skipinitialspace=True),
+        "[['١']]",
+        "١\r\n",
+    )
+    _check(
+        "١\r",
+        Dialect(quotechar="'"),
+        "[['١']]",
+        "١\r\n",
+    )
+    _check(
+        "١\r",
+        Dialect(escapechar="\\"),
+        "[['١']]",
+        "١\r\n",
+    )
+    _check(
+        "١\r",
+        Dialect(doublequote=False),
+        "[['١']]",
+        "١\r\n",
+    )
+
+
+def test_matches_python_294() raises:
+    _check(
+        "١\r",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['١']]",
+        "١\r\n",
+    )
+    _check(
+        "١\r",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['١']]",
+        "١\r\n",
+    )
+    _check(
+        "١\r",
+        Dialect(quoting=QUOTE_ALL),
+        "[['١']]",
+        '"١"\r\n',
+    )
+    _check(
+        "١\r",
+        Dialect(lineterminator="\n"),
+        "[['١']]",
+        "١\n",
+    )
+    _check(
+        "١\r",
+        Dialect(delimiter="\u20ac"),
+        "[['١']]",
+        "١\r\n",
+    )
+    _check(
+        "١\r",
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['1.0']]",
+        '"1.0"\r\n',
+    )
+
+
+def test_matches_python_295() raises:
+    _check(
+        "١\r",
+        Dialect(delimiter="\n"),
+        "[['١']]",
+        "١\r\n",
+    )
+    _check(
+        "١\r",
+        Dialect(escapechar="\r"),
+        "[['١']]",
+        "١\r\n",
+    )
+    _check(
+        "a,\t\n'q'\r\n",
+        Dialect(quotechar="'"),
+        "[['a', '\t'], ['q']]",
+        "a,\t\r\nq\r\n",
+    )
+    _check(
+        '"ab"cd\r\n',
+        Dialect(),
+        "[['abcd']]",
+        "abcd\r\n",
+    )
+    _check(
+        '"ab"cd\r\n',
+        excel_tab(),
+        "[['abcd']]",
+        "abcd\r\n",
+    )
+    _check(
+        '"ab"cd\r\n',
+        unix(),
+        "[['abcd']]",
+        '"abcd"\n',
+    )
+
+
+def test_matches_python_296() raises:
+    _check(
+        '"ab"cd\r\n',
+        Dialect(delimiter=";"),
+        "[['abcd']]",
+        "abcd\r\n",
+    )
+    _check(
+        '"ab"cd\r\n',
+        Dialect(delimiter="|"),
+        "[['abcd']]",
+        "abcd\r\n",
+    )
+    _check(
+        '"ab"cd\r\n',
+        Dialect(skipinitialspace=True),
+        "[['abcd']]",
+        "abcd\r\n",
+    )
+    _check(
+        '"ab"cd\r\n',
+        Dialect(quotechar="'"),
+        "[['\"ab\"cd']]",
+        '"ab"cd\r\n',
+    )
+    _check(
+        '"ab"cd\r\n',
+        Dialect(escapechar="\\"),
+        "[['abcd']]",
+        "abcd\r\n",
+    )
+    _check(
+        '"ab"cd\r\n',
+        Dialect(doublequote=False),
+        "[['abcd']]",
+        "abcd\r\n",
+    )
+
+
+def test_matches_python_297() raises:
+    _check(
+        '"ab"cd\r\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['abcd']]",
+        "abcd\r\n",
+    )
+    _check(
+        '"ab"cd\r\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\"ab\"cd']]",
+        '\\"ab\\"cd\r\n',
+    )
+    _check(
+        '"ab"cd\r\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['abcd']]",
+        '"abcd"\r\n',
+    )
+    _check(
+        '"ab"cd\r\n',
+        Dialect(lineterminator="\n"),
+        "[['abcd']]",
+        "abcd\n",
+    )
+    _check(
+        '"ab"cd\r\n',
+        Dialect(delimiter="\u20ac"),
+        "[['abcd']]",
+        "abcd\r\n",
+    )
+    _check(
+        '"ab"cd\r\n',
+        Dialect(quoting=QUOTE_NONNUMERIC),
+        "[['abcd']]",
+        '"abcd"\r\n',
+    )
+
+
+def test_matches_python_298() raises:
+    _check(
+        '"ab"cd\r\n',
+        Dialect(delimiter="\n"),
+        "[['abcd']]",
+        "abcd\r\n",
+    )
+    _check(
+        '"ab"cd\r\n',
+        Dialect(escapechar="\r"),
+        "[['abcd']]",
+        "abcd\r\n",
+    )
+    _check(
+        "'q',日本\r\n\"ab\"cd\r\n",
+        Dialect(quotechar="'"),
+        "[['q', '日本'], ['\"ab\"cd']]",
+        'q,日本\r\n"ab"cd\r\n',
+    )
+    _check(
+        "\"a\rb\"\t١\t€\ncafé,\"ab\"cd,'q'\n'q'\r\r\n",
+        Dialect(quotechar="'"),
+        "[['\"a'], ['b\"\t١\t€'], ['café', '\"ab\"cd', 'q'], ['q'], []]",
+        '"a\r\nb"\t١\t€\r\ncafé,"ab"cd,q\r\nq\r\n\r\n',
+    )
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(),
+        "[['\x00', '\x00'], ['a\"b;  x  '], []]",
+        '\x00,\x00\r\n"a""b;  x  "\r\n\r\n',
+    )
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        excel_tab(),
+        "[['\x00,\x00'], ['a\"b;  x  '], []]",
+        '\x00,\x00\r\n"a""b;  x  "\r\n\r\n',
+    )
+
+
+def test_matches_python_299() raises:
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        unix(),
+        "[['\x00', '\x00'], ['a\"b;  x  '], []]",
+        '"\x00","\x00"\n"a""b;  x  "\n\n',
+    )
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(delimiter=";"),
+        "[['\x00,\x00'], ['a\"b', '  x  '], []]",
+        '\x00,\x00\r\n"a""b";  x  \r\n\r\n',
+    )
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(delimiter="|"),
+        "[['\x00,\x00'], ['a\"b;  x  '], []]",
+        '\x00,\x00\r\n"a""b;  x  "\r\n\r\n',
+    )
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(skipinitialspace=True),
+        "[['\x00', '\x00'], ['a\"b;  x  '], []]",
+        '\x00,\x00\r\n"a""b;  x  "\r\n\r\n',
+    )
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(quotechar="'"),
+        "[['\x00', '\x00'], ['\"a\"\"b\";  x  '], []]",
+        '\x00,\x00\r\n"a""b";  x  \r\n\r\n',
+    )
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(escapechar="\\"),
+        "[['\x00', '\x00'], ['a\"b;  x  '], []]",
+        '\x00,\x00\r\n"a""b;  x  "\r\n\r\n',
+    )
+
+
+def test_matches_python_300() raises:
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['\x00', '\x00'], ['a\"b\";  x  '], []]",
+        '\x00,\x00\r\na\\"b\\";  x  \r\n\r\n',
+    )
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['\x00', '\x00'], ['\"a\"\"b\";  x  '], []]",
+        '\x00,\x00\r\n\\"a\\"\\"b\\";  x  \r\n\r\n',
+    )
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(quoting=QUOTE_ALL),
+        "[['\x00', '\x00'], ['a\"b;  x  '], []]",
+        '"\x00","\x00"\r\n"a""b;  x  "\r\n\r\n',
+    )
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(lineterminator="\n"),
+        "[['\x00', '\x00'], ['a\"b;  x  '], []]",
+        '\x00,\x00\n"a""b;  x  "\n\n',
+    )
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(delimiter="\u20ac"),
+        "[['\x00,\x00'], ['a\"b;  x  '], []]",
+        '\x00,\x00\r\n"a""b;  x  "\r\n\r\n',
+    )
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(delimiter="\n"),
+        "[['\x00,\x00'], ['a\"b;  x  '], []]",
+        '\x00,\x00\r\n"a""b;  x  "\r\n\r\n',
+    )
+
+
+def test_matches_python_301() raises:
+    _check(
+        '\x00,\x00\r"a""b";  x  \r\n\r',
+        Dialect(escapechar="\r"),
+        "[['\x00', '\x00'], ['a\"b;  x  '], []]",
+        '\x00,\x00\r\n"a""b;  x  "\r\n\r\n',
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(),
+        "[['café\t2.5'], [' ']]",
+        "café\t2.5\r\n \r\n",
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        excel_tab(),
+        "[['café', '2.5'], [' ']]",
+        "café\t2.5\r\n \r\n",
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        unix(),
+        "[['café\t2.5'], [' ']]",
+        '"café\t2.5"\n" "\n',
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(delimiter=";"),
+        "[['café\t2.5'], [' ']]",
+        "café\t2.5\r\n \r\n",
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(delimiter="|"),
+        "[['café\t2.5'], [' ']]",
+        "café\t2.5\r\n \r\n",
+    )
+
+
+def test_matches_python_302() raises:
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(skipinitialspace=True),
+        "[['café\t2.5'], ['']]",
+        'café\t2.5\r\n""\r\n',
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(quotechar="'"),
+        "[['café\t2.5'], [' ']]",
+        "café\t2.5\r\n \r\n",
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(escapechar="\\"),
+        "[['café\t2.5'], [' ']]",
+        "café\t2.5\r\n \r\n",
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(doublequote=False),
+        "[['café\t2.5'], [' ']]",
+        "café\t2.5\r\n \r\n",
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['café\t2.5'], [' ']]",
+        "café\t2.5\r\n \r\n",
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['café\t2.5'], [' ']]",
+        "café\t2.5\r\n \r\n",
+    )
+
+
+def test_matches_python_303() raises:
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(quoting=QUOTE_ALL),
+        "[['café\t2.5'], [' ']]",
+        '"café\t2.5"\r\n" "\r\n',
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(lineterminator="\n"),
+        "[['café\t2.5'], [' ']]",
+        "café\t2.5\n \n",
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(delimiter="\u20ac"),
+        "[['café\t2.5'], [' ']]",
+        "café\t2.5\r\n \r\n",
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(delimiter="\n"),
+        "[['café\t2.5'], [' ']]",
+        "café\t2.5\r\n \r\n",
+    )
+    _check(
+        "café\t2.5\r\n \r",
+        Dialect(escapechar="\r"),
+        "[['café\t2.5'], [' ']]",
+        "café\t2.5\r\n \r\n",
     )
     _check(
         ";\r",
@@ -8095,7 +12010,7 @@ def test_matches_python_203() raises:
     )
 
 
-def test_matches_python_204() raises:
+def test_matches_python_304() raises:
     _check(
         ";\r",
         excel_tab(),
@@ -8134,7 +12049,7 @@ def test_matches_python_204() raises:
     )
 
 
-def test_matches_python_205() raises:
+def test_matches_python_305() raises:
     _check(
         ";\r",
         Dialect(escapechar="\\"),
@@ -8173,7 +12088,7 @@ def test_matches_python_205() raises:
     )
 
 
-def test_matches_python_206() raises:
+def test_matches_python_306() raises:
     _check(
         ";\r",
         Dialect(delimiter="\u20ac"),
@@ -8181,2290 +12096,322 @@ def test_matches_python_206() raises:
         ";\r\n",
     )
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        ";\r",
+        Dialect(delimiter="\n"),
+        "[[';']]",
+        ";\r\n",
+    )
+    _check(
+        ";\r",
+        Dialect(escapechar="\r"),
+        "[[';']]",
+        ";\r\n",
+    )
+    _check(
+        "a,  x  \na\\b,€,inf\r\n",
         Dialect(),
-        "[['a\nb\t1\tcafé'], ['  x  '], ['b\tinf']]",
-        '"a\nb\t1\tcafé"\r\n  x  \r\nb\tinf\r\n',
+        "[['a', '  x  '], ['a\\b', '€', 'inf']]",
+        "a,  x  \r\na\\b,€,inf\r\n",
     )
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         excel_tab(),
-        "[['a\nb', '1', 'café'], ['  x  '], ['b', 'inf']]",
-        '"a\nb"\t1\tcafé\r\n  x  \r\nb\tinf\r\n',
+        "[['a,  x  '], ['a\\b,€,inf']]",
+        "a,  x  \r\na\\b,€,inf\r\n",
     )
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         unix(),
-        "[['a\nb\t1\tcafé'], ['  x  '], ['b\tinf']]",
-        '"a\nb\t1\tcafé"\n"  x  "\n"b\tinf"\n',
+        "[['a', '  x  '], ['a\\b', '€', 'inf']]",
+        '"a","  x  "\n"a\\b","€","inf"\n',
     )
+
+
+def test_matches_python_307() raises:
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         Dialect(delimiter=";"),
-        "[['a\nb\t1\tcafé'], ['  x  '], ['b\tinf']]",
-        '"a\nb\t1\tcafé"\r\n  x  \r\nb\tinf\r\n',
+        "[['a,  x  '], ['a\\b,€,inf']]",
+        "a,  x  \r\na\\b,€,inf\r\n",
     )
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         Dialect(delimiter="|"),
-        "[['a\nb\t1\tcafé'], ['  x  '], ['b\tinf']]",
-        '"a\nb\t1\tcafé"\r\n  x  \r\nb\tinf\r\n',
+        "[['a,  x  '], ['a\\b,€,inf']]",
+        "a,  x  \r\na\\b,€,inf\r\n",
     )
-
-
-def test_matches_python_207() raises:
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         Dialect(skipinitialspace=True),
-        "[['a\nb\t1\tcafé'], ['x  '], ['b\tinf']]",
-        '"a\nb\t1\tcafé"\r\nx  \r\nb\tinf\r\n',
+        "[['a', 'x  '], ['a\\b', '€', 'inf']]",
+        "a,x  \r\na\\b,€,inf\r\n",
     )
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         Dialect(quotechar="'"),
-        "[['\"a'], ['b\"\t1\tcafé'], ['  x  '], ['b\tinf']]",
-        '"a\r\nb"\t1\tcafé\r\n  x  \r\nb\tinf\r\n',
+        "[['a', '  x  '], ['a\\b', '€', 'inf']]",
+        "a,  x  \r\na\\b,€,inf\r\n",
     )
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         Dialect(escapechar="\\"),
-        "[['a\nb\t1\tcafé'], ['  x  '], ['b\tinf']]",
-        '"a\nb\t1\tcafé"\r\n  x  \r\nb\tinf\r\n',
+        "[['a', '  x  '], ['ab', '€', 'inf']]",
+        "a,  x  \r\nab,€,inf\r\n",
     )
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         Dialect(doublequote=False),
-        "[['a\nb\t1\tcafé'], ['  x  '], ['b\tinf']]",
-        '"a\nb\t1\tcafé"\r\n  x  \r\nb\tinf\r\n',
+        "[['a', '  x  '], ['a\\b', '€', 'inf']]",
+        "a,  x  \r\na\\b,€,inf\r\n",
     )
+
+
+def test_matches_python_308() raises:
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         Dialect(doublequote=False, escapechar="\\"),
-        "[['a\nb\t1\tcafé'], ['  x  '], ['b\tinf']]",
-        '"a\nb\t1\tcafé"\r\n  x  \r\nb\tinf\r\n',
+        "[['a', '  x  '], ['ab', '€', 'inf']]",
+        "a,  x  \r\nab,€,inf\r\n",
     )
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['\"a'], ['b\"\t1\tcafé'], ['  x  '], ['b\tinf']]",
-        '\\"a\r\nb\\"\t1\tcafé\r\n  x  \r\nb\tinf\r\n',
+        "[['a', '  x  '], ['ab', '€', 'inf']]",
+        "a,  x  \r\nab,€,inf\r\n",
     )
-
-
-def test_matches_python_208() raises:
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         Dialect(quoting=QUOTE_ALL),
-        "[['a\nb\t1\tcafé'], ['  x  '], ['b\tinf']]",
-        '"a\nb\t1\tcafé"\r\n"  x  "\r\n"b\tinf"\r\n',
+        "[['a', '  x  '], ['a\\b', '€', 'inf']]",
+        '"a","  x  "\r\n"a\\b","€","inf"\r\n',
     )
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         Dialect(lineterminator="\n"),
-        "[['a\nb\t1\tcafé'], ['  x  '], ['b\tinf']]",
-        '"a\nb\t1\tcafé"\n  x  \nb\tinf\n',
+        "[['a', '  x  '], ['a\\b', '€', 'inf']]",
+        "a,  x  \na\\b,€,inf\n",
     )
     _check(
-        '"a\nb"\t1\tcafé\r  x  \r\nb\tinf',
+        "a,  x  \na\\b,€,inf\r\n",
         Dialect(delimiter="\u20ac"),
-        "[['a\nb\t1\tcafé'], ['  x  '], ['b\tinf']]",
-        '"a\nb\t1\tcafé"\r\n  x  \r\nb\tinf\r\n',
+        "[['a,  x  '], ['a\\b,', ',inf']]",
+        "a,  x  \r\na\\b,€,inf\r\n",
     )
     _check(
-        "'q';1;|\n\r\n",
-        Dialect(quotechar="'"),
-        "[['q;1;|'], []]",
-        "q;1;|\r\n\r\n",
+        "a,  x  \na\\b,€,inf\r\n",
+        Dialect(delimiter="\n"),
+        "[['a,  x  '], ['a\\b,€,inf']]",
+        "a,  x  \r\na\\b,€,inf\r\n",
+    )
+
+
+def test_matches_python_309() raises:
+    _check(
+        "a,  x  \na\\b,€,inf\r\n",
+        Dialect(escapechar="\r"),
+        "[['a', '  x  '], ['a\\b', '€', 'inf']]",
+        "a,  x  \r\na\\b,€,inf\r\n",
     )
     _check(
-        "'q'\r",
-        Dialect(quotechar="'"),
-        "[['q']]",
-        "q\r\n",
-    )
-    _check(
-        '"a,b"\ta b\t日本\n\r',
+        'a\\"a,b";a\\b\r\n',
         Dialect(),
-        "[['a,b\ta b\t日本'], []]",
-        '"a,b\ta b\t日本"\r\n\r\n',
+        "[['a\\\"a', 'b\";a\\b']]",
+        '"a\\""a","b"";a\\b"\r\n',
     )
-
-
-def test_matches_python_209() raises:
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        'a\\"a,b";a\\b\r\n',
         excel_tab(),
-        "[['a,b', 'a b', '日本'], []]",
-        "a,b\ta b\t日本\r\n\r\n",
+        "[['a\\\"a,b\";a\\b']]",
+        '"a\\""a,b"";a\\b"\r\n',
     )
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        'a\\"a,b";a\\b\r\n',
         unix(),
-        "[['a,b\ta b\t日本'], []]",
-        '"a,b\ta b\t日本"\n\n',
+        "[['a\\\"a', 'b\";a\\b']]",
+        '"a\\""a","b"";a\\b"\n',
     )
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        'a\\"a,b";a\\b\r\n',
         Dialect(delimiter=";"),
-        "[['a,b\ta b\t日本'], []]",
-        "a,b\ta b\t日本\r\n\r\n",
+        "[['a\\\"a,b\"', 'a\\b']]",
+        '"a\\""a,b""";a\\b\r\n',
     )
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        'a\\"a,b";a\\b\r\n',
         Dialect(delimiter="|"),
-        "[['a,b\ta b\t日本'], []]",
-        "a,b\ta b\t日本\r\n\r\n",
+        "[['a\\\"a,b\";a\\b']]",
+        '"a\\""a,b"";a\\b"\r\n',
     )
+
+
+def test_matches_python_310() raises:
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        'a\\"a,b";a\\b\r\n',
         Dialect(skipinitialspace=True),
-        "[['a,b\ta b\t日本'], []]",
-        '"a,b\ta b\t日本"\r\n\r\n',
+        "[['a\\\"a', 'b\";a\\b']]",
+        '"a\\""a","b"";a\\b"\r\n',
     )
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        'a\\"a,b";a\\b\r\n',
         Dialect(quotechar="'"),
-        "[['\"a', 'b\"\ta b\t日本'], []]",
-        '"a,b"\ta b\t日本\r\n\r\n',
+        "[['a\\\"a', 'b\";a\\b']]",
+        'a\\"a,b";a\\b\r\n',
     )
-
-
-def test_matches_python_210() raises:
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        'a\\"a,b";a\\b\r\n',
         Dialect(escapechar="\\"),
-        "[['a,b\ta b\t日本'], []]",
-        '"a,b\ta b\t日本"\r\n\r\n',
+        "[['a\"a', 'b\";ab']]",
+        '"a""a","b"";ab"\r\n',
     )
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        'a\\"a,b";a\\b\r\n',
+        Dialect(doublequote=False, escapechar="\\"),
+        "[['a\"a', 'b\";ab']]",
+        'a\\"a,b\\";ab\r\n',
+    )
+    _check(
+        'a\\"a,b";a\\b\r\n',
+        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
+        "[['a\"a', 'b\";ab']]",
+        'a\\"a,b\\";ab\r\n',
+    )
+    _check(
+        'a\\"a,b";a\\b\r\n',
+        Dialect(quoting=QUOTE_ALL),
+        "[['a\\\"a', 'b\";a\\b']]",
+        '"a\\""a","b"";a\\b"\r\n',
+    )
+
+
+def test_matches_python_311() raises:
+    _check(
+        'a\\"a,b";a\\b\r\n',
+        Dialect(lineterminator="\n"),
+        "[['a\\\"a', 'b\";a\\b']]",
+        '"a\\""a","b"";a\\b"\n',
+    )
+    _check(
+        'a\\"a,b";a\\b\r\n',
+        Dialect(delimiter="\u20ac"),
+        "[['a\\\"a,b\";a\\b']]",
+        '"a\\""a,b"";a\\b"\r\n',
+    )
+    _check(
+        'a\\"a,b";a\\b\r\n',
+        Dialect(delimiter="\n"),
+        "[['a\\\"a,b\";a\\b']]",
+        '"a\\""a,b"";a\\b"\r\n',
+    )
+    _check(
+        'a\\"a,b";a\\b\r\n',
+        Dialect(escapechar="\r"),
+        "[['a\\\"a', 'b\";a\\b']]",
+        '"a\\""a","b"";a\\b"\r\n',
+    )
+    _check(
+        "\x00\r",
+        Dialect(),
+        "[['\x00']]",
+        "\x00\r\n",
+    )
+    _check(
+        "\x00\r",
+        excel_tab(),
+        "[['\x00']]",
+        "\x00\r\n",
+    )
+
+
+def test_matches_python_312() raises:
+    _check(
+        "\x00\r",
+        unix(),
+        "[['\x00']]",
+        '"\x00"\n',
+    )
+    _check(
+        "\x00\r",
+        Dialect(delimiter=";"),
+        "[['\x00']]",
+        "\x00\r\n",
+    )
+    _check(
+        "\x00\r",
+        Dialect(delimiter="|"),
+        "[['\x00']]",
+        "\x00\r\n",
+    )
+    _check(
+        "\x00\r",
+        Dialect(skipinitialspace=True),
+        "[['\x00']]",
+        "\x00\r\n",
+    )
+    _check(
+        "\x00\r",
+        Dialect(quotechar="'"),
+        "[['\x00']]",
+        "\x00\r\n",
+    )
+    _check(
+        "\x00\r",
+        Dialect(escapechar="\\"),
+        "[['\x00']]",
+        "\x00\r\n",
+    )
+
+
+def test_matches_python_313() raises:
+    _check(
+        "\x00\r",
         Dialect(doublequote=False),
-        "[['a,b\ta b\t日本'], []]",
-        '"a,b\ta b\t日本"\r\n\r\n',
+        "[['\x00']]",
+        "\x00\r\n",
     )
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        "\x00\r",
         Dialect(doublequote=False, escapechar="\\"),
-        "[['a,b\ta b\t日本'], []]",
-        '"a,b\ta b\t日本"\r\n\r\n',
+        "[['\x00']]",
+        "\x00\r\n",
     )
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        "\x00\r",
         Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['\"a', 'b\"\ta b\t日本'], []]",
-        '\\"a,b\\"\ta b\t日本\r\n\r\n',
+        "[['\x00']]",
+        "\x00\r\n",
     )
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        "\x00\r",
         Dialect(quoting=QUOTE_ALL),
-        "[['a,b\ta b\t日本'], []]",
-        '"a,b\ta b\t日本"\r\n\r\n',
+        "[['\x00']]",
+        '"\x00"\r\n',
     )
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        "\x00\r",
         Dialect(lineterminator="\n"),
-        "[['a,b\ta b\t日本'], []]",
-        '"a,b\ta b\t日本"\n\n',
+        "[['\x00']]",
+        "\x00\n",
     )
-
-
-def test_matches_python_211() raises:
     _check(
-        '"a,b"\ta b\t日本\n\r',
+        "\x00\r",
         Dialect(delimiter="\u20ac"),
-        "[['a,b\ta b\t日本'], []]",
-        "a,b\ta b\t日本\r\n\r\n",
+        "[['\x00']]",
+        "\x00\r\n",
     )
-    _check(
-        '"a,b"\ta b\t日本\n\r',
-        Dialect(quoting=QUOTE_NONNUMERIC),
-        "[['a,b\ta b\t日本'], []]",
-        '"a,b\ta b\t日本"\r\n\r\n',
-    )
-    _check(
-        "||1\r\n",
-        Dialect(),
-        "[['||1']]",
-        "||1\r\n",
-    )
-    _check(
-        "||1\r\n",
-        excel_tab(),
-        "[['||1']]",
-        "||1\r\n",
-    )
-    _check(
-        "||1\r\n",
-        unix(),
-        "[['||1']]",
-        '"||1"\n',
-    )
-    _check(
-        "||1\r\n",
-        Dialect(delimiter=";"),
-        "[['||1']]",
-        "||1\r\n",
-    )
-
-
-def test_matches_python_212() raises:
-    _check(
-        "||1\r\n",
-        Dialect(delimiter="|"),
-        "[['', '', '1']]",
-        "||1\r\n",
-    )
-    _check(
-        "||1\r\n",
-        Dialect(skipinitialspace=True),
-        "[['||1']]",
-        "||1\r\n",
-    )
-    _check(
-        "||1\r\n",
-        Dialect(quotechar="'"),
-        "[['||1']]",
-        "||1\r\n",
-    )
-    _check(
-        "||1\r\n",
-        Dialect(escapechar="\\"),
-        "[['||1']]",
-        "||1\r\n",
-    )
-    _check(
-        "||1\r\n",
-        Dialect(doublequote=False),
-        "[['||1']]",
-        "||1\r\n",
-    )
-    _check(
-        "||1\r\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['||1']]",
-        "||1\r\n",
-    )
-
-
-def test_matches_python_213() raises:
-    _check(
-        "||1\r\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['||1']]",
-        "||1\r\n",
-    )
-    _check(
-        "||1\r\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[['||1']]",
-        '"||1"\r\n',
-    )
-    _check(
-        "||1\r\n",
-        Dialect(lineterminator="\n"),
-        "[['||1']]",
-        "||1\n",
-    )
-    _check(
-        "||1\r\n",
-        Dialect(delimiter="\u20ac"),
-        "[['||1']]",
-        "||1\r\n",
-    )
-    _check(
-        '"a,b",|\r\n',
-        Dialect(),
-        "[['a,b', '|']]",
-        '"a,b",|\r\n',
-    )
-    _check(
-        '"a,b",|\r\n',
-        excel_tab(),
-        "[['a,b,|']]",
-        "a,b,|\r\n",
-    )
-
-
-def test_matches_python_214() raises:
-    _check(
-        '"a,b",|\r\n',
-        unix(),
-        "[['a,b', '|']]",
-        '"a,b","|"\n',
-    )
-    _check(
-        '"a,b",|\r\n',
-        Dialect(delimiter=";"),
-        "[['a,b,|']]",
-        "a,b,|\r\n",
-    )
-    _check(
-        '"a,b",|\r\n',
-        Dialect(delimiter="|"),
-        "[['a,b,', '']]",
-        "a,b,|\r\n",
-    )
-    _check(
-        '"a,b",|\r\n',
-        Dialect(skipinitialspace=True),
-        "[['a,b', '|']]",
-        '"a,b",|\r\n',
-    )
-    _check(
-        '"a,b",|\r\n',
-        Dialect(quotechar="'"),
-        "[['\"a', 'b\"', '|']]",
-        '"a,b",|\r\n',
-    )
-    _check(
-        '"a,b",|\r\n',
-        Dialect(escapechar="\\"),
-        "[['a,b', '|']]",
-        '"a,b",|\r\n',
-    )
-
-
-def test_matches_python_215() raises:
-    _check(
-        '"a,b",|\r\n',
-        Dialect(doublequote=False),
-        "[['a,b', '|']]",
-        '"a,b",|\r\n',
-    )
-    _check(
-        '"a,b",|\r\n',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['a,b', '|']]",
-        '"a,b",|\r\n',
-    )
-    _check(
-        '"a,b",|\r\n',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['\"a', 'b\"', '|']]",
-        '\\"a,b\\",|\r\n',
-    )
-    _check(
-        '"a,b",|\r\n',
-        Dialect(quoting=QUOTE_ALL),
-        "[['a,b', '|']]",
-        '"a,b","|"\r\n',
-    )
-    _check(
-        '"a,b",|\r\n',
-        Dialect(lineterminator="\n"),
-        "[['a,b', '|']]",
-        '"a,b",|\n',
-    )
-    _check(
-        '"a,b",|\r\n',
-        Dialect(delimiter="\u20ac"),
-        "[['a,b,|']]",
-        "a,b,|\r\n",
-    )
-
-
-def test_matches_python_216() raises:
-    _check(
-        "\n\n",
-        Dialect(),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-    _check(
-        "\n\n",
-        excel_tab(),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-    _check(
-        "\n\n",
-        unix(),
-        "[[], []]",
-        "\n\n",
-    )
-    _check(
-        "\n\n",
-        Dialect(delimiter=";"),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-    _check(
-        "\n\n",
-        Dialect(delimiter="|"),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-    _check(
-        "\n\n",
-        Dialect(skipinitialspace=True),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-
-
-def test_matches_python_217() raises:
-    _check(
-        "\n\n",
-        Dialect(quotechar="'"),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-    _check(
-        "\n\n",
-        Dialect(escapechar="\\"),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-    _check(
-        "\n\n",
-        Dialect(doublequote=False),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-    _check(
-        "\n\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-    _check(
-        "\n\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-    _check(
-        "\n\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-
-
-def test_matches_python_218() raises:
-    _check(
-        "\n\n",
-        Dialect(lineterminator="\n"),
-        "[[], []]",
-        "\n\n",
-    )
-    _check(
-        "\n\n",
-        Dialect(delimiter="\u20ac"),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-    _check(
-        "\n\n",
-        Dialect(quoting=QUOTE_NONNUMERIC),
-        "[[], []]",
-        "\r\n\r\n",
-    )
-    _check(
-        '\'q\'\r1;|;,\n1|a\\b\n"q",\t,"a""b"',
-        Dialect(quotechar="'"),
-        "[['q'], ['1;|;', ''], ['1|a\\b'], ['\"q\"', '\t', '\"a\"\"b\"']]",
-        'q\r\n1;|;,\r\n1|a\\b\r\n"q",\t,"a""b"\r\n',
-    )
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        Dialect(),
-        "[['a\"b;b;;'], ['日本|2.5|-3e2'], [], ['|;a;a']]",
-        '"a""b;b;;"\r\n日本|2.5|-3e2\r\n\r\n|;a;a\r\n',
-    )
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        excel_tab(),
-        "[['a\"b;b;;'], ['日本|2.5|-3e2'], [], ['|;a;a']]",
-        '"a""b;b;;"\r\n日本|2.5|-3e2\r\n\r\n|;a;a\r\n',
-    )
-
-
-def test_matches_python_219() raises:
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        unix(),
-        "[['a\"b;b;;'], ['日本|2.5|-3e2'], [], ['|;a;a']]",
-        '"a""b;b;;"\n"日本|2.5|-3e2"\n\n"|;a;a"\n',
-    )
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        Dialect(delimiter=";"),
-        "[['a\"b', 'b', '', ''], ['日本|2.5|-3e2'], [], ['|', 'a', 'a']]",
-        '"a""b";b;;\r\n日本|2.5|-3e2\r\n\r\n|;a;a\r\n',
-    )
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        Dialect(delimiter="|"),
-        "[['a\"b;b;;'], ['日本', '2.5', '-3e2'], [], ['', ';a;a']]",
-        '"a""b;b;;"\r\n日本|2.5|-3e2\r\n\r\n|;a;a\r\n',
-    )
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        Dialect(skipinitialspace=True),
-        "[['a\"b;b;;'], ['日本|2.5|-3e2'], [], ['|;a;a']]",
-        '"a""b;b;;"\r\n日本|2.5|-3e2\r\n\r\n|;a;a\r\n',
-    )
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        Dialect(quotechar="'"),
-        "[['\"a\"\"b\";b;;'], ['日本|2.5|-3e2'], [], ['|;a;a']]",
-        '"a""b";b;;\r\n日本|2.5|-3e2\r\n\r\n|;a;a\r\n',
-    )
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        Dialect(escapechar="\\"),
-        "[['a\"b;b;;'], ['日本|2.5|-3e2'], [], ['|;a;a']]",
-        '"a""b;b;;"\r\n日本|2.5|-3e2\r\n\r\n|;a;a\r\n',
-    )
-
-
-def test_matches_python_220() raises:
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['a\"b\";b;;'], ['日本|2.5|-3e2'], [], ['|;a;a']]",
-        'a\\"b\\";b;;\r\n日本|2.5|-3e2\r\n\r\n|;a;a\r\n',
-    )
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['\"a\"\"b\";b;;'], ['日本|2.5|-3e2'], [], ['|;a;a']]",
-        '\\"a\\"\\"b\\";b;;\r\n日本|2.5|-3e2\r\n\r\n|;a;a\r\n',
-    )
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        Dialect(quoting=QUOTE_ALL),
-        "[['a\"b;b;;'], ['日本|2.5|-3e2'], [], ['|;a;a']]",
-        '"a""b;b;;"\r\n"日本|2.5|-3e2"\r\n\r\n"|;a;a"\r\n',
-    )
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        Dialect(lineterminator="\n"),
-        "[['a\"b;b;;'], ['日本|2.5|-3e2'], [], ['|;a;a']]",
-        '"a""b;b;;"\n日本|2.5|-3e2\n\n|;a;a\n',
-    )
-    _check(
-        '"a""b";b;;\r日本|2.5|-3e2\n\r|;a;a',
-        Dialect(delimiter="\u20ac"),
-        "[['a\"b;b;;'], ['日本|2.5|-3e2'], [], ['|;a;a']]",
-        '"a""b;b;;"\r\n日本|2.5|-3e2\r\n\r\n|;a;a\r\n',
-    )
-    _check(
-        'café,日本,""',
-        Dialect(),
-        "[['café', '日本', '']]",
-        "café,日本,\r\n",
-    )
-
-
-def test_matches_python_221() raises:
-    _check(
-        'café,日本,""',
-        excel_tab(),
-        "[['café,日本,\"\"']]",
-        '"café,日本,"""""\r\n',
-    )
-    _check(
-        'café,日本,""',
-        unix(),
-        "[['café', '日本', '']]",
-        '"café","日本",""\n',
-    )
-    _check(
-        'café,日本,""',
-        Dialect(delimiter=";"),
-        "[['café,日本,\"\"']]",
-        '"café,日本,"""""\r\n',
-    )
-    _check(
-        'café,日本,""',
-        Dialect(delimiter="|"),
-        "[['café,日本,\"\"']]",
-        '"café,日本,"""""\r\n',
-    )
-    _check(
-        'café,日本,""',
-        Dialect(skipinitialspace=True),
-        "[['café', '日本', '']]",
-        "café,日本,\r\n",
-    )
-    _check(
-        'café,日本,""',
-        Dialect(quotechar="'"),
-        "[['café', '日本', '\"\"']]",
-        'café,日本,""\r\n',
-    )
-
-
-def test_matches_python_222() raises:
-    _check(
-        'café,日本,""',
-        Dialect(escapechar="\\"),
-        "[['café', '日本', '']]",
-        "café,日本,\r\n",
-    )
-    _check(
-        'café,日本,""',
-        Dialect(doublequote=False),
-        "[['café', '日本', '']]",
-        "café,日本,\r\n",
-    )
-    _check(
-        'café,日本,""',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['café', '日本', '']]",
-        "café,日本,\r\n",
-    )
-    _check(
-        'café,日本,""',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['café', '日本', '\"\"']]",
-        'café,日本,\\"\\"\r\n',
-    )
-    _check(
-        'café,日本,""',
-        Dialect(quoting=QUOTE_ALL),
-        "[['café', '日本', '']]",
-        '"café","日本",""\r\n',
-    )
-    _check(
-        'café,日本,""',
-        Dialect(lineterminator="\n"),
-        "[['café', '日本', '']]",
-        "café,日本,\n",
-    )
-
-
-def test_matches_python_223() raises:
-    _check(
-        'café,日本,""',
-        Dialect(delimiter="\u20ac"),
-        "[['café,日本,\"\"']]",
-        '"café,日本,"""""\r\n',
-    )
-    _check(
-        "a b,\\,\n",
-        Dialect(),
-        "[['a b', '\\', '']]",
-        "a b,\\,\r\n",
-    )
-    _check(
-        "a b,\\,\n",
-        excel_tab(),
-        "[['a b,\\,']]",
-        "a b,\\,\r\n",
-    )
-    _check(
-        "a b,\\,\n",
-        unix(),
-        "[['a b', '\\', '']]",
-        '"a b","\\",""\n',
-    )
-    _check(
-        "a b,\\,\n",
-        Dialect(delimiter=";"),
-        "[['a b,\\,']]",
-        "a b,\\,\r\n",
-    )
-    _check(
-        "a b,\\,\n",
-        Dialect(delimiter="|"),
-        "[['a b,\\,']]",
-        "a b,\\,\r\n",
-    )
-
-
-def test_matches_python_224() raises:
-    _check(
-        "a b,\\,\n",
-        Dialect(skipinitialspace=True),
-        "[['a b', '\\', '']]",
-        "a b,\\,\r\n",
-    )
-    _check(
-        "a b,\\,\n",
-        Dialect(quotechar="'"),
-        "[['a b', '\\', '']]",
-        "a b,\\,\r\n",
-    )
-    _check(
-        "a b,\\,\n",
-        Dialect(escapechar="\\"),
-        "[['a b', ',']]",
-        'a b,","\r\n',
-    )
-    _check(
-        "a b,\\,\n",
-        Dialect(doublequote=False),
-        "[['a b', '\\', '']]",
-        "a b,\\,\r\n",
-    )
-    _check(
-        "a b,\\,\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['a b', ',']]",
-        'a b,","\r\n',
-    )
-    _check(
-        "a b,\\,\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['a b', ',']]",
-        "a b,\\,\r\n",
-    )
-
-
-def test_matches_python_225() raises:
-    _check(
-        "a b,\\,\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[['a b', '\\', '']]",
-        '"a b","\\",""\r\n',
-    )
-    _check(
-        "a b,\\,\n",
-        Dialect(lineterminator="\n"),
-        "[['a b', '\\', '']]",
-        "a b,\\,\n",
-    )
-    _check(
-        "a b,\\,\n",
-        Dialect(delimiter="\u20ac"),
-        "[['a b,\\,']]",
-        "a b,\\,\r\n",
-    )
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        Dialect(),
-        "[['2.5'], ['€;\"a', 'b\"'], ['\\', '\x00', '-3e2']]",
-        '2.5\r\n"€;""a","b"""\r\n\\,\x00,-3e2\r\n',
-    )
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        excel_tab(),
-        "[['2.5'], ['€;\"a,b\"'], ['\\,\x00,-3e2']]",
-        '2.5\r\n"€;""a,b"""\r\n\\,\x00,-3e2\r\n',
-    )
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        unix(),
-        "[['2.5'], ['€;\"a', 'b\"'], ['\\', '\x00', '-3e2']]",
-        '"2.5"\n"€;""a","b"""\n"\\","\x00","-3e2"\n',
-    )
-
-
-def test_matches_python_226() raises:
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        Dialect(delimiter=";"),
-        "[['2.5'], ['€', 'a,b'], ['\\,\x00,-3e2']]",
-        "2.5\r\n€;a,b\r\n\\,\x00,-3e2\r\n",
-    )
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        Dialect(delimiter="|"),
-        "[['2.5'], ['€;\"a,b\"'], ['\\,\x00,-3e2']]",
-        '2.5\r\n"€;""a,b"""\r\n\\,\x00,-3e2\r\n',
-    )
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        Dialect(skipinitialspace=True),
-        "[['2.5'], ['€;\"a', 'b\"'], ['\\', '\x00', '-3e2']]",
-        '2.5\r\n"€;""a","b"""\r\n\\,\x00,-3e2\r\n',
-    )
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        Dialect(quotechar="'"),
-        "[['2.5'], ['€;\"a', 'b\"'], ['\\', '\x00', '-3e2']]",
-        '2.5\r\n€;"a,b"\r\n\\,\x00,-3e2\r\n',
-    )
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        Dialect(escapechar="\\"),
-        "[['2.5'], ['€;\"a', 'b\"'], [',\x00', '-3e2']]",
-        '2.5\r\n"€;""a","b"""\r\n",\x00",-3e2\r\n',
-    )
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['2.5'], ['€;\"a', 'b\"'], [',\x00', '-3e2']]",
-        '2.5\r\n€;\\"a,b\\"\r\n",\x00",-3e2\r\n',
-    )
-
-
-def test_matches_python_227() raises:
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['2.5'], ['€;\"a', 'b\"'], [',\x00', '-3e2']]",
-        '2.5\r\n€;\\"a,b\\"\r\n\\,\x00,-3e2\r\n',
-    )
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        Dialect(quoting=QUOTE_ALL),
-        "[['2.5'], ['€;\"a', 'b\"'], ['\\', '\x00', '-3e2']]",
-        '"2.5"\r\n"€;""a","b"""\r\n"\\","\x00","-3e2"\r\n',
-    )
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        Dialect(lineterminator="\n"),
-        "[['2.5'], ['€;\"a', 'b\"'], ['\\', '\x00', '-3e2']]",
-        '2.5\n"€;""a","b"""\n\\,\x00,-3e2\n',
-    )
-    _check(
-        '2.5\r€;"a,b"\r\\,\x00,-3e2\r',
-        Dialect(delimiter="\u20ac"),
-        "[['2.5'], ['', ';\"a,b\"'], ['\\,\x00,-3e2']]",
-        '2.5\r\n€";""a,b"""\r\n\\,\x00,-3e2\r\n',
-    )
-    _check(
-        '"q"\t \t \n',
-        Dialect(),
-        "[['q\t \t ']]",
-        "q\t \t \r\n",
-    )
-    _check(
-        '"q"\t \t \n',
-        excel_tab(),
-        "[['q', ' ', ' ']]",
-        "q\t \t \r\n",
-    )
-
-
-def test_matches_python_228() raises:
-    _check(
-        '"q"\t \t \n',
-        unix(),
-        "[['q\t \t ']]",
-        '"q\t \t "\n',
-    )
-    _check(
-        '"q"\t \t \n',
-        Dialect(delimiter=";"),
-        "[['q\t \t ']]",
-        "q\t \t \r\n",
-    )
-    _check(
-        '"q"\t \t \n',
-        Dialect(delimiter="|"),
-        "[['q\t \t ']]",
-        "q\t \t \r\n",
-    )
-    _check(
-        '"q"\t \t \n',
-        Dialect(skipinitialspace=True),
-        "[['q\t \t ']]",
-        "q\t \t \r\n",
-    )
-    _check(
-        '"q"\t \t \n',
-        Dialect(quotechar="'"),
-        "[['\"q\"\t \t ']]",
-        '"q"\t \t \r\n',
-    )
-    _check(
-        '"q"\t \t \n',
-        Dialect(escapechar="\\"),
-        "[['q\t \t ']]",
-        "q\t \t \r\n",
-    )
-
-
-def test_matches_python_229() raises:
-    _check(
-        '"q"\t \t \n',
-        Dialect(doublequote=False),
-        "[['q\t \t ']]",
-        "q\t \t \r\n",
-    )
-    _check(
-        '"q"\t \t \n',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['q\t \t ']]",
-        "q\t \t \r\n",
-    )
-    _check(
-        '"q"\t \t \n',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['\"q\"\t \t ']]",
-        '\\"q\\"\t \t \r\n',
-    )
-    _check(
-        '"q"\t \t \n',
-        Dialect(quoting=QUOTE_ALL),
-        "[['q\t \t ']]",
-        '"q\t \t "\r\n',
-    )
-    _check(
-        '"q"\t \t \n',
-        Dialect(lineterminator="\n"),
-        "[['q\t \t ']]",
-        "q\t \t \n",
-    )
-    _check(
-        '"q"\t \t \n',
-        Dialect(delimiter="\u20ac"),
-        "[['q\t \t ']]",
-        "q\t \t \r\n",
-    )
-
-
-def test_matches_python_230() raises:
-    _check(
-        '"q"\t \t \n',
-        Dialect(quoting=QUOTE_NONNUMERIC),
-        "[['q\t \t ']]",
-        '"q\t \t "\r\n',
-    )
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        Dialect(),
-        "[['inf'], ['\t\tcafé'], []]",
-        "inf\r\n\t\tcafé\r\n\r\n",
-    )
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        excel_tab(),
-        "[['inf'], ['', '', 'café'], []]",
-        "inf\r\n\t\tcafé\r\n\r\n",
-    )
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        unix(),
-        "[['inf'], ['\t\tcafé'], []]",
-        '"inf"\n"\t\tcafé"\n\n',
-    )
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        Dialect(delimiter=";"),
-        "[['inf'], ['\t\tcafé'], []]",
-        "inf\r\n\t\tcafé\r\n\r\n",
-    )
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        Dialect(delimiter="|"),
-        "[['inf'], ['\t\tcafé'], []]",
-        "inf\r\n\t\tcafé\r\n\r\n",
-    )
-
-
-def test_matches_python_231() raises:
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        Dialect(skipinitialspace=True),
-        "[['inf'], ['\t\tcafé'], []]",
-        "inf\r\n\t\tcafé\r\n\r\n",
-    )
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        Dialect(quotechar="'"),
-        "[['inf'], ['\t\tcafé'], []]",
-        "inf\r\n\t\tcafé\r\n\r\n",
-    )
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        Dialect(escapechar="\\"),
-        "[['inf'], ['\t\tcafé'], []]",
-        "inf\r\n\t\tcafé\r\n\r\n",
-    )
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        Dialect(doublequote=False),
-        "[['inf'], ['\t\tcafé'], []]",
-        "inf\r\n\t\tcafé\r\n\r\n",
-    )
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['inf'], ['\t\tcafé'], []]",
-        "inf\r\n\t\tcafé\r\n\r\n",
-    )
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['inf'], ['\t\tcafé'], []]",
-        "inf\r\n\t\tcafé\r\n\r\n",
-    )
-
-
-def test_matches_python_232() raises:
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[['inf'], ['\t\tcafé'], []]",
-        '"inf"\r\n"\t\tcafé"\r\n\r\n',
-    )
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        Dialect(lineterminator="\n"),
-        "[['inf'], ['\t\tcafé'], []]",
-        "inf\n\t\tcafé\n\n",
-    )
-    _check(
-        "inf\n\t\tcafé\r\n\r\n",
-        Dialect(delimiter="\u20ac"),
-        "[['inf'], ['\t\tcafé'], []]",
-        "inf\r\n\t\tcafé\r\n\r\n",
-    )
-    _check(
-        ",,a\\b\r\n",
-        Dialect(),
-        "[['', '', 'a\\b']]",
-        ",,a\\b\r\n",
-    )
-    _check(
-        ",,a\\b\r\n",
-        excel_tab(),
-        "[[',,a\\b']]",
-        ",,a\\b\r\n",
-    )
-    _check(
-        ",,a\\b\r\n",
-        unix(),
-        "[['', '', 'a\\b']]",
-        '"","","a\\b"\n',
-    )
-
-
-def test_matches_python_233() raises:
-    _check(
-        ",,a\\b\r\n",
-        Dialect(delimiter=";"),
-        "[[',,a\\b']]",
-        ",,a\\b\r\n",
-    )
-    _check(
-        ",,a\\b\r\n",
-        Dialect(delimiter="|"),
-        "[[',,a\\b']]",
-        ",,a\\b\r\n",
-    )
-    _check(
-        ",,a\\b\r\n",
-        Dialect(skipinitialspace=True),
-        "[['', '', 'a\\b']]",
-        ",,a\\b\r\n",
-    )
-    _check(
-        ",,a\\b\r\n",
-        Dialect(quotechar="'"),
-        "[['', '', 'a\\b']]",
-        ",,a\\b\r\n",
-    )
-    _check(
-        ",,a\\b\r\n",
-        Dialect(escapechar="\\"),
-        "[['', '', 'ab']]",
-        ",,ab\r\n",
-    )
-    _check(
-        ",,a\\b\r\n",
-        Dialect(doublequote=False),
-        "[['', '', 'a\\b']]",
-        ",,a\\b\r\n",
-    )
-
-
-def test_matches_python_234() raises:
-    _check(
-        ",,a\\b\r\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['', '', 'ab']]",
-        ",,ab\r\n",
-    )
-    _check(
-        ",,a\\b\r\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['', '', 'ab']]",
-        ",,ab\r\n",
-    )
-    _check(
-        ",,a\\b\r\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[['', '', 'a\\b']]",
-        '"","","a\\b"\r\n',
-    )
-    _check(
-        ",,a\\b\r\n",
-        Dialect(lineterminator="\n"),
-        "[['', '', 'a\\b']]",
-        ",,a\\b\n",
-    )
-    _check(
-        ",,a\\b\r\n",
-        Dialect(delimiter="\u20ac"),
-        "[[',,a\\b']]",
-        ",,a\\b\r\n",
-    )
-    _check(
-        ' \t1\t-3e2\n"',
-        Dialect(),
-        "[[' \t1\t-3e2'], ['']]",
-        ' \t1\t-3e2\r\n""\r\n',
-    )
-
-
-def test_matches_python_235() raises:
-    _check(
-        ' \t1\t-3e2\n"',
-        excel_tab(),
-        "[[' ', '1', '-3e2'], ['']]",
-        ' \t1\t-3e2\r\n""\r\n',
-    )
-    _check(
-        ' \t1\t-3e2\n"',
-        unix(),
-        "[[' \t1\t-3e2'], ['']]",
-        '" \t1\t-3e2"\n""\n',
-    )
-    _check(
-        ' \t1\t-3e2\n"',
-        Dialect(delimiter=";"),
-        "[[' \t1\t-3e2'], ['']]",
-        ' \t1\t-3e2\r\n""\r\n',
-    )
-    _check(
-        ' \t1\t-3e2\n"',
-        Dialect(delimiter="|"),
-        "[[' \t1\t-3e2'], ['']]",
-        ' \t1\t-3e2\r\n""\r\n',
-    )
-    _check(
-        ' \t1\t-3e2\n"',
-        Dialect(skipinitialspace=True),
-        "[['\t1\t-3e2'], ['']]",
-        '\t1\t-3e2\r\n""\r\n',
-    )
-    _check(
-        ' \t1\t-3e2\n"',
-        Dialect(quotechar="'"),
-        "[[' \t1\t-3e2'], ['\"']]",
-        ' \t1\t-3e2\r\n"\r\n',
-    )
-
-
-def test_matches_python_236() raises:
-    _check(
-        ' \t1\t-3e2\n"',
-        Dialect(escapechar="\\"),
-        "[[' \t1\t-3e2'], ['']]",
-        ' \t1\t-3e2\r\n""\r\n',
-    )
-    _check(
-        ' \t1\t-3e2\n"',
-        Dialect(doublequote=False),
-        "[[' \t1\t-3e2'], ['']]",
-        ' \t1\t-3e2\r\n""\r\n',
-    )
-    _check(
-        ' \t1\t-3e2\n"',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[[' \t1\t-3e2'], ['']]",
-        ' \t1\t-3e2\r\n""\r\n',
-    )
-    _check(
-        ' \t1\t-3e2\n"',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[[' \t1\t-3e2'], ['\"']]",
-        ' \t1\t-3e2\r\n\\"\r\n',
-    )
-    _check(
-        ' \t1\t-3e2\n"',
-        Dialect(quoting=QUOTE_ALL),
-        "[[' \t1\t-3e2'], ['']]",
-        '" \t1\t-3e2"\r\n""\r\n',
-    )
-    _check(
-        ' \t1\t-3e2\n"',
-        Dialect(lineterminator="\n"),
-        "[[' \t1\t-3e2'], ['']]",
-        ' \t1\t-3e2\n""\n',
-    )
-
-
-def test_matches_python_237() raises:
-    _check(
-        ' \t1\t-3e2\n"',
-        Dialect(delimiter="\u20ac"),
-        "[[' \t1\t-3e2'], ['']]",
-        ' \t1\t-3e2\r\n""\r\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(),
-        "[['a\nb;-3e2;\x00']]",
-        '"a\nb;-3e2;\x00"\r\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        excel_tab(),
-        "[['a\nb;-3e2;\x00']]",
-        '"a\nb;-3e2;\x00"\r\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        unix(),
-        "[['a\nb;-3e2;\x00']]",
-        '"a\nb;-3e2;\x00"\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(delimiter=";"),
-        "[['a\nb', '-3e2', '\x00']]",
-        '"a\nb";-3e2;\x00\r\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(delimiter="|"),
-        "[['a\nb;-3e2;\x00']]",
-        '"a\nb;-3e2;\x00"\r\n',
-    )
-
-
-def test_matches_python_238() raises:
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(skipinitialspace=True),
-        "[['a\nb;-3e2;\x00']]",
-        '"a\nb;-3e2;\x00"\r\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(quotechar="'"),
-        "[['\"a'], ['b\";-3e2;\x00']]",
-        '"a\r\nb";-3e2;\x00\r\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(escapechar="\\"),
-        "[['a\nb;-3e2;\x00']]",
-        '"a\nb;-3e2;\x00"\r\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(doublequote=False),
-        "[['a\nb;-3e2;\x00']]",
-        '"a\nb;-3e2;\x00"\r\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['a\nb;-3e2;\x00']]",
-        '"a\nb;-3e2;\x00"\r\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['\"a'], ['b\";-3e2;\x00']]",
-        '\\"a\r\nb\\";-3e2;\x00\r\n',
-    )
-
-
-def test_matches_python_239() raises:
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(quoting=QUOTE_ALL),
-        "[['a\nb;-3e2;\x00']]",
-        '"a\nb;-3e2;\x00"\r\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(lineterminator="\n"),
-        "[['a\nb;-3e2;\x00']]",
-        '"a\nb;-3e2;\x00"\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(delimiter="\u20ac"),
-        "[['a\nb;-3e2;\x00']]",
-        '"a\nb;-3e2;\x00"\r\n',
-    )
-    _check(
-        '"a\nb";-3e2;\x00\n',
-        Dialect(quoting=QUOTE_NONNUMERIC),
-        "[['a\nb;-3e2;\x00']]",
-        '"a\nb;-3e2;\x00"\r\n',
-    )
-    _check(
-        'b\rb,"q",\x00\n\r',
-        Dialect(),
-        "[['b'], ['b', 'q', '\x00'], []]",
-        "b\r\nb,q,\x00\r\n\r\n",
-    )
-    _check(
-        'b\rb,"q",\x00\n\r',
-        excel_tab(),
-        "[['b'], ['b,\"q\",\x00'], []]",
-        'b\r\n"b,""q"",\x00"\r\n\r\n',
-    )
-
-
-def test_matches_python_240() raises:
-    _check(
-        'b\rb,"q",\x00\n\r',
-        unix(),
-        "[['b'], ['b', 'q', '\x00'], []]",
-        '"b"\n"b","q","\x00"\n\n',
-    )
-    _check(
-        'b\rb,"q",\x00\n\r',
-        Dialect(delimiter=";"),
-        "[['b'], ['b,\"q\",\x00'], []]",
-        'b\r\n"b,""q"",\x00"\r\n\r\n',
-    )
-    _check(
-        'b\rb,"q",\x00\n\r',
-        Dialect(delimiter="|"),
-        "[['b'], ['b,\"q\",\x00'], []]",
-        'b\r\n"b,""q"",\x00"\r\n\r\n',
-    )
-    _check(
-        'b\rb,"q",\x00\n\r',
-        Dialect(skipinitialspace=True),
-        "[['b'], ['b', 'q', '\x00'], []]",
-        "b\r\nb,q,\x00\r\n\r\n",
-    )
-    _check(
-        'b\rb,"q",\x00\n\r',
-        Dialect(quotechar="'"),
-        "[['b'], ['b', '\"q\"', '\x00'], []]",
-        'b\r\nb,"q",\x00\r\n\r\n',
-    )
-    _check(
-        'b\rb,"q",\x00\n\r',
-        Dialect(escapechar="\\"),
-        "[['b'], ['b', 'q', '\x00'], []]",
-        "b\r\nb,q,\x00\r\n\r\n",
-    )
-
-
-def test_matches_python_241() raises:
-    _check(
-        'b\rb,"q",\x00\n\r',
-        Dialect(doublequote=False),
-        "[['b'], ['b', 'q', '\x00'], []]",
-        "b\r\nb,q,\x00\r\n\r\n",
-    )
-    _check(
-        'b\rb,"q",\x00\n\r',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['b'], ['b', 'q', '\x00'], []]",
-        "b\r\nb,q,\x00\r\n\r\n",
-    )
-    _check(
-        'b\rb,"q",\x00\n\r',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['b'], ['b', '\"q\"', '\x00'], []]",
-        'b\r\nb,\\"q\\",\x00\r\n\r\n',
-    )
-    _check(
-        'b\rb,"q",\x00\n\r',
-        Dialect(quoting=QUOTE_ALL),
-        "[['b'], ['b', 'q', '\x00'], []]",
-        '"b"\r\n"b","q","\x00"\r\n\r\n',
-    )
-    _check(
-        'b\rb,"q",\x00\n\r',
-        Dialect(lineterminator="\n"),
-        "[['b'], ['b', 'q', '\x00'], []]",
-        "b\nb,q,\x00\n\n",
-    )
-    _check(
-        'b\rb,"q",\x00\n\r',
-        Dialect(delimiter="\u20ac"),
-        "[['b'], ['b,\"q\",\x00'], []]",
-        'b\r\n"b,""q"",\x00"\r\n\r\n',
-    )
-
-
-def test_matches_python_242() raises:
-    _check(
-        ";;,;a\n\r\n€",
-        Dialect(),
-        "[[';;', ';a'], [], ['€']]",
-        ";;,;a\r\n\r\n€\r\n",
-    )
-    _check(
-        ";;,;a\n\r\n€",
-        excel_tab(),
-        "[[';;,;a'], [], ['€']]",
-        ";;,;a\r\n\r\n€\r\n",
-    )
-    _check(
-        ";;,;a\n\r\n€",
-        unix(),
-        "[[';;', ';a'], [], ['€']]",
-        '";;",";a"\n\n"€"\n',
-    )
-    _check(
-        ";;,;a\n\r\n€",
-        Dialect(delimiter=";"),
-        "[['', '', ',', 'a'], [], ['€']]",
-        ";;,;a\r\n\r\n€\r\n",
-    )
-    _check(
-        ";;,;a\n\r\n€",
-        Dialect(delimiter="|"),
-        "[[';;,;a'], [], ['€']]",
-        ";;,;a\r\n\r\n€\r\n",
-    )
-    _check(
-        ";;,;a\n\r\n€",
-        Dialect(skipinitialspace=True),
-        "[[';;', ';a'], [], ['€']]",
-        ";;,;a\r\n\r\n€\r\n",
-    )
-
-
-def test_matches_python_243() raises:
-    _check(
-        ";;,;a\n\r\n€",
-        Dialect(quotechar="'"),
-        "[[';;', ';a'], [], ['€']]",
-        ";;,;a\r\n\r\n€\r\n",
-    )
-    _check(
-        ";;,;a\n\r\n€",
-        Dialect(escapechar="\\"),
-        "[[';;', ';a'], [], ['€']]",
-        ";;,;a\r\n\r\n€\r\n",
-    )
-    _check(
-        ";;,;a\n\r\n€",
-        Dialect(doublequote=False),
-        "[[';;', ';a'], [], ['€']]",
-        ";;,;a\r\n\r\n€\r\n",
-    )
-    _check(
-        ";;,;a\n\r\n€",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[[';;', ';a'], [], ['€']]",
-        ";;,;a\r\n\r\n€\r\n",
-    )
-    _check(
-        ";;,;a\n\r\n€",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[[';;', ';a'], [], ['€']]",
-        ";;,;a\r\n\r\n€\r\n",
-    )
-    _check(
-        ";;,;a\n\r\n€",
-        Dialect(quoting=QUOTE_ALL),
-        "[[';;', ';a'], [], ['€']]",
-        '";;",";a"\r\n\r\n"€"\r\n',
-    )
-
-
-def test_matches_python_244() raises:
-    _check(
-        ";;,;a\n\r\n€",
-        Dialect(lineterminator="\n"),
-        "[[';;', ';a'], [], ['€']]",
-        ";;,;a\n\n€\n",
-    )
-    _check(
-        ";;,;a\n\r\n€",
-        Dialect(delimiter="\u20ac"),
-        "[[';;,;a'], [], ['', '']]",
-        ";;,;a\r\n\r\n€\r\n",
-    )
-    _check(
-        "b|日本|\t\r\n",
-        Dialect(),
-        "[['b|日本|\t']]",
-        "b|日本|\t\r\n",
-    )
-    _check(
-        "b|日本|\t\r\n",
-        excel_tab(),
-        "[['b|日本|', '']]",
-        "b|日本|\t\r\n",
-    )
-    _check(
-        "b|日本|\t\r\n",
-        unix(),
-        "[['b|日本|\t']]",
-        '"b|日本|\t"\n',
-    )
-    _check(
-        "b|日本|\t\r\n",
-        Dialect(delimiter=";"),
-        "[['b|日本|\t']]",
-        "b|日本|\t\r\n",
-    )
-
-
-def test_matches_python_245() raises:
-    _check(
-        "b|日本|\t\r\n",
-        Dialect(delimiter="|"),
-        "[['b', '日本', '\t']]",
-        "b|日本|\t\r\n",
-    )
-    _check(
-        "b|日本|\t\r\n",
-        Dialect(skipinitialspace=True),
-        "[['b|日本|\t']]",
-        "b|日本|\t\r\n",
-    )
-    _check(
-        "b|日本|\t\r\n",
-        Dialect(quotechar="'"),
-        "[['b|日本|\t']]",
-        "b|日本|\t\r\n",
-    )
-    _check(
-        "b|日本|\t\r\n",
-        Dialect(escapechar="\\"),
-        "[['b|日本|\t']]",
-        "b|日本|\t\r\n",
-    )
-    _check(
-        "b|日本|\t\r\n",
-        Dialect(doublequote=False),
-        "[['b|日本|\t']]",
-        "b|日本|\t\r\n",
-    )
-    _check(
-        "b|日本|\t\r\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['b|日本|\t']]",
-        "b|日本|\t\r\n",
-    )
-
 
-def test_matches_python_246() raises:
-    _check(
-        "b|日本|\t\r\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['b|日本|\t']]",
-        "b|日本|\t\r\n",
-    )
-    _check(
-        "b|日本|\t\r\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[['b|日本|\t']]",
-        '"b|日本|\t"\r\n',
-    )
-    _check(
-        "b|日本|\t\r\n",
-        Dialect(lineterminator="\n"),
-        "[['b|日本|\t']]",
-        "b|日本|\t\n",
-    )
-    _check(
-        "b|日本|\t\r\n",
-        Dialect(delimiter="\u20ac"),
-        "[['b|日本|\t']]",
-        "b|日本|\t\r\n",
-    )
-    _check(
-        "-3e2,\x00,\"a\nb\"\r'q'\r",
-        Dialect(quotechar="'"),
-        "[['-3e2', '\x00', '\"a'], ['b\"'], ['q']]",
-        '-3e2,\x00,"a\r\nb"\r\nq\r\n',
-    )
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        Dialect(),
-        "[['2.5|a|a\\ba;|;inf']]",
-        "2.5|a|a\\ba;|;inf\r\n",
-    )
-
-
-def test_matches_python_247() raises:
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        excel_tab(),
-        "[['2.5|a|a\\ba;|;inf']]",
-        "2.5|a|a\\ba;|;inf\r\n",
-    )
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        unix(),
-        "[['2.5|a|a\\ba;|;inf']]",
-        '"2.5|a|a\\ba;|;inf"\n',
-    )
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        Dialect(delimiter=";"),
-        "[['2.5|a|a\\ba', '|', 'inf']]",
-        "2.5|a|a\\ba;|;inf\r\n",
-    )
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        Dialect(delimiter="|"),
-        "[['2.5', 'a', 'a\\ba;', ';inf']]",
-        "2.5|a|a\\ba;|;inf\r\n",
-    )
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        Dialect(skipinitialspace=True),
-        "[['2.5|a|a\\ba;|;inf']]",
-        "2.5|a|a\\ba;|;inf\r\n",
-    )
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        Dialect(quotechar="'"),
-        "[['2.5|a|a\\ba;|;inf']]",
-        "2.5|a|a\\ba;|;inf\r\n",
-    )
-
-
-def test_matches_python_248() raises:
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        Dialect(escapechar="\\"),
-        "[['2.5|a|aba;|;inf']]",
-        "2.5|a|aba;|;inf\r\n",
-    )
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        Dialect(doublequote=False),
-        "[['2.5|a|a\\ba;|;inf']]",
-        "2.5|a|a\\ba;|;inf\r\n",
-    )
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['2.5|a|aba;|;inf']]",
-        "2.5|a|aba;|;inf\r\n",
-    )
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['2.5|a|aba;|;inf']]",
-        "2.5|a|aba;|;inf\r\n",
-    )
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[['2.5|a|a\\ba;|;inf']]",
-        '"2.5|a|a\\ba;|;inf"\r\n',
-    )
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        Dialect(lineterminator="\n"),
-        "[['2.5|a|a\\ba;|;inf']]",
-        "2.5|a|a\\ba;|;inf\n",
-    )
-
-
-def test_matches_python_249() raises:
-    _check(
-        "2.5|a|a\\ba;|;inf\n",
-        Dialect(delimiter="\u20ac"),
-        "[['2.5|a|a\\ba;|;inf']]",
-        "2.5|a|a\\ba;|;inf\r\n",
-    )
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        Dialect(),
-        '[[\'a\\b;a b;inf\'], [\'x"y|"q"|""café;-3e2\'], []]',
-        'a\\b;a b;inf\r\n"x""y|""q""|""""café;-3e2"\r\n\r\n',
-    )
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        excel_tab(),
-        '[[\'a\\b;a b;inf\'], [\'x"y|"q"|""café;-3e2\'], []]',
-        'a\\b;a b;inf\r\n"x""y|""q""|""""café;-3e2"\r\n\r\n',
-    )
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        unix(),
-        '[[\'a\\b;a b;inf\'], [\'x"y|"q"|""café;-3e2\'], []]',
-        '"a\\b;a b;inf"\n"x""y|""q""|""""café;-3e2"\n\n',
-    )
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        Dialect(delimiter=";"),
-        "[['a\\b', 'a b', 'inf'], ['x\"y|\"q\"|\"\"café', '-3e2'], []]",
-        'a\\b;a b;inf\r\n"x""y|""q""|""""café";-3e2\r\n\r\n',
-    )
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        Dialect(delimiter="|"),
-        "[['a\\b;a b;inf'], ['x\"y', 'q', 'café;-3e2'], []]",
-        'a\\b;a b;inf\r\n"x""y"|q|café;-3e2\r\n\r\n',
-    )
-
-
-def test_matches_python_250() raises:
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        Dialect(skipinitialspace=True),
-        '[[\'a\\b;a b;inf\'], [\'x"y|"q"|""café;-3e2\'], []]',
-        'a\\b;a b;inf\r\n"x""y|""q""|""""café;-3e2"\r\n\r\n',
-    )
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        Dialect(quotechar="'"),
-        '[[\'a\\b;a b;inf\'], [\'x"y|"q"|""café;-3e2\'], []]',
-        'a\\b;a b;inf\r\nx"y|"q"|""café;-3e2\r\n\r\n',
-    )
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        Dialect(escapechar="\\"),
-        '[[\'ab;a b;inf\'], [\'x"y|"q"|""café;-3e2\'], []]',
-        'ab;a b;inf\r\n"x""y|""q""|""""café;-3e2"\r\n\r\n',
-    )
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        Dialect(doublequote=False, escapechar="\\"),
-        '[[\'ab;a b;inf\'], [\'x"y|"q"|""café;-3e2\'], []]',
-        'ab;a b;inf\r\nx\\"y|\\"q\\"|\\"\\"café;-3e2\r\n\r\n',
-    )
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        '[[\'ab;a b;inf\'], [\'x"y|"q"|""café;-3e2\'], []]',
-        'ab;a b;inf\r\nx\\"y|\\"q\\"|\\"\\"café;-3e2\r\n\r\n',
-    )
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        Dialect(quoting=QUOTE_ALL),
-        '[[\'a\\b;a b;inf\'], [\'x"y|"q"|""café;-3e2\'], []]',
-        '"a\\b;a b;inf"\r\n"x""y|""q""|""""café;-3e2"\r\n\r\n',
-    )
-
-
-def test_matches_python_251() raises:
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        Dialect(lineterminator="\n"),
-        '[[\'a\\b;a b;inf\'], [\'x"y|"q"|""café;-3e2\'], []]',
-        'a\\b;a b;inf\n"x""y|""q""|""""café;-3e2"\n\n',
-    )
-    _check(
-        'a\\b;a b;inf\nx"y|"q"|""café;-3e2\n\n',
-        Dialect(delimiter="\u20ac"),
-        '[[\'a\\b;a b;inf\'], [\'x"y|"q"|""café;-3e2\'], []]',
-        'a\\b;a b;inf\r\n"x""y|""q""|""""café;-3e2"\r\n\r\n',
-    )
-    _check(
-        ',;";;\r\n',
-        Dialect(),
-        "[['', ';\";;']]",
-        ',";"";;"\r\n',
-    )
-    _check(
-        ',;";;\r\n',
-        excel_tab(),
-        "[[',;\";;']]",
-        '",;"";;"\r\n',
-    )
-    _check(
-        ',;";;\r\n',
-        unix(),
-        "[['', ';\";;']]",
-        '"",";"";;"\n',
-    )
-    _check(
-        ',;";;\r\n',
-        Dialect(delimiter=";"),
-        "[[',', ';;\r\n']]",
-        ',;";;\r\n"\r\n',
-    )
-
-
-def test_matches_python_252() raises:
-    _check(
-        ',;";;\r\n',
-        Dialect(delimiter="|"),
-        "[[',;\";;']]",
-        '",;"";;"\r\n',
-    )
-    _check(
-        ',;";;\r\n',
-        Dialect(skipinitialspace=True),
-        "[['', ';\";;']]",
-        ',";"";;"\r\n',
-    )
-    _check(
-        ',;";;\r\n',
-        Dialect(quotechar="'"),
-        "[['', ';\";;']]",
-        ',;";;\r\n',
-    )
-    _check(
-        ',;";;\r\n',
-        Dialect(escapechar="\\"),
-        "[['', ';\";;']]",
-        ',";"";;"\r\n',
-    )
-    _check(
-        ',;";;\r\n',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['', ';\";;']]",
-        ',;\\";;\r\n',
-    )
-    _check(
-        ',;";;\r\n',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['', ';\";;']]",
-        ',;\\";;\r\n',
-    )
-
-
-def test_matches_python_253() raises:
-    _check(
-        ',;";;\r\n',
-        Dialect(quoting=QUOTE_ALL),
-        "[['', ';\";;']]",
-        '"",";"";;"\r\n',
-    )
-    _check(
-        ',;";;\r\n',
-        Dialect(lineterminator="\n"),
-        "[['', ';\";;']]",
-        ',";"";;"\n',
-    )
-    _check(
-        ',;";;\r\n',
-        Dialect(delimiter="\u20ac"),
-        "[[',;\";;']]",
-        '",;"";;"\r\n',
-    )
-    _check(
-        '\r\ninf;"a\rb"\r',
-        Dialect(),
-        "[[], ['inf;\"a'], ['b\"']]",
-        '\r\n"inf;""a"\r\n"b"""\r\n',
-    )
-    _check(
-        '\r\ninf;"a\rb"\r',
-        excel_tab(),
-        "[[], ['inf;\"a'], ['b\"']]",
-        '\r\n"inf;""a"\r\n"b"""\r\n',
-    )
-    _check(
-        '\r\ninf;"a\rb"\r',
-        unix(),
-        "[[], ['inf;\"a'], ['b\"']]",
-        '\n"inf;""a"\n"b"""\n',
-    )
-
-
-def test_matches_python_254() raises:
-    _check(
-        '\r\ninf;"a\rb"\r',
-        Dialect(delimiter=";"),
-        "[[], ['inf', 'a\rb']]",
-        '\r\ninf;"a\rb"\r\n',
-    )
-    _check(
-        '\r\ninf;"a\rb"\r',
-        Dialect(delimiter="|"),
-        "[[], ['inf;\"a'], ['b\"']]",
-        '\r\n"inf;""a"\r\n"b"""\r\n',
-    )
-    _check(
-        '\r\ninf;"a\rb"\r',
-        Dialect(skipinitialspace=True),
-        "[[], ['inf;\"a'], ['b\"']]",
-        '\r\n"inf;""a"\r\n"b"""\r\n',
-    )
-    _check(
-        '\r\ninf;"a\rb"\r',
-        Dialect(quotechar="'"),
-        "[[], ['inf;\"a'], ['b\"']]",
-        '\r\ninf;"a\r\nb"\r\n',
-    )
-    _check(
-        '\r\ninf;"a\rb"\r',
-        Dialect(escapechar="\\"),
-        "[[], ['inf;\"a'], ['b\"']]",
-        '\r\n"inf;""a"\r\n"b"""\r\n',
-    )
-    _check(
-        '\r\ninf;"a\rb"\r',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[[], ['inf;\"a'], ['b\"']]",
-        '\r\ninf;\\"a\r\nb\\"\r\n',
-    )
-
-
-def test_matches_python_255() raises:
-    _check(
-        '\r\ninf;"a\rb"\r',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[[], ['inf;\"a'], ['b\"']]",
-        '\r\ninf;\\"a\r\nb\\"\r\n',
-    )
-    _check(
-        '\r\ninf;"a\rb"\r',
-        Dialect(quoting=QUOTE_ALL),
-        "[[], ['inf;\"a'], ['b\"']]",
-        '\r\n"inf;""a"\r\n"b"""\r\n',
-    )
-    _check(
-        '\r\ninf;"a\rb"\r',
-        Dialect(lineterminator="\n"),
-        "[[], ['inf;\"a'], ['b\"']]",
-        '\n"inf;""a"\n"b"""\n',
-    )
-    _check(
-        '\r\ninf;"a\rb"\r',
-        Dialect(delimiter="\u20ac"),
-        "[[], ['inf;\"a'], ['b\"']]",
-        '\r\n"inf;""a"\r\n"b"""\r\n',
-    )
-    _check(
-        '  x  \t"a,b"\n',
-        Dialect(),
-        "[['  x  \t\"a', 'b\"']]",
-        '"  x  \t""a","b"""\r\n',
-    )
-    _check(
-        '  x  \t"a,b"\n',
-        excel_tab(),
-        "[['  x  ', 'a,b']]",
-        "  x  \ta,b\r\n",
-    )
-
-
-def test_matches_python_256() raises:
-    _check(
-        '  x  \t"a,b"\n',
-        unix(),
-        "[['  x  \t\"a', 'b\"']]",
-        '"  x  \t""a","b"""\n',
-    )
-    _check(
-        '  x  \t"a,b"\n',
-        Dialect(delimiter=";"),
-        "[['  x  \t\"a,b\"']]",
-        '"  x  \t""a,b"""\r\n',
-    )
-    _check(
-        '  x  \t"a,b"\n',
-        Dialect(delimiter="|"),
-        "[['  x  \t\"a,b\"']]",
-        '"  x  \t""a,b"""\r\n',
-    )
-    _check(
-        '  x  \t"a,b"\n',
-        Dialect(skipinitialspace=True),
-        "[['x  \t\"a', 'b\"']]",
-        '"x  \t""a","b"""\r\n',
-    )
-    _check(
-        '  x  \t"a,b"\n',
-        Dialect(quotechar="'"),
-        "[['  x  \t\"a', 'b\"']]",
-        '  x  \t"a,b"\r\n',
-    )
-    _check(
-        '  x  \t"a,b"\n',
-        Dialect(escapechar="\\"),
-        "[['  x  \t\"a', 'b\"']]",
-        '"  x  \t""a","b"""\r\n',
-    )
-
-
-def test_matches_python_257() raises:
-    _check(
-        '  x  \t"a,b"\n',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['  x  \t\"a', 'b\"']]",
-        '  x  \t\\"a,b\\"\r\n',
-    )
-    _check(
-        '  x  \t"a,b"\n',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['  x  \t\"a', 'b\"']]",
-        '  x  \t\\"a,b\\"\r\n',
-    )
-    _check(
-        '  x  \t"a,b"\n',
-        Dialect(quoting=QUOTE_ALL),
-        "[['  x  \t\"a', 'b\"']]",
-        '"  x  \t""a","b"""\r\n',
-    )
-    _check(
-        '  x  \t"a,b"\n',
-        Dialect(lineterminator="\n"),
-        "[['  x  \t\"a', 'b\"']]",
-        '"  x  \t""a","b"""\n',
-    )
-    _check(
-        '  x  \t"a,b"\n',
-        Dialect(delimiter="\u20ac"),
-        "[['  x  \t\"a,b\"']]",
-        '"  x  \t""a,b"""\r\n',
-    )
-    _check(
-        'a\\\t|"ab"cd\n',
-        Dialect(),
-        "[['a\\\t|\"ab\"cd']]",
-        '"a\\\t|""ab""cd"\r\n',
-    )
-
-
-def test_matches_python_258() raises:
-    _check(
-        'a\\\t|"ab"cd\n',
-        excel_tab(),
-        "[['a\\', '|\"ab\"cd']]",
-        'a\\\t"|""ab""cd"\r\n',
-    )
-    _check(
-        'a\\\t|"ab"cd\n',
-        unix(),
-        "[['a\\\t|\"ab\"cd']]",
-        '"a\\\t|""ab""cd"\n',
-    )
-    _check(
-        'a\\\t|"ab"cd\n',
-        Dialect(delimiter=";"),
-        "[['a\\\t|\"ab\"cd']]",
-        '"a\\\t|""ab""cd"\r\n',
-    )
-    _check(
-        'a\\\t|"ab"cd\n',
-        Dialect(delimiter="|"),
-        "[['a\\\t', 'abcd']]",
-        "a\\\t|abcd\r\n",
-    )
-    _check(
-        'a\\\t|"ab"cd\n',
-        Dialect(skipinitialspace=True),
-        "[['a\\\t|\"ab\"cd']]",
-        '"a\\\t|""ab""cd"\r\n',
-    )
-    _check(
-        'a\\\t|"ab"cd\n',
-        Dialect(quotechar="'"),
-        "[['a\\\t|\"ab\"cd']]",
-        'a\\\t|"ab"cd\r\n',
-    )
-
-
-def test_matches_python_259() raises:
-    _check(
-        'a\\\t|"ab"cd\n',
-        Dialect(escapechar="\\"),
-        "[['a\t|\"ab\"cd']]",
-        '"a\t|""ab""cd"\r\n',
-    )
-    _check(
-        'a\\\t|"ab"cd\n',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['a\t|\"ab\"cd']]",
-        'a\t|\\"ab\\"cd\r\n',
-    )
-    _check(
-        'a\\\t|"ab"cd\n',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['a\t|\"ab\"cd']]",
-        'a\t|\\"ab\\"cd\r\n',
-    )
-    _check(
-        'a\\\t|"ab"cd\n',
-        Dialect(quoting=QUOTE_ALL),
-        "[['a\\\t|\"ab\"cd']]",
-        '"a\\\t|""ab""cd"\r\n',
-    )
-    _check(
-        'a\\\t|"ab"cd\n',
-        Dialect(lineterminator="\n"),
-        "[['a\\\t|\"ab\"cd']]",
-        '"a\\\t|""ab""cd"\n',
-    )
-    _check(
-        'a\\\t|"ab"cd\n',
-        Dialect(delimiter="\u20ac"),
-        "[['a\\\t|\"ab\"cd']]",
-        '"a\\\t|""ab""cd"\r\n',
-    )
-
-
-def test_matches_python_260() raises:
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        Dialect(),
-        "[['2.5\ta\\b'], [], [''], ['café|b']]",
-        '2.5\ta\\b\r\n\r\n""\r\ncafé|b\r\n',
-    )
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        excel_tab(),
-        "[['2.5', 'a\\b'], [], [''], ['café|b']]",
-        '2.5\ta\\b\r\n\r\n""\r\ncafé|b\r\n',
-    )
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        unix(),
-        "[['2.5\ta\\b'], [], [''], ['café|b']]",
-        '"2.5\ta\\b"\n\n""\n"café|b"\n',
-    )
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        Dialect(delimiter=";"),
-        "[['2.5\ta\\b'], [], [''], ['café|b']]",
-        '2.5\ta\\b\r\n\r\n""\r\ncafé|b\r\n',
-    )
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        Dialect(delimiter="|"),
-        "[['2.5\ta\\b'], [], [''], ['café', 'b']]",
-        '2.5\ta\\b\r\n\r\n""\r\ncafé|b\r\n',
-    )
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        Dialect(skipinitialspace=True),
-        "[['2.5\ta\\b'], [], [''], ['café|b']]",
-        '2.5\ta\\b\r\n\r\n""\r\ncafé|b\r\n',
-    )
-
-
-def test_matches_python_261() raises:
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        Dialect(quotechar="'"),
-        "[['2.5\ta\\b'], [], ['\"\"'], ['café|b']]",
-        '2.5\ta\\b\r\n\r\n""\r\ncafé|b\r\n',
-    )
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        Dialect(escapechar="\\"),
-        "[['2.5\tab'], [], [''], ['café|b']]",
-        '2.5\tab\r\n\r\n""\r\ncafé|b\r\n',
-    )
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        Dialect(doublequote=False),
-        "[['2.5\ta\\b'], [], [''], ['café|b']]",
-        '2.5\ta\\b\r\n\r\n""\r\ncafé|b\r\n',
-    )
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['2.5\tab'], [], [''], ['café|b']]",
-        '2.5\tab\r\n\r\n""\r\ncafé|b\r\n',
-    )
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['2.5\tab'], [], ['\"\"'], ['café|b']]",
-        '2.5\tab\r\n\r\n\\"\\"\r\ncafé|b\r\n',
-    )
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        Dialect(quoting=QUOTE_ALL),
-        "[['2.5\ta\\b'], [], [''], ['café|b']]",
-        '"2.5\ta\\b"\r\n\r\n""\r\n"café|b"\r\n',
-    )
-
-
-def test_matches_python_262() raises:
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        Dialect(lineterminator="\n"),
-        "[['2.5\ta\\b'], [], [''], ['café|b']]",
-        '2.5\ta\\b\n\n""\ncafé|b\n',
-    )
-    _check(
-        '2.5\ta\\b\n\n""\r\ncafé|b\r',
-        Dialect(delimiter="\u20ac"),
-        "[['2.5\ta\\b'], [], [''], ['café|b']]",
-        '2.5\ta\\b\r\n\r\n""\r\ncafé|b\r\n',
-    )
-    _check(
-        '\'q\',","a\rb"\r\n\n;\r',
-        Dialect(quotechar="'"),
-        "[['q', '\"', '\"a'], ['b\"'], [], [';']]",
-        'q,","a\r\nb"\r\n\r\n;\r\n',
-    )
-    _check(
-        "a\\b,a\\\na b\r\n",
-        Dialect(),
-        "[['a\\b', 'a\\'], ['a b']]",
-        "a\\b,a\\\r\na b\r\n",
-    )
-    _check(
-        "a\\b,a\\\na b\r\n",
-        excel_tab(),
-        "[['a\\b,a\\'], ['a b']]",
-        "a\\b,a\\\r\na b\r\n",
-    )
-    _check(
-        "a\\b,a\\\na b\r\n",
-        unix(),
-        "[['a\\b', 'a\\'], ['a b']]",
-        '"a\\b","a\\"\n"a b"\n',
-    )
-
-
-def test_matches_python_263() raises:
-    _check(
-        "a\\b,a\\\na b\r\n",
-        Dialect(delimiter=";"),
-        "[['a\\b,a\\'], ['a b']]",
-        "a\\b,a\\\r\na b\r\n",
-    )
-    _check(
-        "a\\b,a\\\na b\r\n",
-        Dialect(delimiter="|"),
-        "[['a\\b,a\\'], ['a b']]",
-        "a\\b,a\\\r\na b\r\n",
-    )
-    _check(
-        "a\\b,a\\\na b\r\n",
-        Dialect(skipinitialspace=True),
-        "[['a\\b', 'a\\'], ['a b']]",
-        "a\\b,a\\\r\na b\r\n",
-    )
-    _check(
-        "a\\b,a\\\na b\r\n",
-        Dialect(quotechar="'"),
-        "[['a\\b', 'a\\'], ['a b']]",
-        "a\\b,a\\\r\na b\r\n",
-    )
-    _check(
-        "a\\b,a\\\na b\r\n",
-        Dialect(escapechar="\\"),
-        "[['ab', 'a\na b']]",
-        'ab,"a\na b"\r\n',
-    )
-    _check(
-        "a\\b,a\\\na b\r\n",
-        Dialect(doublequote=False),
-        "[['a\\b', 'a\\'], ['a b']]",
-        "a\\b,a\\\r\na b\r\n",
-    )
 
-
-def test_matches_python_264() raises:
-    _check(
-        "a\\b,a\\\na b\r\n",
-        Dialect(doublequote=False, escapechar="\\"),
-        "[['ab', 'a\na b']]",
-        'ab,"a\na b"\r\n',
-    )
-    _check(
-        "a\\b,a\\\na b\r\n",
-        Dialect(quoting=QUOTE_NONE, escapechar="\\"),
-        "[['ab', 'a\na b']]",
-        "ab,a\\\na b\r\n",
-    )
-    _check(
-        "a\\b,a\\\na b\r\n",
-        Dialect(quoting=QUOTE_ALL),
-        "[['a\\b', 'a\\'], ['a b']]",
-        '"a\\b","a\\"\r\n"a b"\r\n',
-    )
+def test_matches_python_314() raises:
     _check(
-        "a\\b,a\\\na b\r\n",
-        Dialect(lineterminator="\n"),
-        "[['a\\b', 'a\\'], ['a b']]",
-        "a\\b,a\\\na b\n",
+        "\x00\r",
+        Dialect(delimiter="\n"),
+        "[['\x00']]",
+        "\x00\r\n",
     )
     _check(
-        "a\\b,a\\\na b\r\n",
-        Dialect(delimiter="\u20ac"),
-        "[['a\\b,a\\'], ['a b']]",
-        "a\\b,a\\\r\na b\r\n",
+        "\x00\r",
+        Dialect(escapechar="\r"),
+        "[['\x00']]",
+        "\x00\r\n",
     )
 
 

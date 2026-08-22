@@ -9,7 +9,7 @@ from std.testing import TestSuite, assert_equal, assert_raises
 from json import dumps
 from serde import Value
 
-from csv import Dialect, read_records, write_records
+from csv import QUOTE_NONNUMERIC, Dialect, read_records, write_records
 
 
 def _rendered(records: List[Value]) raises -> String:
@@ -94,6 +94,35 @@ def test_a_field_outside_fieldnames_is_an_error() raises:
         write_records(records, names, extrasaction_raise=False),
         "a,b\r\n1,\r\n",
     )
+
+
+def test_quote_nonnumeric_keeps_numbers_unquoted() raises:
+    # A record still knows which members were numbers, so `QUOTE_NONNUMERIC`
+    # leaves them bare the way CPython's `DictWriter` does.
+    var record = Value.object()
+    record["a"] = 1
+    record["b"] = "x"
+    record["c"] = 2.5
+    record["d"] = True
+    record["e"] = None
+    var names: List[String] = ["a", "b", "c", "d", "e"]
+    var records: List[Value] = [record]
+    assert_equal(
+        write_records(records, names, Dialect(quoting=QUOTE_NONNUMERIC)),
+        '"a","b","c","d","e"\r\n1,"x",2.5,True,""\r\n',
+    )
+    assert_equal(
+        write_records(records, names), "a,b,c,d,e\r\n1,x,2.5,True,\r\n"
+    )
+
+
+def test_a_record_must_be_a_table() raises:
+    var names: List[String] = ["a"]
+    var records: List[Value] = [Value.array()]
+    with assert_raises(contains="a record must be a table"):
+        _ = write_records(records, names)
+    with assert_raises(contains="a record must be a table"):
+        _ = write_records(records, names, extrasaction_raise=False)
 
 
 def main() raises:

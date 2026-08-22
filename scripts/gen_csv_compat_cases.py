@@ -51,6 +51,10 @@ DIALECTS = [
         "Dialect(quoting=QUOTE_NONNUMERIC)",
         {"quoting": csv.QUOTE_NONNUMERIC},
     ),
+    # CPython takes a line ending as a dialect character; the line break wins
+    # over it either way, and matching that is the point.
+    ('Dialect(delimiter="\\n")', {"delimiter": "\n"}),
+    ('Dialect(escapechar="\\r")', {"escapechar": "\r"}),
 ]
 
 DOCUMENTS = [
@@ -116,6 +120,11 @@ DOCUMENTS = [
     "a\x01b,c\n",
     "café,日本語\n",
     "é\"a\",b\n",
+    # Unicode decimal digits and blanks, which Python's `float` takes.
+    "\u0661,\uff11\uff12\n",
+    "\u0661.\u0662,\u06f1\n",
+    "\u3000\uff11\uff12\u3000,\u00a0 1\n",
+    "\uff11_\uff12,1_0\n",
     # Numbers, for the dialect that reads unquoted fields as floats.
     "1,2.5\n-3e2,1_0\n",
     '1,"a"\n',
@@ -166,7 +175,7 @@ def random_documents(count=55):
     pieces = [
         "a", "b", "", " ", "  x  ", '"q"', '"a,b"', '"a""b"', '"a\nb"',
         '"a\rb"', 'x"y', '"ab"cd', "a\\b", "a\\", "\\", "'q'", ";", "|",
-        "\t", "café", "€", "\x00", "1", "2.5", "-3e2", "inf",
+        "\t", "café", "€", "\x00", "1", "2.5", "-3e2", "inf", "\u0661", "\uff11\uff12",
         '""', '"', "a b", ",", "日本",
     ]
     enders = ["\n", "\r\n", "\r", ""]

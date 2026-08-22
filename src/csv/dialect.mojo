@@ -204,25 +204,24 @@ def excel() -> Dialect:
     return Dialect()
 
 
-def excel_tab() raises -> Dialect:
+def excel_tab() -> Dialect:
     """Builds CPython's `excel-tab` dialect.
 
     Returns:
         The `excel` dialect with a tab delimiter.
-
-    Raises:
-        Never; the signature matches `Dialect.__init__`.
     """
-    return Dialect(delimiter="\t")
+    var d = Dialect()
+    d.delimiter = 0x09
+    return d^
 
 
-def unix() raises -> Dialect:
+def unix() -> Dialect:
     """Builds CPython's `unix` dialect.
 
     Returns:
         Comma separated, LF terminated, with every field quoted.
-
-    Raises:
-        Never; the signature matches `Dialect.__init__`.
     """
-    return Dialect(lineterminator="\n", quoting=QUOTE_ALL)
+    var d = Dialect()
+    d.lineterminator = String("\n")
+    d.quoting = QUOTE_ALL
+    return d^

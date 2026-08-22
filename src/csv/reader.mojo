@@ -15,6 +15,7 @@ from std.math import isinf, isnan
 
 from .dialect import QUOTE_NONE, QUOTE_NONNUMERIC, Dialect
 from .errors import CSVError
+from .numbers import decimal_value, is_float_space
 
 comptime _EOL = UInt32(0xFFFFFFFF)
 """Stands for the end of a line, which is not a character in the text."""
@@ -57,31 +58,70 @@ def _append_utf8(mut out: List[UInt8], cp: UInt32):
         out.append(UInt8(0x80 | (cp & 0x3F)))
 
 
-def _drop_underscores(text: StringSlice) -> Optional[String]:
-    """Removes the digit-grouping underscores Python's `float` allows.
+def _normalized(text: StringSlice) -> Optional[String]:
+    """Rewrites a field into the ASCII number `atof` can read, or `None`.
+
+    Python's `float` reaches wider than `atof` does in three ways, and all
+    three are undone here: it strips Unicode whitespace from both ends, it
+    takes any Unicode decimal digit, and it allows digit-grouping
+    underscores between two digits.
 
     Args:
-        text: The number, already stripped of surrounding blanks.
+        text: The field's text.
 
     Returns:
-        The number without underscores, or `None` if one sits anywhere other
-        than between two digits.
+        The same number written in ASCII, or `None` if a character rules it
+        out on its own.
     """
     var bytes = text.as_bytes()
-    var kept = List[UInt8](capacity=len(bytes))
-    for i in range(len(bytes)):
-        if bytes[i] != 0x5F:  # _
-            kept.append(bytes[i])
+    var n = len(bytes)
+
+    var start = 0
+    while start < n:
+        var cp: UInt32
+        var width: Int
+        cp, width = _decode(bytes, start)
+        if not is_float_space(cp):
+            break
+        start += width
+    var end = n
+    while end > start:
+        var back = end - 1
+        while back > start and (bytes[back] & 0xC0) == 0x80:
+            back -= 1
+        var trailing = _decode(bytes, back)
+        if not is_float_space(trailing[0]):
+            break
+        end = back
+
+    var out = List[UInt8](capacity=end - start)
+    var i = start
+    var previous_digit = False
+    while i < end:
+        var cp: UInt32
+        var width: Int
+        cp, width = _decode(bytes, i)
+        i += width
+        if cp == 0x5F:  # _
+            # A separator has to sit between two digits, and the one after it
+            # is checked on the next turn of the loop.
+            if not previous_digit or i >= end:
+                return None
+            if decimal_value(_decode(bytes, i)[0]) < 0:
+                return None
+            previous_digit = False
             continue
-        if i == 0 or i + 1 == len(bytes):
+        var digit = decimal_value(cp)
+        if digit >= 0:
+            out.append(UInt8(0x30 + digit))
+            previous_digit = True
+            continue
+        if cp >= 0x80:
+            # Nothing else outside ASCII belongs in a float literal.
             return None
-        var before = bytes[i - 1]
-        var after = bytes[i + 1]
-        if not (before >= 0x30 and before <= 0x39):
-            return None
-        if not (after >= 0x30 and after <= 0x39):
-            return None
-    return String(unsafe_from_utf8=Span(kept))
+        out.append(UInt8(cp))
+        previous_digit = False
+    return String(unsafe_from_utf8=Span(out))
 
 
 def _digits(bytes: Span[UInt8, _], start: Int) -> Int:
@@ -107,7 +147,7 @@ def _is_python_float(text: StringSlice) -> Bool:
     grammar is checked here rather than left to the conversion.
 
     Args:
-        text: The text to check, already stripped of blanks and underscores.
+        text: The text to check, already normalized to ASCII.
 
     Returns:
         True if the text is a float literal Python would read.
@@ -160,13 +200,8 @@ def _float_text(text: StringSlice) raises -> String:
     Raises:
         `ValueError` with CPython's wording if the text is not a number.
     """
-    var trimmed = text.strip()
     var bad = String("could not convert string to float: '", text, "'")
-    if trimmed.byte_length() == 0:
-        raise Error(bad)
-    # Python's `float` takes the digit-grouping underscores `atof` does not,
-    # under the same rule: one has to sit between two digits.
-    var cleaned = _drop_underscores(trimmed)
+    var cleaned = _normalized(text)
     if not cleaned:
         raise Error(bad)
     var digits = cleaned.value()

@@ -10,9 +10,10 @@ from std.memory import ArcPointer
 
 from serde import Value
 
-from .api import reader, writes
+from .api import reader
 from .dialect import Dialect
 from .errors import CSVError
+from .writer import _Writer
 
 
 def read_records(
@@ -36,7 +37,8 @@ def read_records(
         fieldnames: The field names, or `None` to take them from the first
             record.
         restkey: The key the surplus fields of a long record go under. An
-            empty name drops them, which is what CPython's `None` does.
+            empty name drops them; CPython instead files them under the
+            `None` key, which an object keyed by text has nowhere to put.
         restval: What a short record's missing fields hold.
 
     Returns:
@@ -106,10 +108,12 @@ def write_records(
         `CSVError` if a record carries a field outside `fieldnames` and
         `extrasaction_raise` is set, or if a record cannot be written.
     """
-    var rows = List[List[String]]()
+    var out = _Writer(dialect)
     if header:
-        rows.append(fieldnames.copy())
+        out.writerow(fieldnames)
     for record in records:
+        if not record.is_object():
+            raise CSVError(String("a record must be a table"))
         if extrasaction_raise:
             for name in record.keys():
                 var known = False
@@ -126,13 +130,19 @@ def write_records(
                         )
                     )
         var row = List[String](capacity=len(fieldnames))
+        # `QUOTE_NONNUMERIC` leaves a number unquoted, and only the record
+        # still knows which members were numbers once they are text.
+        var numeric = List[Bool](capacity=len(fieldnames))
         for i in range(len(fieldnames)):
             if fieldnames[i] in record:
-                row.append(_field_text(record[fieldnames[i]]))
+                ref value = record[fieldnames[i]]
+                row.append(_field_text(value))
+                numeric.append(value.is_number() or value.is_bool())
             else:
                 row.append(String(restval))
-        rows.append(row^)
-    return writes(rows, dialect)
+                numeric.append(False)
+        out._write(row, numeric)
+    return out.text()
 
 
 def _field_text(value: Value) raises -> String:

@@ -95,16 +95,22 @@ print(dumps(read_records("a,b\n1,2\n")[0]))
 
 A short record is padded with `restval`, a long one puts the surplus under
 `restkey`, and a blank line is skipped rather than becoming an empty record.
+A record keeps the types its members had, so `QUOTE_NONNUMERIC` writes a
+number bare and quotes everything else, exactly as `DictWriter` does.
 
 ## Where it differs from CPython
 
 - **A row is text.** `csv.reader` with `QUOTE_NONNUMERIC` puts `float` objects
   in the row; a row here holds strings, so the number is rendered straight
   back the way Python's `str` would write it and `1` reads as `1.0`. The
-  conversion still happens, so a field that is not a number still raises
-  `could not convert string to float: 'a'`.
+  conversion itself is Python's whole `float`, Unicode decimal digits and
+  Unicode blanks included — `１２` is twelve — so a field that is not a number
+  still raises `could not convert string to float: 'a'`.
 - **`field_size_limit` is a dialect field**, not the global
   `csv.field_size_limit()` a whole program shares.
+- **A long record's surplus fields are dropped** unless `restkey` names a
+  place for them. CPython files them under the `None` key of the dict, which
+  an object keyed by text has nowhere to put.
 - **`Sniffer` and the dialect registry are not implemented.** There is no
   `register_dialect`; build a `Dialect` and pass it.
 - **`quotechar=None` requires `QUOTE_NONE`.** CPython accepts the pair with
@@ -128,12 +134,13 @@ Against CPython 3.11's `_csv`, which is written in C, on the fixtures in
 
 | Fixture | `reader` | `writer` |
 |---------|----------|----------|
-| plain (0.47 MiB) | 13.50 ms vs 13.55 ms — **1.0x** | 9.86 ms vs 15.60 ms — **1.6x** faster |
-| quoted (0.42 MiB) | 8.59 ms vs 7.80 ms — **0.9x** | 7.62 ms vs 12.12 ms — **1.6x** faster |
+| plain (0.47 MiB) | 9.22 ms vs 9.51 ms — **1.0x** | 7.72 ms vs 9.21 ms — **1.2x** faster |
+| quoted (0.42 MiB) | 5.91 ms vs 5.59 ms — **0.9x** | 6.04 ms vs 7.22 ms — **1.2x** faster |
 
-Reading is at parity with the C implementation and writing is half again as
-fast. Median of three runs on each side, taken back to back on one 4-core
-x86-64 Linux box.
+Reading is at parity with the C implementation and writing is a little ahead.
+Median of three runs on each side, taken back to back on an otherwise idle
+4-core x86-64 Linux box — the machine has to be idle, because the two do not
+lose the same amount to a busy one.
 
 Reproduce with:
 

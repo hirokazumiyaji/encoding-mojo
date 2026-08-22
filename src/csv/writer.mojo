@@ -72,8 +72,28 @@ struct _Writer(Movable):
             `CSVError` if a field needs an escape and none is set, or if the
             record is a single empty field that cannot be quoted.
         """
+        var numeric = List[Bool](length=len(row), fill=False)
+        self._write(row, numeric)
+
+    def _write(mut self, row: List[String], numeric: List[Bool]) raises:
+        """Writes one record, knowing which fields came from numbers.
+
+        The record is assembled on its own and appended in one go, so a field
+        that cannot be written leaves the document exactly as it was — which
+        is what CPython does when a row fails halfway.
+
+        Args:
+            row: The fields to write.
+            numeric: Whether each field stands for a number, which is what
+                `QUOTE_NONNUMERIC` leaves unquoted. All false for a row of
+                plain text.
+
+        Raises:
+            `CSVError` if a field needs an escape and none is set, or if the
+            record is a single empty field that cannot be quoted.
+        """
         var d = self.dialect
-        var start = self.out.byte_length()
+        var line = String()
         var delimiter = _encoded(d.delimiter)
         var quote = _encoded(d.quotechar) if d.has_quotechar else String()
         var escape = _encoded(d.escapechar) if d.has_escapechar else String()
@@ -81,8 +101,10 @@ struct _Writer(Movable):
 
         for index in range(len(row)):
             if index:
-                self.out += delimiter
-            var quoted = d.quoting == QUOTE_ALL or d.quoting == QUOTE_NONNUMERIC
+                line += delimiter
+            var quoted = d.quoting == QUOTE_ALL or (
+                d.quoting == QUOTE_NONNUMERIC and not numeric[index]
+            )
             var body = List[UInt8]()
 
             var bytes = row[index].as_bytes()
@@ -136,22 +158,23 @@ struct _Writer(Movable):
             if quoted:
                 if not d.has_quotechar:
                     raise CSVError(String(_NEED_ESCAPE))
-                self.out += quote
-                self.out += StringSlice(unsafe_from_utf8=Span(body))
-                self.out += quote
+                line += quote
+                line += StringSlice(unsafe_from_utf8=Span(body))
+                line += quote
             else:
-                self.out += StringSlice(unsafe_from_utf8=Span(body))
+                line += StringSlice(unsafe_from_utf8=Span(body))
 
-        if len(row) > 0 and self.out.byte_length() == start:
+        if len(row) > 0 and line.byte_length() == 0:
             # One empty field on its own would read back as an empty record,
             # so it has to be written quoted.
             if d.quoting == QUOTE_NONE or not d.has_quotechar:
                 raise CSVError(
                     String("single empty field record must be quoted")
                 )
-            self.out += quote
-            self.out += quote
-        self.out += d.lineterminator
+            line += quote
+            line += quote
+        line += d.lineterminator
+        self.out += line
 
     def writerows(mut self, rows: List[List[String]]) raises:
         """Writes several records in order.

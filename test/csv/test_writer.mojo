@@ -157,5 +157,20 @@ def test_writerows() raises:
     assert_equal(w.text(), '"a"\n"b"\n')
 
 
+def test_a_failed_row_leaves_the_document_alone() raises:
+    # CPython assembles the record before touching the output, so a field it
+    # cannot write does not leave half a row behind.
+    var w = writer(Dialect(doublequote=False))
+    with assert_raises(contains="need to escape, but no escapechar set"):
+        w.writerow(["ok", 'bad"'])
+    assert_equal(w.text(), "")
+    w.writerow(["next"])
+    assert_equal(w.text(), "next\r\n")
+
+
+def test_carriage_returns_may_be_dialect_characters() raises:
+    _check_with([["a", "b"]], Dialect(delimiter="\n"), "a\nb\r\n")
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()
