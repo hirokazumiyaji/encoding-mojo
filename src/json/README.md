@@ -1,5 +1,7 @@
 # `json`
 
+*English · [日本語](README.ja.md)*
+
 A JSON decoder, encoder and document model in pure Mojo, built to match
 CPython's `json` module — the same function names and keyword arguments, the
 same output bytes, and the same error messages.

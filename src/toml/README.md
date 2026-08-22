@@ -1,5 +1,7 @@
 # `toml`
 
+*English · [日本語](README.ja.md)*
+
 A TOML 1.0.0 parser and writer in pure Mojo, built to match the reference
 Python implementations: `loads`/`load` follow CPython's `tomllib`, and
 `dumps`/`dump` follow [`tomli_w`](https://pypi.org/project/tomli-w/), down to

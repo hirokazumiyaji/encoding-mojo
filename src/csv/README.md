@@ -1,5 +1,7 @@
 # `csv`
 
+*English · [日本語](README.ja.md)*
+
 A CSV reader and writer in pure Mojo, running the same state machine CPython's
 `_csv` does — character for character, including the parts that only show up
 in malformed input.
@@ -75,7 +77,7 @@ writes(rows, unix())
 CPython registers. `Dialect` takes `delimiter`, `quotechar`, `escapechar`,
 `doublequote`, `skipinitialspace`, `lineterminator`, `quoting`, `strict` and
 `field_size_limit`, with `QUOTE_MINIMAL`, `QUOTE_ALL`, `QUOTE_NONNUMERIC` and
-`QUOTE_NONE` for the last. Any single character may be a delimiter, a quote or
+`QUOTE_NONE` for `quoting`. Any single character may be a delimiter, a quote or
 an escape, `€` included.
 
 ## Records

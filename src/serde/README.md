@@ -1,5 +1,7 @@
 # `serde`
 
+*English · [日本語](README.ja.md)*
+
 The document model every format in this repository shares.
 
 A `Value` is `null`, a bool, a number, a string, a sequence or a mapping — the

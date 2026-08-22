@@ -1,5 +1,7 @@
 # `yaml`
 
+*English · [日本語](README.ja.md)*
+
 A YAML loader and emitter in pure Mojo, built to match PyYAML's `safe_load`
 and `safe_dump` — the same function names and keyword arguments, the same
 implicit typing, and the same output bytes.

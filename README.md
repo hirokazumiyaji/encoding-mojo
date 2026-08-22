@@ -1,9 +1,12 @@
-# json-mojo
+# encoding-mojo
 
-Pure-Mojo data-format libraries with Python-compatible APIs: `json` mirrors
-CPython's `json` module, `yaml` mirrors PyYAML's `safe_load`/`safe_dump`,
-`toml` mirrors `tomllib` and `tomli_w`, and `csv` mirrors CPython's `csv`.
-Mojo's standard library ships none of these.
+*English · [日本語](README.ja.md)*
+
+Data-format encoders and decoders for Mojo, in pure Mojo, with
+Python-compatible APIs. Mojo's standard library ships none of these, so each
+package here mirrors the Python module people already know: `json` mirrors
+CPython's `json`, `yaml` mirrors PyYAML's `safe_load`/`safe_dump`, `toml`
+mirrors `tomllib` and `tomli_w`, and `csv` mirrors CPython's `csv`.
 
 ```mojo
 from json import dumps, loads
@@ -35,7 +38,7 @@ print(dumps(read_records("name,tags\nmojo,fast\n")[0]))
 # {"name": "mojo", "tags": "fast"}
 ```
 
-## Status
+## Packages
 
 | Package | State | Notes |
 |---------|-------|-------|
@@ -45,12 +48,46 @@ print(dumps(read_records("name,tags\nmojo,fast\n")[0]))
 | [`csv`](src/csv) | complete | Reader and writer running CPython's own `_csv` state machine |
 | [`serde`](src/serde) | complete | The `Value` type and tape every package builds on |
 
+## Documentation
+
+Each package has a hand-written guide, in English and Japanese, covering its
+API surface with runnable examples:
+
+| Package | Guide | ガイド |
+|---------|-------|--------|
+| `json` | [src/json/README.md](src/json/README.md) | [日本語](src/json/README.ja.md) |
+| `yaml` | [src/yaml/README.md](src/yaml/README.md) | [日本語](src/yaml/README.ja.md) |
+| `toml` | [src/toml/README.md](src/toml/README.md) | [日本語](src/toml/README.ja.md) |
+| `csv` | [src/csv/README.md](src/csv/README.md) | [日本語](src/csv/README.ja.md) |
+| `serde` | [src/serde/README.md](src/serde/README.md) | [日本語](src/serde/README.ja.md) |
+
+The examples in those guides are executable. `test/json/test_readme_examples.mojo`
+and its counterparts for `yaml`, `toml` and `csv` run every snippet a reader
+might copy, so a guide that drifts from the code fails the build.
+
+Alongside them, a full API reference is generated from the docstrings in
+`src/` — every signature, argument, return value and raised error:
+
+```bash
+./scripts/build_docs.sh               # writes docs/api/*.md
+./scripts/build_docs.sh --check       # only validate the docstrings
+```
+
+`mojo doc` compiles the docstrings into JSON and
+`scripts/render_api_docs.py` renders that as Markdown, so the reference cannot
+drift from the source. `docs/api/` is generated and not committed; CI rebuilds
+it on every push and uploads it as an artifact.
+
+`scripts/check_docstrings.py` is the compiler-free half of the same check. It
+needs only Python, and it fails when a public declaration is missing its
+docstring, an `Args:` or `Parameters:` entry, a `Returns:`, or a `Raises:`.
+
 ## Why it is fast
 
 A parsed document is not a tree of individually allocated nodes. Every value
 lives in one flat arena — a "tape" — of fixed-size nodes, plus one array of
 child indices and one buffer of decoded string bytes. A document of `n` values
-costs `O(1)` allocations instead of `O(n)`, and a `JSONValue` is a 12-byte
+costs `O(1)` allocations instead of `O(n)`, and a `Value` is a 12-byte
 reference-counted handle into that arena.
 
 On top of that: strings are scanned 32 bytes at a time with SIMD and copied in
@@ -119,13 +156,13 @@ python3 bench/csv/bench_python.py
 The packages are plain Mojo source. Either point the compiler at `src`:
 
 ```bash
-mojo run -I /path/to/json-mojo/src your_program.mojo
+mojo run -I /path/to/encoding-mojo/src your_program.mojo
 ```
 
-or precompile and depend on the package file:
+or precompile and depend on the package files:
 
 ```bash
-./scripts/build_packages.sh          # writes build/json.mojoc
+./scripts/build_packages.sh          # writes build/json.mojoc and friends
 mojo run -I build your_program.mojo
 ```
 
@@ -141,13 +178,14 @@ src/toml/            the toml package
 src/csv/             the csv package
 test/<name>/         each package's tests, one module per area
 bench/<name>/        each package's benchmarks, plus the Python baseline
-scripts/             test runner, package build, compat-case generators
+docs/api/            the generated API reference (not committed)
+scripts/             test runner, package build, doc build, compat-case generators
 ```
 
 A new format package follows the same shape: `src/<name>/` with an
 `__init__.mojo`, `test/<name>/test_*.mojo`, and `bench/<name>/` if it is worth
-measuring. `scripts/run_tests.sh` and `scripts/build_packages.sh` pick it up
-with no changes.
+measuring. `scripts/run_tests.sh`, `scripts/build_packages.sh` and
+`scripts/build_docs.sh` pick it up with no changes.
 
 ## Development
 
@@ -173,6 +211,19 @@ python3 scripts/gen_csv_compat_cases.py
 ```
 
 The generators need `pyyaml` and `tomli_w` installed.
+
+Documentation is part of the build. Before sending a change, run:
+
+```bash
+python3 scripts/check_docstrings.py src   # no compiler needed
+./scripts/build_docs.sh                   # the full mojo doc pass
+```
+
+New public declarations need a docstring with a summary, an entry for every
+argument and parameter, and a `Returns:`/`Raises:` where they apply. When a
+change alters what a package's README shows, update the Japanese README beside
+it, and update `test/<name>/test_readme_examples.mojo` so the examples keep
+running.
 
 ## License
 

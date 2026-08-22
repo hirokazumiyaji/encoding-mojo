@@ -35,6 +35,29 @@ jobs:
       - name: Build packages
         run: ./scripts/build_packages.sh
 
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check every public declaration is documented
+        run: python3 scripts/check_docstrings.py src
+
+      - name: Install Mojo
+        run: pip install modular
+
+      - name: Build the API reference
+        run: ./scripts/build_docs.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api-reference
+          path: docs/api
+
   benchmark:
     runs-on: ubuntu-latest
     steps:
@@ -50,7 +73,7 @@ jobs:
       - name: Benchmark json against CPython
         run: |
           python3 bench/json/gen_data.py
-          echo "== json-mojo"
+          echo "== encoding-mojo"
           mojo run -I src bench/json/bench_json.mojo
           echo "== CPython"
           python3 bench/json/bench_python.py
@@ -58,7 +81,7 @@ jobs:
       - name: Benchmark yaml against PyYAML
         run: |
           python3 bench/yaml/gen_data.py
-          echo "== yaml-mojo"
+          echo "== encoding-mojo"
           mojo run -I src bench/yaml/bench_yaml.mojo
           echo "== PyYAML"
           python3 bench/yaml/bench_python.py
@@ -66,7 +89,7 @@ jobs:
       - name: Benchmark toml against tomllib
         run: |
           python3 bench/toml/gen_data.py
-          echo "== toml-mojo"
+          echo "== encoding-mojo"
           mojo run -I src bench/toml/bench_toml.mojo
           echo "== CPython"
           python3 bench/toml/bench_python.py
@@ -74,7 +97,7 @@ jobs:
       - name: Benchmark csv against CPython
         run: |
           python3 bench/csv/gen_data.py
-          echo "== csv-mojo"
+          echo "== encoding-mojo"
           mojo run -I src bench/csv/bench_csv.mojo
           echo "== CPython"
           python3 bench/csv/bench_python.py
