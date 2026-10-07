@@ -1,0 +1,55 @@
+name: Publish package
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Package (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-64
+          - os: macos-14
+            platform: osx-arm64
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check release tag version
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          recipe_version="$(sed -n 's/^  version: "\([^"]*\)"/\1/p' conda.recipe/recipe.yaml)"
+          test -n "$recipe_version"
+          test "${RELEASE_TAG#v}" = "$recipe_version"
+
+      - name: Build conda package
+        uses: prefix-dev/rattler-build-action@1ca5f45832f419a46d1326ccc5861d7e14d67c44 # v0.2.39
+        with:
+          artifact-name: json-mojo-${{ matrix.platform }}
+          build-args: >-
+            --recipe conda.recipe/recipe.yaml
+            -c conda-forge
+            -c https://conda.modular.com/max
+
+      - name: Upload package to prefix.dev
+        env:
+          PREFIX_CHANNEL: ${{ vars.PREFIX_CHANNEL }}
+          PREFIX_API_KEY: ${{ secrets.PREFIX_API_KEY }}
+        run: |
+          test -n "$PREFIX_CHANNEL"
+          test -n "$PREFIX_API_KEY"
+          packages="$(find output -type f -name '*.conda' -print)"
+          test -n "$packages"
+          find output -type f -name '*.conda' -exec rattler-build upload prefix --channel "$PREFIX_CHANNEL" {} +

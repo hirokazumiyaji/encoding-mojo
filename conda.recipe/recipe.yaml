@@ -1,0 +1,34 @@
+context:
+  name: json-mojo
+  version: "0.1.0"
+
+package:
+  name: ${{ name }}
+  version: ${{ version }}
+
+source:
+  path: ..
+
+build:
+  number: 0
+  script:
+    - mkdir -p ${{ PREFIX }}/lib/mojo
+    - mojo precompile -I src -o ${{ PREFIX }}/lib/mojo/serde.mojoc src/serde
+    - mojo precompile -I src -o ${{ PREFIX }}/lib/mojo/json.mojoc src/json
+    - mojo precompile -I src -o ${{ PREFIX }}/lib/mojo/yaml.mojoc src/yaml
+    - mojo precompile -I src -o ${{ PREFIX }}/lib/mojo/toml.mojoc src/toml
+    - mojo precompile -I src -o ${{ PREFIX }}/lib/mojo/csv.mojoc src/csv
+
+requirements:
+  build:
+    - mojo-compiler =1.0.0
+  host:
+    - mojo-compiler =1.0.0
+  run:
+    - ${{ pin_compatible('mojo-compiler') }}
+
+about:
+  homepage: https://github.com/hirokazumiyaji/encoding-mojo
+  repository: https://github.com/hirokazumiyaji/encoding-mojo
+  summary: Pure Mojo data-format libraries
+  description: JSON, YAML, TOML, and CSV libraries for Mojo with a shared document model.
