@@ -132,8 +132,8 @@ mojo run -I build your_program.mojo
 Requires the Mojo compiler (`pip install modular`); developed against Mojo 1.0.
 
 The publish workflow builds separate prefix.dev packages for each format:
-`json-mojo`, `yaml-mojo`, `toml-mojo` and `csv-mojo`. Each depends on the
-shared `serde-mojo` package. Packages are built for Linux and macOS when a
+`json`, `yaml`, `toml` and `csv`. Each depends on the shared `serde` package.
+Packages are built for Linux and macOS when a
 version tag is pushed, or on manual workflow dispatch. The channel is set by
 the repository's `PREFIX_CHANNEL` variable.
 
