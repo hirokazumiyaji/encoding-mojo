@@ -1,0 +1,96 @@
+context:
+  version: "0.1.0"
+
+recipe:
+  name: encoding-mojo
+  version: ${{ version }}
+
+source:
+  path: ..
+  target_directory: encoding-mojo
+
+outputs:
+  - package:
+      name: serde-mojo
+    build:
+      number: 0
+      script:
+        - mkdir -p ${{ PREFIX }}/lib/mojo
+        - mojo precompile -I encoding-mojo/src -o ${{ PREFIX }}/lib/mojo/serde.mojoc encoding-mojo/src/serde
+    requirements:
+      build:
+        - mojo-compiler =1.0.0
+      host:
+        - mojo-compiler =1.0.0
+      run:
+        - ${{ pin_compatible('mojo-compiler') }}
+
+  - package:
+      name: json-mojo
+    build:
+      number: 0
+      script:
+        - mkdir -p ${{ PREFIX }}/lib/mojo
+        - mojo precompile -I encoding-mojo/src -o ${{ PREFIX }}/lib/mojo/json.mojoc encoding-mojo/src/json
+    requirements:
+      build:
+        - mojo-compiler =1.0.0
+      host:
+        - mojo-compiler =1.0.0
+      run:
+        - ${{ pin_subpackage('serde-mojo', exact=True) }}
+        - ${{ pin_compatible('mojo-compiler') }}
+
+  - package:
+      name: yaml-mojo
+    build:
+      number: 0
+      script:
+        - mkdir -p ${{ PREFIX }}/lib/mojo
+        - mojo precompile -I encoding-mojo/src -o ${{ PREFIX }}/lib/mojo/yaml.mojoc encoding-mojo/src/yaml
+    requirements:
+      build:
+        - mojo-compiler =1.0.0
+      host:
+        - mojo-compiler =1.0.0
+      run:
+        - ${{ pin_subpackage('serde-mojo', exact=True) }}
+        - ${{ pin_compatible('mojo-compiler') }}
+
+  - package:
+      name: toml-mojo
+    build:
+      number: 0
+      script:
+        - mkdir -p ${{ PREFIX }}/lib/mojo
+        - mojo precompile -I encoding-mojo/src -o ${{ PREFIX }}/lib/mojo/toml.mojoc encoding-mojo/src/toml
+    requirements:
+      build:
+        - mojo-compiler =1.0.0
+      host:
+        - mojo-compiler =1.0.0
+      run:
+        - ${{ pin_subpackage('serde-mojo', exact=True) }}
+        - ${{ pin_compatible('mojo-compiler') }}
+
+  - package:
+      name: csv-mojo
+    build:
+      number: 0
+      script:
+        - mkdir -p ${{ PREFIX }}/lib/mojo
+        - mojo precompile -I encoding-mojo/src -o ${{ PREFIX }}/lib/mojo/csv.mojoc encoding-mojo/src/csv
+    requirements:
+      build:
+        - mojo-compiler =1.0.0
+      host:
+        - mojo-compiler =1.0.0
+      run:
+        - ${{ pin_subpackage('serde-mojo', exact=True) }}
+        - ${{ pin_compatible('mojo-compiler') }}
+
+about:
+  homepage: https://github.com/hirokazumiyaji/encoding-mojo
+  repository: https://github.com/hirokazumiyaji/encoding-mojo
+  summary: Pure Mojo data-format libraries
+  description: JSON, YAML, TOML, and CSV libraries for Mojo with a shared document model.

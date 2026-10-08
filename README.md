@@ -1,4 +1,4 @@
-# json-mojo
+# encoding-mojo
 
 Pure-Mojo data-format libraries with Python-compatible APIs: `json` mirrors
 CPython's `json` module, `yaml` mirrors PyYAML's `safe_load`/`safe_dump`,
@@ -119,17 +119,23 @@ python3 bench/csv/bench_python.py
 The packages are plain Mojo source. Either point the compiler at `src`:
 
 ```bash
-mojo run -I /path/to/json-mojo/src your_program.mojo
+mojo run -I /path/to/encoding-mojo/src your_program.mojo
 ```
 
-or precompile and depend on the package file:
+or precompile the packages and use the generated files:
 
 ```bash
-./scripts/build_packages.sh          # writes build/json.mojoc
+./scripts/build_packages.sh          # writes build/<package>.mojoc for each package
 mojo run -I build your_program.mojo
 ```
 
 Requires the Mojo compiler (`pip install modular`); developed against Mojo 1.0.
+
+The publish workflow builds separate prefix.dev packages for each format:
+`json-mojo`, `yaml-mojo`, `toml-mojo` and `csv-mojo`. Each depends on the
+shared `serde-mojo` package. Packages are built for Linux and macOS when a
+version tag is pushed, or on manual workflow dispatch. The channel is set by
+the repository's `PREFIX_CHANNEL` variable.
 
 ## Repository layout
 
