@@ -7,6 +7,7 @@ recipe:
 
 source:
   path: ..
+  target_directory: encoding-mojo
 
 outputs:
   - package:
@@ -15,7 +16,7 @@ outputs:
       number: 0
       script:
         - mkdir -p ${{ PREFIX }}/lib/mojo
-        - mojo precompile -I src -o ${{ PREFIX }}/lib/mojo/serde.mojoc src/serde
+        - mojo precompile -I encoding-mojo/src -o ${{ PREFIX }}/lib/mojo/serde.mojoc encoding-mojo/src/serde
     requirements:
       build:
         - mojo-compiler =1.0.0
@@ -30,7 +31,7 @@ outputs:
       number: 0
       script:
         - mkdir -p ${{ PREFIX }}/lib/mojo
-        - mojo precompile -I src -o ${{ PREFIX }}/lib/mojo/json.mojoc src/json
+        - mojo precompile -I encoding-mojo/src -o ${{ PREFIX }}/lib/mojo/json.mojoc encoding-mojo/src/json
     requirements:
       build:
         - mojo-compiler =1.0.0
@@ -46,7 +47,7 @@ outputs:
       number: 0
       script:
         - mkdir -p ${{ PREFIX }}/lib/mojo
-        - mojo precompile -I src -o ${{ PREFIX }}/lib/mojo/yaml.mojoc src/yaml
+        - mojo precompile -I encoding-mojo/src -o ${{ PREFIX }}/lib/mojo/yaml.mojoc encoding-mojo/src/yaml
     requirements:
       build:
         - mojo-compiler =1.0.0
@@ -62,7 +63,7 @@ outputs:
       number: 0
       script:
         - mkdir -p ${{ PREFIX }}/lib/mojo
-        - mojo precompile -I src -o ${{ PREFIX }}/lib/mojo/toml.mojoc src/toml
+        - mojo precompile -I encoding-mojo/src -o ${{ PREFIX }}/lib/mojo/toml.mojoc encoding-mojo/src/toml
     requirements:
       build:
         - mojo-compiler =1.0.0
@@ -78,7 +79,7 @@ outputs:
       number: 0
       script:
         - mkdir -p ${{ PREFIX }}/lib/mojo
-        - mojo precompile -I src -o ${{ PREFIX }}/lib/mojo/csv.mojoc src/csv
+        - mojo precompile -I encoding-mojo/src -o ${{ PREFIX }}/lib/mojo/csv.mojoc encoding-mojo/src/csv
     requirements:
       build:
         - mojo-compiler =1.0.0
