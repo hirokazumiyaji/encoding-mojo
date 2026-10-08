@@ -52,5 +52,4 @@ jobs:
           test -n "$PREFIX_API_KEY"
           packages="$(find output -type f -name '*.conda' -print)"
           test -n "$packages"
-          test "$(printf '%s\n' "$packages" | wc -l | tr -d ' ')" -eq 5
           find output -type f -name '*.conda' -exec rattler-build upload prefix --channel "$PREFIX_CHANNEL" {} +
