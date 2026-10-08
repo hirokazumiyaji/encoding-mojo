@@ -11,7 +11,7 @@ source:
 
 outputs:
   - package:
-      name: serde-mojo
+      name: serde
     build:
       number: 0
       script:
@@ -26,7 +26,7 @@ outputs:
         - ${{ pin_compatible('mojo-compiler') }}
 
   - package:
-      name: json-mojo
+      name: json
     build:
       number: 0
       script:
@@ -38,11 +38,11 @@ outputs:
       host:
         - mojo-compiler =1.0.0
       run:
-        - ${{ pin_subpackage('serde-mojo', exact=True) }}
+        - ${{ pin_subpackage('serde', exact=True) }}
         - ${{ pin_compatible('mojo-compiler') }}
 
   - package:
-      name: yaml-mojo
+      name: yaml
     build:
       number: 0
       script:
@@ -54,11 +54,11 @@ outputs:
       host:
         - mojo-compiler =1.0.0
       run:
-        - ${{ pin_subpackage('serde-mojo', exact=True) }}
+        - ${{ pin_subpackage('serde', exact=True) }}
         - ${{ pin_compatible('mojo-compiler') }}
 
   - package:
-      name: toml-mojo
+      name: toml
     build:
       number: 0
       script:
@@ -70,11 +70,11 @@ outputs:
       host:
         - mojo-compiler =1.0.0
       run:
-        - ${{ pin_subpackage('serde-mojo', exact=True) }}
+        - ${{ pin_subpackage('serde', exact=True) }}
         - ${{ pin_compatible('mojo-compiler') }}
 
   - package:
-      name: csv-mojo
+      name: csv
     build:
       number: 0
       script:
@@ -86,7 +86,7 @@ outputs:
       host:
         - mojo-compiler =1.0.0
       run:
-        - ${{ pin_subpackage('serde-mojo', exact=True) }}
+        - ${{ pin_subpackage('serde', exact=True) }}
         - ${{ pin_compatible('mojo-compiler') }}
 
 about:
